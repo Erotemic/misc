@@ -62,3 +62,39 @@ use_parse(
   e 1 2 3
   )
 
+
+
+# TRY TO MAKE A CMAKE-PORT OF PYTHON DEDENT
+function(_dedent outvar text)
+  # spaces only. no tabs allowed
+  STRING(REGEX REPLACE ";" "\\\\;" _text "${text}")
+  STRING(REGEX REPLACE "\n" ";" lines "${_text}")
+
+
+  message(STATUS "text = ${text}")
+  # remove whitespce only lines
+  string(REGEX REPLACE "^[ \t]+$" "" "${text}" text)
+  message(STATUS "text = ${text}")
+
+  #string(REGEX MATCHALL "[a-zA-Z]+\ |[a-zA-Z]+$" SEXY_LIST "${text}")
+  string(REPLACE "\n" ";" SEXY_LIST ${text})
+  message(STATUS "SEXY_LIST = ${SEXY_LIST}")
+
+
+  string(REGEX MATCHALL "([ \t]+)" indents "${text}")
+  foreach (indent ${indents})
+    message(STATUS "indent = \"${indent}\"")
+  endforeach()
+endfunction()
+
+
+#_dedent(result "
+#   My indented string
+#    a;b;c;
+#    lo;oks
+
+#     like
+#      this
+#")
+# message(STATUS "result = ${result}")
+

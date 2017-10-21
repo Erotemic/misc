@@ -1,3 +1,29 @@
+
+#+  # -----------
+#+  function(SAFE_ExternalProject_Get_Property name)
+#+    foreach(var ${ARGN})
+#+      string(TOUPPER "${var}" VAR)
+#+      get_property(is_set TARGET ${name} PROPERTY _EP_${VAR} SET)
+#+      if(NOT is_set)
+#+        #message(FATAL_ERROR "External project \"${name}\" has no ${var}")
+#+      endif()
+#+      get_property(${var} TARGET ${name} PROPERTY _EP_${VAR})
+#+      set(${var} "${${var}}" PARENT_SCOPE)
+#+    endforeach()
+#+  endfunction()
+#+
+#+  foreach (target_name ${_viame_external_projects})
+#+    if (TARGET ${target_name})
+#+      get_target_property(_dep_check ${target_name} _EP_IS_EXTERNAL_PROJECT)
+#+      if(_dep_check EQUAL 1)
+#+        SAFE_ExternalProject_Get_Property(${target_name} DEPENDS)
+#+        message(STATUS "${target_name} DEPENDS = ${DEPENDS}")
+#+      endif()
+#+    endif()
+#+  endforeach()
+#+  # -----------
+
+
 function (extract_depends)
   # dependency extraction
   message(STATUS "BUILDSYSTEM_TARGETS = ${BUILDSYSTEM_TARGETS}")

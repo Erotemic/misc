@@ -133,3 +133,6 @@ A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/write_track_descriptor_se
 A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/write_track_descriptor_set.h
 A /home/joncrall/code/VIAME/packages/kwiver/vital/bindings/c/types/track_set.hxx
 
+
+NOTE TO PIP INSTALL SMQTK with psycopg2 we need the postgres dev libs
+sudo apt-get install libpq-dev
