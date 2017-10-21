@@ -8,9 +8,9 @@ workon_py2
 export KWIVER_PLUGIN_PATH=""
 export SPROKIT_MODULE_PATH=""
 source ~/code/VIAME/build-py2/install/setup_viame.sh
+export KWIVER_PYTHON_DEFAULT_LOG_LEVEL=debug
 export KWIVER_DEFAULT_LOG_LEVEL=debug
 export KWIVER_DEFAULT_LOG_LEVEL=info
-export KWIVER_PYTHON_DEFAULT_LOG_LEVEL=debug
 
 # export KWIVER_PYTHON_COLOREDLOGS=1
 
@@ -23,9 +23,15 @@ python run_camtrawl.py
 
 cd ~/code/VIAME/examples/hello_world_pipeline
 ~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/code/VIAME/examples/hello_world_pipeline/hello_world_detector.pipe
+~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/code/VIAME/examples/hello_world_pipeline/hello_world_python.pipe
 
 cd ~/code/VIAME/examples/tracking_pipelines
 ~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/code/VIAME/examples/tracking_pipelines/simple_tracker.pipe
+
+
+cd ~/code/VIAME/examples/detector_pipelines
+#~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/code/VIAME/examples/detector_pipelines/yolo_v2_detector.pipe
+~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/code/VIAME/examples/detector_pipelines/scallop_tk_detector.pipe
 
 
 Tracking related files:
