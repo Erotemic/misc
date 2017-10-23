@@ -414,6 +414,9 @@ class Pipeline(object):
         Creates a networkx representation of the process graph.
 
         Useful for visualization / any network graph analysis
+
+        SeeAlso:
+            pipe_to_dot
         """
         import networkx as nx
         G = nx.DiGraph()
@@ -436,6 +439,8 @@ class Pipeline(object):
         for proc in self.procs.values():
             G.add_node(proc.name)
             _defaultstyle(proc.name, 'turquoise', shape='ellipse', fontsize=20)
+            node_dict[proc.name]['label'] = '{}:\n{}'.format(proc.name,
+                                                             proc.type)
 
             for iport in proc.iports.values():
                 iport_name = iport.absname()
