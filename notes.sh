@@ -4,7 +4,6 @@ export PYTHONPATH=$(pwd):$PYTHONPATH
 install/bin/processopedia
 
 workon_py2
-
 export KWIVER_PLUGIN_PATH=""
 export SPROKIT_MODULE_PATH=""
 source ~/code/VIAME/build-py2/install/setup_viame.sh
@@ -12,13 +11,12 @@ export KWIVER_PYTHON_DEFAULT_LOG_LEVEL=debug
 export KWIVER_DEFAULT_LOG_LEVEL=debug
 export KWIVER_DEFAULT_LOG_LEVEL=info
 
-# export KWIVER_PYTHON_COLOREDLOGS=1
+export KWIVER_PYTHON_COLOREDLOGS=1
 
-python ~/code/VIAME/plugins/camtrawl/python/run_camtrawl.py
-python run_camtrawl.py
-
-~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/.cache/sprokit/temp_pipelines/temp_pipeline_file.pipe
-~/code/VIAME/build-py2/install/bin/pipeline_runner -p camtrawl.pipe -S pythread_per_process
+#python ~/code/VIAME/plugins/camtrawl/python/run_camtrawl.py
+#python run_camtrawl.py
+#~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/.cache/sprokit/temp_pipelines/temp_pipeline_file.pipe
+#~/code/VIAME/build-py2/install/bin/pipeline_runner -p camtrawl.pipe -S pythread_per_process
 
 
 cd ~/code/VIAME/examples/hello_world_pipeline
