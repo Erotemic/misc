@@ -1,7 +1,6 @@
 cd ~/code/VIAME/plugins/camtrawl/python
 export PYTHONPATH=$(pwd):$PYTHONPATH
 
-install/bin/processopedia
 
 workon_py2
 export KWIVER_PLUGIN_PATH=""
@@ -13,23 +12,29 @@ export KWIVER_DEFAULT_LOG_LEVEL=info
 
 export KWIVER_PYTHON_COLOREDLOGS=1
 
-#python ~/code/VIAME/plugins/camtrawl/python/run_camtrawl.py
-#python run_camtrawl.py
-#~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/.cache/sprokit/temp_pipelines/temp_pipeline_file.pipe
-#~/code/VIAME/build-py2/install/bin/pipeline_runner -p camtrawl.pipe -S pythread_per_process
+#SeeAlso: ~/code/kwiver/examples/tracking_pipelines/README.md
 
+processopedia
 
-cd ~/code/VIAME/examples/hello_world_pipeline
-~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/code/VIAME/examples/hello_world_pipeline/hello_world_detector.pipe
-~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/code/VIAME/examples/hello_world_pipeline/hello_world_python.pipe
 
 cd ~/code/VIAME/examples/tracking_pipelines
-~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/code/VIAME/examples/tracking_pipelines/simple_tracker.pipe
+pipeline_runner -p ~/code/VIAME/examples/tracking_pipelines/simple_tracker.pipe
 
 
 cd ~/code/VIAME/examples/detector_pipelines
-#~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/code/VIAME/examples/detector_pipelines/yolo_v2_detector.pipe
-~/code/VIAME/build-py2/install/bin/pipeline_runner -p ~/code/VIAME/examples/detector_pipelines/scallop_tk_detector.pipe
+#pipeline_runner -p ~/code/VIAME/examples/detector_pipelines/yolo_v2_detector.pipe
+pipeline_runner -p ~/code/VIAME/examples/detector_pipelines/scallop_tk_detector.pipe
+
+
+cd ~/code/VIAME/examples/hello_world_pipeline
+pipeline_runner -p ~/code/VIAME/examples/hello_world_pipeline/hello_world_detector.pipe
+pipeline_runner -p ~/code/VIAME/examples/hello_world_pipeline/hello_world_python.pipe
+
+
+#python ~/code/VIAME/plugins/camtrawl/python/run_camtrawl.py
+#python run_camtrawl.py
+#pipeline_runner -p ~/.cache/sprokit/temp_pipelines/temp_pipeline_file.pipe
+#pipeline_runner -p camtrawl.pipe -S pythread_per_process
 
 
 Tracking related files:
@@ -84,62 +89,173 @@ git-new-files dev/tracking-framework master
 git-new-files dev/tracking-framework HEAD
 
 
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/associate_detections_to_tracks_threshold.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/associate_detections_to_tracks_threshold.h
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/compute_association_matrix_from_features.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/compute_association_matrix_from_features.h
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/initialize_object_tracks_threshold.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/initialize_object_tracks_threshold.h
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/read_object_track_set_kw18.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/read_object_track_set_kw18.h
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/read_track_descriptor_set_csv.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/read_track_descriptor_set_csv.h
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/write_object_track_set_kw18.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/write_object_track_set_kw18.h
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/write_track_descriptor_set_csv.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/core/write_track_descriptor_set_csv.h
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/darknet/generate_headers.py
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/ocv/refine_detections_draw.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/ocv/refine_detections_draw.h
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/ocv/split_image.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/ocv/split_image.h
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/vxl/split_image.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/arrows/vxl/split_image.h
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/associate_detections_to_tracks_process.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/associate_detections_to_tracks_process.h
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/compute_association_matrix_process.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/compute_association_matrix_process.h
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/compute_track_descriptors_process.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/initialize_object_tracks_process.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/initialize_object_tracks_process.h
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/read_object_track_process.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/read_object_track_process.h
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/read_track_descriptor_process.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/read_track_descriptor_process.h
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/split_image_process.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/split_image_process.h
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/write_object_track_process.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/write_object_track_process.h
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/write_track_descriptor_process.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/sprokit/processes/core/write_track_descriptor_process.h
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/associate_detections_to_tracks.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/associate_detections_to_tracks.h
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/compute_association_matrix.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/compute_association_matrix.h
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/initialize_object_tracks.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/initialize_object_tracks.h
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/read_object_track_set.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/read_object_track_set.h
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/read_track_descriptor_set.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/read_track_descriptor_set.h
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/split_image.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/split_image.h
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/write_object_track_set.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/write_object_track_set.h
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/write_track_descriptor_set.cxx
-A /home/joncrall/code/VIAME/packages/kwiver/vital/algo/write_track_descriptor_set.h
-A /home/joncrall/code/VIAME/packages/kwiver/vital/bindings/c/types/track_set.hxx
-
-
 NOTE TO PIP INSTALL SMQTK with psycopg2 we need the postgres dev libs
 sudo apt-get install libpq-dev
+
+source ~/code/VIAME/build/install/setup_viame.sh
+cd /home/joncrall/code/VIAME/examples/tracking_pipelines
+~/code/VIAME/build/install/bin/pipe_to_dot -p simple_tracker.pipe -o g.dot
+dot -Tpng g.dot > g.png
+
+
+github query-wip
+github dev/tracking-framework
+kwgitlab dev/obj_tracking
+ 
+gitk master jon/viame/master jon/viame/next viame/master viame/query-wip viame/tracking-work viame/master-w-pytorch viame/master-no-pybind viame/add-descriptor-pipeline
+
+
+gitk master dev/tracking-framework
+gitk master viame/tracking-work
+
+git merge-base --independent viame/tracking-work dev/tracking-framework
+echo $?
+git merge-base --is-ancestor dev/tracking-framework viame/tracking-work 
+echo $?
+
+git merge-base --is-ancestor dev/tracking-framework jon/viame/next
+git merge-base --is-ancestor jon/viame/next dev/tracking-framework 
+echo $?
+
+
+git merge-base master viame/master
+#git merge-base --is-ancestor <commit> <commit>
+#git merge-base --independent <commit>…​
+#git merge-base --fork-point <ref> [<commit>]
+
+
+make_diva_kwiver(){
+    git co master
+    git co -b jon/diva/master
+    git merge dev/tracking-framework
+    git merge viame/query-wip
+
+    git log --name-only master..dev/tracking-framework
+}
+
+# Note viame/next kwiver sha 7a9285a83f8fe1f814fb71e4d69d0ec110fe916b
+# Note viame/master kwiver sha edd8fb851103ede39c235bc44bf8b1ce62c080e7
+
+python ~/misc/git-branch-relationships.py "
+    jon/viame/master
+    jon/viame/next
+    master
+    dev/tracking-framework
+    viame/master
+    viame/query-wip
+    viame/tracking-work
+    viame/master-no-pybind
+    viame/master-w-pytorch
+    dev/obj_tracking
+    7a9285a83f8fe
+    edd8fb851103e
+"
+
+
+gitk viame/query-wip viame/master dev/tracking-framework
+
+
+merging_query_wip(){
+    git co viame/query-wip
+    git co -b jon/viame/query-wip
+
+    #gitk ab450923532ed904035939d123bf15e8fc8c5127
+
+    git cherry-pick df4813f971ce7c123152ee44d7fde1a765ab05b8
+    git cherry-pick 1c1b7365f691dd9bafaf6e45f38248845f22820c
+    git cherry-pick eab3b29a912484043378046afd114416da6f7e17
+
+    git co jon/diva/master
+    git merge jon/viame/query-wip
+
+}
+
+# list all branches that have commit as an ancestor
+gitk --all --ancestry-path viame/query-wip..
+
+
+#Required classes:
+
+CLASSES=(compute_track_descriptors
+compute_association_matrix
+associate_detections_to_tracks 
+initialize_object_tracks 
+write_object_track 
+image_object_detector 
+detected_object_output 
+frame_list_input)
+     
+
+for i in ${CLASSES[@]}; do
+    echo class: $i
+    cgrep --files-with-matches --exclude "*.dot*" --exclude "*.rst*" --exclude "*.pipe*" $i
+    #fzfind $i
+done
+
+    cgrep --files-with-matches --exclude "*.dot*" --exclude "*.rst*" --exclude "*.pipe*" compute_track_descriptors
+
+
+
+
+As far as I can tell there are a few things that need to be done:
+
+* dev/tracking-framework needs to be merged into KWIVER master, however there are issues preventing that from happening. The PR is too big and lacks tests. I believe Matt P is working on this front, but progress is slow. How should we proceed? Perhaps we make a diva/master branch and work off of that?
+
+* There are parts of the tracking pipeline that depend on burnout, smqtk, vivia, etc...
+What are these parts? In other words, what functionality from VIAME needs to be ported other than the dev/tracking-framework branch?
+
+* kwiver has an enable_burnout option, but all it does is `find_package( vidtk REQUIRED )`.
+
+For reference the following classes referenced in the tracker pipeline are not currently in kwiver master. However, I believe they are in dev/tracking-framework
+class: compute_association_matrix
+class: associate_detections_to_tracks
+class: initialize_object_tracks
+class: write_object_track
+
+
+
+
+python -c "from kwiver.util.vital_type_converters import ctypes; print(ctypes)"
+
+# Runs kwiver standalone simple example
+(cd ~/code/kwiver/build-py2/examples/pipelines && pipeline_runner -p number_flow.pipe)
+
+
+# Find libraries loaded on runtime 
+# https://stackoverflow.com/questions/5103443/how-to-check-what-shared-libraries-are-loaded-at-run-time-for-a-given-process
+python ~/misc/ldd_graph.py processopedia
+strace processopedia 2>&1 | grep '^open(".*\.so"' | grep -v "= -1"
+strace processopedia 2>&1 | grep '^open(".*\.so"' | grep -v "= -1" | grep python -A 10000 -B 10000
+
+
+
+ git diff --name-only jon/diva/master jon/viame/master
+
+ 
+
+README.rst
+gitk jon/diva/master jon/viame/master arrows/core/handle_descriptor_request_core.cxx
+gitk jon/diva/master jon/viame/master arrows/darknet/darknet_detector.cxx
+
+arrows/ocv/refine_detections_write_to_disk.cxx
+arrows/uuid/tests/CMakeLists.txt
+arrows/uuid/tests/test_uuid_factory.cxx
+doc/manuals/_images/cmake/cmake_step_2.png
+doc/manuals/_images/cmake/cmake_step_3.png
+examples/external/darknet.zip.sha512
+sprokit/CMakeLists.txt
+sprokit/conf/sprokit-macro-python-tests.cmake
+sprokit/processes/vxl/kw_archive_writer_process.cxx
+sprokit/src/bindings/python/modules/loaders.py
+sprokit/src/bindings/python/sprokit/pipeline/process.cxx
+sprokit/src/bindings/python/sprokit/pipeline/process_factory.cxx
+sprokit/src/bindings/python/sprokit/pipeline/scheduler_factory.cxx
+sprokit/src/sprokit/pipeline/CMakeLists.txt
+sprokit/src/sprokit/pipeline/process.h
+sprokit/src/sprokit/pipeline/process_factory.cxx
+sprokit/src/sprokit/pipeline/process_factory.h
+sprokit/src/sprokit/pipeline/scheduler_factory.cxx
+sprokit/src/sprokit/pipeline/scheduler_factory.h
+sprokit/tests/bindings/python/CMakeLists.txt
+tests/test_gtest.h
+ 
