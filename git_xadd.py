@@ -9,6 +9,10 @@ import sys
 def git_xadd(branch, files, message='wip'):
     repo = git.Repo()
     orig_branch_name = repo.active_branch.name
+
+    if branch not in {branch.name for branch in repo.branches}:
+        raise ValueError('Branch {!r} does not exist'.format(branch))
+
     try:
         repo.git.checkout(branch)
         repo.git.add(files)

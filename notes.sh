@@ -261,3 +261,12 @@ tests/test_gtest.h
  
 
 ===============
+
+
+
+python ~/misc/git_xadd.py dev/add_vital_type_image_container_set \
+    vital/CMakeLists.txt \
+    vital/tests/test_image_container_set.cxx \
+    vital/types/image_container_set.h \
+    vital/tests/CMakeLists.txt \
+    -m "add vital type: image_container_set"
