@@ -53,7 +53,7 @@ if __name__ == '__main__':
         git_squash_streaks.py
 
     Ignore:
-        python ~/misc/git_xadd.py dev/doc_fixes arrows/ocv/split_image.cxx -m "added a bit more info"
+        python ~/misc/git/git_xadd.py dev/doc_fixes arrows/ocv/split_image.cxx -m "added a bit more info"
         git merge dev/doc_fixes
 
     CommandLine:
