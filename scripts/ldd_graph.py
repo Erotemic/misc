@@ -1,9 +1,11 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
-import ubelt as ub
-from os.path import exists, basename, join, abspath
+import os
 import parse
 import itertools as it
+import ubelt as ub
+from os.path import exists, basename, join, abspath
 
 
 def search_candidate_paths(candidate_path_list, candidate_name_list=None):
@@ -47,13 +49,11 @@ def ldd(lib_fpath):
         yield child_lib_fpath
 
 
-def ldd_tree(lib_fpaths):
+def ldd_tree(lib_fpaths, print_tree=False):
     ldd_seen = {}
-    import os
-    PATH = os.environ['PATH'].split(os.pathsep)
 
     def _ldd_tree(fpath, depth=0):
-        prefix = '    ' + '│    ' * (depth) + '├──'
+        prefix = '│    ' * (depth) + '├──'
         if fpath in ldd_seen:
             # if 'python' in fpath or 'py' in basename(fpath):
             #     print(ub.color_text(prefix + fpath + ' [SEEN]', 'red'))
@@ -61,10 +61,11 @@ def ldd_tree(lib_fpaths):
             #     print(prefix + fpath + ' [SEEN]')
             raise StopIteration()
         else:
-            if 'python' in fpath or 'py' in basename(fpath):
-                print(ub.color_text(prefix + fpath, 'red'))
-            else:
-                print(prefix + fpath)
+            if print_tree:
+                if 'python' in fpath or 'py' in basename(fpath):
+                    print(ub.color_text(prefix + fpath, 'red'))
+                else:
+                    print(prefix + fpath)
 
         if not exists(fpath):
             yield fpath + ' (not found)'
@@ -80,13 +81,20 @@ def ldd_tree(lib_fpaths):
                 for _ in _ldd_tree(child, depth=depth + 1):
                     yield _
 
+    def _rectify_input_paths(lib_fpaths):
+        PATH = os.environ['PATH'].split(os.pathsep)
+        for fpath in lib_fpaths:
+            if not exists(fpath):
+                fpath = abspath(next(search_candidate_paths(PATH, [fpath])))
+            else:
+                fpath = abspath(fpath)
+            yield fpath
+
+    lib_fpaths = list(_rectify_input_paths(lib_fpaths))
+
+    print('Parsing LDD Tree for {}'.format(lib_fpaths))
+
     for fpath in lib_fpaths:
-
-        if not exists(fpath):
-            fpath = abspath(next(search_candidate_paths(PATH, [fpath])))
-        else:
-            fpath = abspath(fpath)
-
         for _ in _ldd_tree(fpath):
             yield _
 
@@ -95,7 +103,7 @@ if __name__ == '__main__':
     r"""
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/misc
-        python ~/misc/ldd_graph.py *.so
+        python ~/misc/scripts/ldd_graph.py *.so
 
         lib_fpaths = ['/home/joncrall/code/kwiver/build-py2/lib/libsprokit_pipeline.so.0']
 
@@ -103,7 +111,9 @@ if __name__ == '__main__':
     """
     import sys
     lib_fpaths = sys.argv[1:]
-    for child in ldd_tree(lib_fpaths):
-        pass
-        # print(child)
-        # print('child = {!r}'.format(child))
+    print('lib_fpaths = {!r}'.format(lib_fpaths))
+    print_tree = True
+
+    for child in ldd_tree(lib_fpaths, print_tree=print_tree):
+        if not print_tree:
+            print(child)
