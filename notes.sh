@@ -263,10 +263,40 @@ tests/test_gtest.h
 ===============
 
 
+git co jon/master
 
-python ~/misc/git/git_xadd.py dev/add_vital_type_image_container_set \
+
+python ~/misc/git/git_xadd.py \
     vital/CMakeLists.txt \
     vital/tests/test_image_container_set.cxx \
     vital/types/image_container_set.h \
     vital/tests/CMakeLists.txt \
+    --branch=dev/add_vital_type_image_container_set \
+    --base=master \ 
     -m "add vital type: image_container_set"
+
+git merge dev/add_vital_type_image_container_set
+
+
+python ~/misc/git/git_xadd.py \
+    vital/CMakeLists.txt \
+    sprokit/processes/core/extract_image_descriptor_process.cxx \
+    sprokit/processes/core/extract_image_descriptor_process.h \
+    vital/algo/extract_image_descriptor.cxx \
+    vital/algo/extract_image_descriptor.h \
+    --branch=dev/image_desc_proc \
+    --base=master \
+    -m "add process/algo: image_desc_proc"
+
+git merge dev/image_desc_proc
+
+git co -b dev/hog_desc_arrow
+
+
+
+python ~/misc/git/git_xadd.py \
+    vital/algo/detected_object_set_output.h \
+    --branch=dev/doc_fixes \
+    -m "made param rst doc consistent"
+
+git-xadd sprokit/processes/kwiver_type_traits.h --branch=dev/add_vital_type_image_container_set -m "fixed type trait"

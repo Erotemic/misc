@@ -22,7 +22,8 @@ SCRIPT_HEADER = ub.codeblock(
     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
     ''')
 
-SCRIPT_FOOTER_FMT = '$DIR/{fname} $@'
+SCRIPT_FOOTER_FMT = '$DIR/{fname} "$@"'
+
 
 def setup_git_commands():
     dpath = dirname(__file__)
@@ -33,12 +34,15 @@ def setup_git_commands():
 
     for fpath in git_scripts:
         fname = basename(fpath)
-        script_text = SCRIPT_HEADER + '\n' + SCRIPT_FOOTER_FMT.format(fname=fname)
+        script_text = (SCRIPT_HEADER + '\n\n' +
+                       SCRIPT_FOOTER_FMT.format(fname=fname) + '\n')
 
         new_fname = splitext(fname)[0].replace('_', '-')
         new_fpath = join(dpath, new_fname)
         print('writing script {!r}'.format(new_fname))
         ub.writeto(new_fpath, script_text)
+        ub.cmd('chmod +x ' + new_fpath)
+        ub.cmd('chmod +x ' + fpath)
 
 
 if __name__ == '__main__':

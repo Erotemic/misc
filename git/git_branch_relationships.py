@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import itertools as it
 import ubelt as ub
 
