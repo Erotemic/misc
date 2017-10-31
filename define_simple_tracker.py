@@ -23,8 +23,8 @@ def main():
     detector = pipe.add_process(name='detector', type='image_object_detector', config={
         'detector:type': 'darknet',
         # Network config
-        ':detector:darknet:net_config'  :  '../detector_pipelines/models/model2.cfg',
-        ':detector:darknet:weight_file' :  '../detector_pipelines/models/model2.weights',
+        ':detector:darknet:net_config'  : '../detector_pipelines/models/model2.cfg',
+        ':detector:darknet:weight_file' : '../detector_pipelines/models/model2.weights',
         ':detector:darknet:class_names' : '../detector_pipelines/models/scallop_and_fish.lbl',
 
         # Detector parameters
