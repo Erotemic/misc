@@ -14,23 +14,28 @@ def test_array_io():
 
     # Setup Test Data
     dpath = ub.ensure_app_cache_dir('misc')
+    dpath = '.'
 
-    N_ARRS = 10
+    N_ARRS = 100
     N_ITERS = 1
 
-    # arrs = [np.random.rand(480, 360, 4) for i in range(N_ARRS)]
-    arrs = [np.random.rand(2048, 2048, 4).astype(np.float32) for i in range(N_ARRS)]
+    arrs = [np.random.rand(480, 360, 4) for i in range(N_ARRS)]
+    # arrs = [np.random.rand(2048, 2048, 4).astype(np.float32) for i in range(N_ARRS)]
 
     class Store(object):
         """
         Base class helper for defining IO storage strategies
         """
+
+        def name(self):
+            return self.__class__.__name__
+
         def n_bytes(self):
             return sum(map(ut.file_bytes, self.paths()))
 
         def test_disk_io(self):
             # Function that runs different strategies
-            key = self.__class__.__name__
+            key = self.name()
 
             print('\n# --- {} ---'.format(key))
             write_ti = ub.Timerit(N_ITERS, label='{} write time'.format(self.ext))
@@ -71,13 +76,22 @@ def test_array_io():
 
     class NPY(MultiFileStore):
         ext = '.npy'
+        def __init__(self, readkw={}, writekw={}):
+            self.readkw = readkw
+            self.writekw = writekw
+
         def read(self):
             for fpath in self.paths():
-                yield np.load(fpath)[...]
+                yield np.load(fpath, **self.readkw)[...]
 
         def write(self):
             for fpath, arr in zip(self.paths(), arrs):
-                np.save(fpath, arr)
+                np.save(fpath, arr, **self.writekw)
+
+        def name(self):
+            read_id = ub.repr2(self.readkw, nl=0, sep='', si=True)
+            write_id = ub.repr2(self.writekw, nl=0, sep='', si=True)
+            return super().name() + '(' + read_id + ', ' + write_id + ')'
 
     class NPZ(MultiFileStore):
         ext = '.npz'
@@ -134,6 +148,10 @@ def test_array_io():
                     #                   compression='lzf')
 
     # Execute tests
+
+    NPY().test_disk_io()
+    NPY(dict(allow_pickle=False)).test_disk_io()
+    NPY(dict(allow_pickle=False, fix_imports=False), dict(allow_pickle=False, fix_imports=False)).test_disk_io()
 
     NPY().test_disk_io()
 
