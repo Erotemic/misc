@@ -1,4 +1,5 @@
 import ubelt as ub
+import sys
 import tqdm
 from time import sleep
 
@@ -41,7 +42,7 @@ def test_partial_nest1():
     print('\n\n\n\n')
 
 
-def test_partial_nest2():
+def test_partial_nest_explicit():
 
     p1 = tqdm.tqdm(total=100, desc='loop 1', leave=True, position=1)
 
@@ -61,14 +62,62 @@ def test_partial_nest2():
         p1.update(1)
 
 
+def test_partial_nest_explicit_with_write():
+
+    p1 = tqdm.tqdm(total=100, desc='loop 1', leave=True, position=1)
+
+    long_msg = ub.codeblock(
+        '''
+        HELLO WORLD
+              -jon
+        ''')
+
+    for _ in range(p1.total):
+        # tqdm.tqdm.write('out = {}'.format(_))
+
+        # VERY IMPORTANT TO PASS WRITE WITH SYS.STDOUT IN CASE IT WAS MONKEY
+        # PATCHED
+        # p1.write('out = {}'.format(_), file=sys.stdout)
+        for l in long_msg.split('\n'):
+            tqdm.tqdm.write(l, file=sys.stdout)
+
+        p2 = tqdm.tqdm(total=1000, desc='loop 2', leave=True, position=2)
+        for _ in range(p2.total):
+            sleep(0.001)
+            p2.update(1)
+        p2.close()
+
+        p3 = tqdm.tqdm(total=1000, desc='loop 3', leave=True, position=3)
+        for _ in range(p3.total):
+            sleep(0.001)
+            p3.update(1)
+        p3.close()
+
+        p1.update(1)
+
+
+def simple_write():
+
+    p1 = tqdm.tqdm(total=100, desc='loop 1')
+
+    for _ in range(p1.total):
+        sleep(0.1)
+        # p1.write('out = {}'.format(_))
+        tqdm.tqdm.write('out = {}'.format(_), file=sys.stdout)
+        p1.update(1)
+
+
 if __name__ == '__main__':
     r"""
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/misc/python_tests
         python ~/misc/python_tests/test_tqdm.py test_partial_nest1
-        python ~/misc/python_tests/test_tqdm.py test_partial_nest2
+        python ~/misc/python_tests/test_tqdm.py test_partial_nest_explicit
+        python ~/misc/python_tests/test_tqdm.py test_partial_nest_explicit_with_write
+        python ~/misc/python_tests/test_tqdm.py simple_write
     """
     import xdoctest
     xdoctest.doctest_module(__file__)
     # test_partial_nest1()
     # test_write()
+    # simple_write()
