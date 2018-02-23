@@ -300,3 +300,54 @@ python ~/misc/git/git_xadd.py \
     -m "made param rst doc consistent"
 
 git-xadd sprokit/processes/kwiver_type_traits.h --branch=dev/add_vital_type_image_container_set -m "fixed type trait"
+
+
+
+
+
+FLETCH_BUILD_ERRORS(){
+    __heredoc__ "
+    [ 97%] Linking CXX executable ../../bin/opencv_traincascade
+    //usr/lib/liblapack.so.3: undefined reference to `gotoblas`
+    collect2: error: ld returned 1 exit status
+    apps/traincascade/CMakeFiles/opencv_traincascade.dir/build.make:392: recipe for target 'bin/opencv_traincascade' failed
+
+    https://github.com/opencv/opencv/issues/7970
+
+    problem may be multiple cblas.h
+
+    locate cblas.h
+
+    Workaround is to disable lapack
+    
+    OPENCV_ENABLE_LAPACK=False, there should be a better solution though
+    "
+
+
+    # VIAME CMAKE HAD ERROR WHEN CUDA WAS IN LOCAL DIRECTORY
+    # FOUND CUDA_rt_LIBRARY in the wrong place.
+    # Found /usr/lib/x86_64-linux-gnu/librt.so isntead of
+    # ~/.local/cuda/lib64/libcudart.so
+
+
+[  2%] Building NVCC (Device) object src/caffe/CMakeFiles/cuda_compile.dir/layers/cuda_compile_generated_relu_layer.cu.o
+nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+/home/joncrall/code/fletch/build-py3.5/build/src/Caffe/include/caffe/util/cudnn.hpp(112): error: too few arguments in function call
+
+1 error detected in the compilation of "/tmp/tmpxft_00000524_00000000-5_relu_layer.cpp4.ii".
+CMake Error at cuda_compile_generated_relu_layer.cu.o.cmake:266 (message):
+  Error generating file
+  /home/joncrall/code/fletch/build-py3.5/build/src/Caffe-build/src/caffe/CMakeFiles/cuda_compile.dir/layers/./cuda_compile_generated_relu_layer.cu.o
+
+
+src/caffe/CMakeFiles/caffe.dir/build.make:483: recipe for target 'src/caffe/CMakeFiles/cuda_compile.dir/layers/cuda_compile_generated_relu_layer.cu.o' failed
+make[2]: *** [src/caffe/CMakeFiles/cuda_compile.dir/layers/cuda_compile_generated_relu_layer.cu.o] Error 1
+CMakeFiles/Makefile2:272: recipe for target 'src/caffe/CMakeFiles/caffe.dir/all' failed
+make[1]: *** [src/caffe/CMakeFiles/caffe.dir/all] Error 2
+Makefile:127: recipe for target 'all' failed
+make: *** [all] Error 2
+
+
+
+}
