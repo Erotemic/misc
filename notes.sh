@@ -354,3 +354,5 @@ make: *** [all] Error 2
 
 
 }
+
+#http://www.viametoolkit.org/cvpr-2018-workshop-data-challenge/
