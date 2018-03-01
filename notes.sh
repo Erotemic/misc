@@ -349,5 +349,8 @@ Makefile:127: recipe for target 'all' failed
 make: *** [all] Error 2
 
 
+# Had issues building Caffe2 with older cmake 3.5 because it kept finding Eigen in fletch
+# perhaps it had to do with that depricated previous build flags
+
 
 }
