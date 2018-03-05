@@ -197,7 +197,8 @@ class CocoDataset(object):
                 ann['roi_shape'] = 'bounding_box'
 
             if ann['roi_shape'] == 'point' and 'point' not in ann:
-                pass
+                x, y, w, h = ann['bbox']
+                ann['point'] = (x, y)
 
             if ann['roi_shape'] == 'line' and 'line' not in ann:
                 # hack in a decent bounding box to fix the roi.
@@ -276,8 +277,8 @@ def make_baseline_truthfiles():
     # ignore the non-bounding box nwfsc and afsc datasets for now
 
     exclude = (
-        # 'nwfsc',
-        'afsc',
+        'nwfsc',
+        # 'afsc',
         'mouss',
         'habcam')
     fpaths = [p for p in fpaths if not basename(p).startswith(exclude)]
