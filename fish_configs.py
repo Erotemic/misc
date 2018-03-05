@@ -1,10 +1,10 @@
-
 from os.path import basename
-import glob
 from os.path import join
-
 from os.path import exists
+import glob
+import numpy as np
 import ubelt as ub
+
 ub.codeblock(
     """
     MODEL:
@@ -179,12 +179,41 @@ class CocoDataset(object):
         self.imgs = imgs
         self.cats = cats
 
+    def run_fixes(self):
+        for ann in self.anns:
+            # Note standard coco bbox is [x,y,width,height]
+            if 'roi_shape' not in ann:
+                ann['roi_shape'] = 'bounding_box'
+
+            if ann['roi_shape'] == 'boundingBox':
+                x1, y1, x2, y2 = ann['bbox']
+
+                assert x2 >= x1
+                assert y2 >= y1
+
+                w = x2 - x1
+                h = y2 - y1
+                ann['bbox'] = [x1, y1, w, h]
+                ann['roi_shape'] = 'bounding_box'
+
+            if ann['roi_shape'] == 'point' and 'point' not in ann:
+                pass
+
+            if ann['roi_shape'] == 'line' and 'line' not in ann:
+                # hack in a decent bounding box to fix the roi.
+                # Assume the line is the diameter of an enscribed circle
+                x1, y1, x2, y2 = ann['bbox']
+                xc = (x1 + x2) / 2
+                yc = (y1 + y2) / 2
+                length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+                bbox = [(xc - length / 2), (yc - length / 2), length, length]
+                ann['bbox'] = bbox
+                ann['line'] = [(x1, y1), (x2, y2)]
+
     def show_annotation(self, primary_aid):
         import matplotlib as mpl
         from matplotlib import pyplot as plt
         import cv2
-        # from clab.util import mplutil
-
         primary_ann = self.anns[primary_aid]
         gid = primary_ann['image_id']
 
@@ -198,35 +227,12 @@ class CocoDataset(object):
         ax = plt.gca()
 
         # Show all annotations inside it
-        import numpy as np
         segments = []
+        points = []
         rects = []
         for aid in aids:
             ann = self.anns[aid]
             # Note standard coco bbox is [x,y,width,height]
-            if 'roi_shape' not in ann:
-                ann['roi_shape'] = 'boundingBox'
-
-            if ann['roi_shape'] == 'boundingBox':
-                x1, y1, x2, y2 = ann['bbox']
-                w = x2 - x1
-                h = y2 - y1
-                ann['bbox'] = [x1, y1, w, h]
-                ann['roi_shape'] = 'bounding_box'
-
-            if ann['roi_shape'] == 'point' and 'point' not in ann:
-                pass
-
-            if ann['roi_shape'] == 'line' and 'line' not in ann:
-                # hack the roi to fix it
-                x1, y1, x2, y2 = ann['bbox']
-                xc = (x1 + x2) / 2
-                yc = (y1 + y2) / 2
-                length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-                bbox = [(xc - length / 2), (yc - length / 2), length, length]
-                ann['bbox'] = bbox
-                ann['line'] = [(x1, y1), (x2, y2)]
-
             [x, y, w, h] = ann['bbox']
 
             catname = self.cats[ann['category_id']]['name']
@@ -246,18 +252,17 @@ class CocoDataset(object):
             rects.append(rect)
             if 'line' in ann:
                 segments.append(ann['line'])
+            if 'point' in ann:
+                points.append(ann['point'])
 
         if segments:
-            line_group = mpl.collections.LineCollection(segments, 2, color='b')
-            ax.add_collection(line_group)
+            line_col = mpl.collections.LineCollection(segments, 2, color='b')
+            ax.add_collection(line_col)
 
-        rect_group = mpl.collections.PatchCollection(rects, match_original=True)
-        ax.add_collection(rect_group)
-        # w = w - x
-        # h = h - y
-        # rect = mpl.patches.Rectangle((x, y), w, h, facecolor='none',
-        #                              edgecolor='b')
-        # ax.add_artist(rect)
+        rect_col = mpl.collections.PatchCollection(rects, match_original=True)
+        ax.add_collection(rect_col)
+        if points:
+            ax.plot(*list(zip(*points)))
 
 
 def make_baseline_truthfiles():
@@ -266,11 +271,12 @@ def make_baseline_truthfiles():
     annot_dir = ub.truepath('~/data/viame-challenge-2018/phase0-annotations')
     fpaths = list(glob.glob(join(annot_dir, '*.json')))
     # ignore the non-bounding box nwfsc and afsc datasets for now
-    fpaths = [p for p in fpaths
-              if not basename(p).startswith(('nwfsc', 'afsc',
-                                             # 'mouss',
-                                             'habcam'
-                                            ))]
+
+    exclude = ('nwfsc',
+               'afsc',
+               # 'mouss',
+               'habcam')
+    fpaths = [p for p in fpaths if not basename(p).startswith(exclude)]
 
     import json
     dsets = ub.odict()
@@ -286,6 +292,7 @@ def make_baseline_truthfiles():
 
     import copy
     self = CocoDataset(copy.deepcopy(merged), img_root=img_root)
+    self.run_fixes()
 
     catname_to_nannots = ub.map_keys(lambda x: self.cats[x]['name'],
                                      ub.map_vals(len, self.cid_to_aids))
@@ -294,9 +301,18 @@ def make_baseline_truthfiles():
     print(ub.repr2(catname_to_nannots))
 
     aid = list(self.anns.values())[0]['id']
-
     for ann in self.anns.values():
+        primary_aid = ann['id']
+        print('primary_aid = {!r}'.format(primary_aid))
+        print(len(self.gid_to_aids[ann['image_id']]))
+
+        if 'roi_shape' not in ann:
+            ann['roi_shape'] = 'bounding_box'
+
         if ann['roi_shape'] == 'boundingBox':
+            pass
+
+        if ann['roi_shape'] == 'point':
             primary_aid = ann['id']
             print('primary_aid = {!r}'.format(primary_aid))
             print(len(self.gid_to_aids[ann['image_id']]))
