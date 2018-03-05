@@ -440,16 +440,23 @@ def make_baseline_truthfiles():
     self._build_index()
     self.run_fixes()
 
-    # remove all point annotations
-    to_remove = []
-    for ann in self.dataset['annotations']:
-        if ann['roi_shape'] == 'point':
-            to_remove.append(ann)
-    for ann in to_remove:
-        self.dataset['annotations'].remove(ann)
-    self._build_index()
+    if True:
+        # remove all point annotations
+        to_remove = []
+        for ann in self.dataset['annotations']:
+            if ann['roi_shape'] == 'point':
+                to_remove.append(ann)
+        for ann in to_remove:
+            self.dataset['annotations'].remove(ann)
+        self._build_index()
 
-    for self.gid_to_aids
+        # remove empty images
+        to_remove = []
+        for gid, aids in self.gid_to_aids.items():
+            if not aids:
+                to_remove.append(self.imgs[gid])
+        for img in to_remove:
+            self.dataset['images'].remove(img)
 
     # for gid, aids in self.gid_to_aids.items():
     #     for ann in ub.take(self.anns, ann)
