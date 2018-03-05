@@ -116,10 +116,10 @@ def coco_union(dsets):
             new_cat_id = cat_id_map.get(old_cat_id, None)
             new_img_id = img_id_map.get(old_img_id, None)
             if new_cat_id is None:
-                continue
+                # continue
                 print('annot {} in {} has bad category-id {}'.format(old_annot['id'], key, old_cat_id))
             if new_img_id is None:
-                continue
+                # continue
                 print('annot {} in {} has bad image-id {}'.format(old_annot['id'], key, old_img_id))
             new_annot = ub.odict([
                 ('id', len(merged['annotations']) + 1),
@@ -132,6 +132,12 @@ def coco_union(dsets):
 
 
 class CocoDataset(object):
+    """
+    Notation:
+        aid - Annotation ID
+        gid - imaGe ID
+        cid - Category ID
+    """
     def __init__(self, data, img_root='.', autobuild=True):
         self.dataset = data
         self.img_root = img_root
@@ -143,12 +149,12 @@ class CocoDataset(object):
         """ build reverse indexes """
         # create index
         anns, cats, imgs = {}, {}, {}
-        img_to_anns = ub.ddict(list)
-        cat_to_imgs = ub.ddict(list)
-        cat_to_anns = ub.ddict(list)
+        gid_to_anns = ub.ddict(list)
+        cid_to_gids = ub.ddict(list)
+        cid_to_aids = ub.ddict(list)
 
         for ann in self.dataset.get('annotations', []):
-            img_to_anns[ann['image_id']].append(ann)
+            gid_to_anns[ann['image_id']].append(ann)
             anns[ann['id']] = ann
 
         for img in self.dataset.get('images', []):
@@ -157,21 +163,34 @@ class CocoDataset(object):
         for cat in self.dataset.get('categories', []):
             cats[cat['id']] = cat
 
-        if 'annotations' in self.dataset and 'categories' in self.dataset:
+        if anns and cats:
             for ann in self.dataset['annotations']:
-                cat_to_imgs[ann['category_id']].append(ann['image_id'])
+                cid_to_gids[ann['category_id']].append(ann['image_id'])
 
-        for cat, imgs in cat_to_imgs.items():
-            anns = [ann['id'] for img in imgs for ann in img_to_anns[img]]
-            cat_to_anns[cat] = anns
+        for cat, gids in cid_to_gids.items():
+            aids = [ann for gid in gids for ann in gid_to_anns[gid]]
+            cid_to_aids[cat] = aids
 
         # create class members
-        self.img_to_anns = img_to_anns
-        self.cat_to_imgs = cat_to_imgs
-        self.cat_to_anns = cat_to_anns
+        self.gid_to_anns = gid_to_anns
+        self.cid_to_gids = cid_to_gids
+        self.cid_to_aids = cid_to_aids
         self.anns = anns
         self.imgs = imgs
         self.cats = cats
+
+    def show_annotation(self, aid):
+        import matplotlib as mpl
+        from matplotlib import pyplot as plt
+        import cv2
+        # from clab.util import mplutil
+
+        ann = self.anns[aid]
+        img = self.imgs[ann['image_id']]
+        np_img = cv2.imread(join(self.img_root, img['file_name']))
+        plt.imshow(np_img)
+
+        pass
 
 
 def make_baseline_truthfiles():
@@ -198,10 +217,12 @@ def make_baseline_truthfiles():
     self = CocoDataset(merged, img_root=img_root)
 
     catname_to_nannots = ub.map_keys(lambda x: self.cats[x]['name'],
-                                     ub.map_vals(len, self.cat_to_anns))
+                                     ub.map_vals(len, self.cid_to_aids))
     catname_to_nannots = ub.odict(sorted(catname_to_nannots.items(),
                                          key=lambda kv: kv[1]))
     print(ub.repr2(catname_to_nannots))
+
+    aid = list(self.anns.values())[0]['id']
 
     # self = coco.COCO(merged_fpath)
     # cats = coco.loadCats(coco.getCatIds())
