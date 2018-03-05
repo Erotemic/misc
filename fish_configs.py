@@ -255,7 +255,8 @@ class CocoDataset(object):
         ax.add_collection(rect_col)
         if points:
             print('points = {!r}'.format(points))
-            ax.plot(*list(zip(*points)), 'bo')
+            xs, ys = list(zip(*points))
+            ax.plot(xs, ys, 'bo')
 
 
 # from sklearn.utils.fixes import bincount
@@ -482,7 +483,7 @@ def make_baseline_truthfiles():
     aid_to_gid = {aid: ann['image_id'] for aid, ann in self.anns.items()}
     train_aids = list(ub.take(X, train_idx))
     test_aids = list(ub.take(X, test_idx))
-    train_gids = sorted(set(ub.take(aid_to_gid, test_aids)))
+    train_gids = sorted(set(ub.take(aid_to_gid, train_aids)))
     test_gids = sorted(set(ub.take(aid_to_gid, test_aids)))
 
     train_dset = self.subset(train_gids)
