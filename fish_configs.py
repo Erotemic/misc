@@ -7,44 +7,6 @@ import ubelt as ub
 from six.moves import zip
 from sklearn.model_selection._split import (_BaseKFold,)
 
-ub.codeblock(
-    """
-    MODEL:
-      TYPE: generalized_rcnn
-      CONV_BODY: ResNet.add_ResNet50_conv4_body
-      NUM_CLASSES: 81
-      FASTER_RCNN: True
-    NUM_GPUS: 1
-    SOLVER:
-      WEIGHT_DECAY: 0.0001
-      LR_POLICY: steps_with_decay
-      BASE_LR: 0.01
-      GAMMA: 0.1
-      # 1x schedule (note TRAIN.IMS_PER_BATCH: 1)
-      MAX_ITER: 180000
-      STEPS: [0, 120000, 160000]
-    RPN:
-      SIZES: (32, 64, 128, 256, 512)
-    FAST_RCNN:
-      ROI_BOX_HEAD: ResNet.add_ResNet_roi_conv5_head
-      ROI_XFORM_METHOD: RoIAlign
-    TRAIN:
-      WEIGHTS: https://s3-us-west-2.amazonaws.com/detectron/ImageNetPretrained/MSRA/R-50.pkl
-      DATASETS: ('coco_2014_train', 'coco_2014_valminusminival')
-      SCALES: (800,)
-      MAX_SIZE: 1333
-      IMS_PER_BATCH: 1
-      BATCH_SIZE_PER_IM: 512
-    TEST:
-      DATASETS: ('coco_2014_minival',)
-      SCALES: (800,)
-      MAX_SIZE: 1333
-      NMS: 0.5
-      RPN_PRE_NMS_TOP_N: 6000
-      RPN_POST_NMS_TOP_N: 1000
-    OUTPUT_DIR: $WORK_DIR/viame-challenge-2018/output
-    """)
-
 
 def coco_union(dsets):
     """
@@ -383,7 +345,11 @@ class StratifiedGroupKFold(_BaseKFold):
             ratio_loss = other_diffs + cand_diffs
             # penalize heavy splits
             freq_loss = split_freq.sum(axis=1)
-            freq_loss = freq_loss / freq_loss.sum()
+            denom = freq_loss.sum()
+            if denom == 0:
+                freq_loss = freq_loss * 0
+            else:
+                freq_loss = freq_loss / denom
             losses = ratio_loss + freq_loss
             #-------
             splitx = np.argmin(losses)
@@ -414,9 +380,16 @@ class StratifiedGroupKFold(_BaseKFold):
 
 
 def make_baseline_truthfiles():
-    challenge_dir = ub.truepath('~/data/viame-challenge-2018')
-    img_root = join(challenge_dir, 'phase0-imagery')
-    annot_dir = ub.truepath('~/data/viame-challenge-2018/phase0-annotations')
+    work_dir = ub.truepath('~/work/viame-challenge-2018')
+    data_dir = ub.truepath('~/data')
+
+    challenge_data_dir = join(data_dir, 'viame-challenge-2018')
+    challenge_work_dir = join(work_dir, 'viame-challenge-2018')
+
+    ub.ensuredir(challenge_work_dir)
+
+    img_root = join(challenge_data_dir, 'phase0-imagery')
+    annot_dir = join(challenge_data_dir, 'phase0-annotations')
     fpaths = list(glob.glob(join(annot_dir, '*.json')))
     # ignore the non-bounding box nwfsc and afsc datasets for now
 
@@ -429,9 +402,10 @@ def make_baseline_truthfiles():
         key = basename(fpath).split('.')[0]
         dsets[key] = json.load(open(fpath, 'r'))
 
+    print('Merging')
     merged = coco_union(dsets)
 
-    merged_fpath = join(challenge_dir, 'phase0-merged.mscoco.json')
+    merged_fpath = join(challenge_work_dir, 'phase0-merged.mscoco.json')
     with open(merged_fpath, 'w') as fp:
         json.dump(merged, fp, indent=4)
 
@@ -441,6 +415,7 @@ def make_baseline_truthfiles():
     self.run_fixes()
 
     if True:
+        print('Fixing')
         # remove all point annotations
         to_remove = []
         for ann in self.dataset['annotations']:
@@ -457,6 +432,7 @@ def make_baseline_truthfiles():
                 to_remove.append(self.imgs[gid])
         for img in to_remove:
             self.dataset['images'].remove(img)
+        self._build_index()
 
     # for gid, aids in self.gid_to_aids.items():
     #     for ann in ub.take(self.anns, ann)
@@ -498,24 +474,74 @@ def make_baseline_truthfiles():
                 break
 
     # Split into train / test  set
+    print('Splitting')
     skf = StratifiedGroupKFold(n_splits=2)
     groups = [ann['image_id'] for ann in self.anns.values()]
     y = [ann['category_id'] for ann in self.anns.values()]
     X = [ann['id'] for ann in self.anns.values()]
     split = list(skf.split(X=X, y=y, groups=groups))[0]
-
     train_idx, test_idx = split
-    train_gids = [ann['image_id'] for ann in ub.take(self.anns, ub.take(X, train_idx))]
-    test_gids = [ann['image_id'] for ann in ub.take(self.anns, ub.take(X, test_idx))]
+
+    print('Taking subsets')
+    aid_to_gid = {aid: ann['image_id'] for aid, ann in self.anns.items()}
+    train_aids = list(ub.take(X, train_idx))
+    test_aids = list(ub.take(X, test_idx))
+    train_gids = sorted(set(ub.take(aid_to_gid, test_aids)))
+    test_gids = sorted(set(ub.take(aid_to_gid, test_aids)))
 
     train_dset = self.subset(train_gids)
     test_dset = self.subset(test_gids)
 
-    with open(join(challenge_dir, 'phase0-merged-train.mscoco.json'), 'w') as fp:
+    with open(join(challenge_work_dir, 'phase0-merged-train.mscoco.json'), 'w') as fp:
         json.dump(train_dset.dataset, fp, indent=4)
 
-    with open(join(challenge_dir, 'phase0-merged-test.mscoco.json'), 'w') as fp:
+    with open(join(challenge_work_dir, 'phase0-merged-test.mscoco.json'), 'w') as fp:
         json.dump(test_dset.dataset, fp, indent=4)
+
+    # Make a detectron yaml file
+    config_text = ub.codeblock(
+        """
+        MODEL:
+          TYPE: generalized_rcnn
+          CONV_BODY: ResNet.add_ResNet50_conv4_body
+          NUM_CLASSES: {num_classes}
+          FASTER_RCNN: True
+        NUM_GPUS: 1
+        SOLVER:
+          WEIGHT_DECAY: 0.0001
+          LR_POLICY: steps_with_decay
+          BASE_LR: 0.01
+          GAMMA: 0.1
+          # 1x schedule (note TRAIN.IMS_PER_BATCH: 1)
+          MAX_ITER: 180000
+          STEPS: [0, 120000, 160000]
+        RPN:
+          SIZES: (32, 64, 128, 256, 512)
+        FAST_RCNN:
+          ROI_BOX_HEAD: ResNet.add_ResNet_roi_conv5_head
+          ROI_XFORM_METHOD: RoIAlign
+        TRAIN:
+          WEIGHTS: https://s3-us-west-2.amazonaws.com/detectron/ImageNetPretrained/MSRA/R-50.pkl
+          DATASETS: ('phase0-merged-train.mscoco.json',)
+          SCALES: (800,)
+          MAX_SIZE: 1333
+          IMS_PER_BATCH: 1
+          BATCH_SIZE_PER_IM: 512
+        TEST:
+          DATASETS: ('phase0-merged-test.mscoco.json',)
+          SCALES: (800,)
+          MAX_SIZE: 1333
+          NMS: 0.5
+          RPN_PRE_NMS_TOP_N: 6000
+          RPN_POST_NMS_TOP_N: 1000
+        OUTPUT_DIR: /work/viame-challenge-2018/output
+        """)
+    config_text = config_text.format(
+        num_classes=len(self.cats)
+    )
+    ub.writeto(join(work_dir, 'phase0.yaml'), config_text)
+
+    nvidia-docker run -v $WORK_DIR:/work $DATA_DIR:/data -it detectron:c2-cuda9-cudnn7 bash
 
     # self = coco.COCO(merged_fpath)
     # cats = coco.loadCats(coco.getCatIds())
