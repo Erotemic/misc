@@ -180,7 +180,7 @@ class CocoDataset(object):
         self.cats = cats
 
     def run_fixes(self):
-        for ann in self.anns:
+        for ann in self.anns.values():
             # Note standard coco bbox is [x,y,width,height]
             if 'roi_shape' not in ann:
                 ann['roi_shape'] = 'bounding_box'
@@ -210,12 +210,14 @@ class CocoDataset(object):
                 ann['bbox'] = bbox
                 ann['line'] = [(x1, y1), (x2, y2)]
 
-    def show_annotation(self, primary_aid):
+    def show_annotation(self, primary_aid=None, gid=None):
         import matplotlib as mpl
         from matplotlib import pyplot as plt
         import cv2
-        primary_ann = self.anns[primary_aid]
-        gid = primary_ann['image_id']
+
+        if gid is None:
+            primary_ann = self.anns[primary_aid]
+            gid = primary_ann['image_id']
 
         img = self.imgs[gid]
         aids = self.gid_to_aids[img['id']]
@@ -301,6 +303,11 @@ def make_baseline_truthfiles():
     print(ub.repr2(catname_to_nannots))
 
     aid = list(self.anns.values())[0]['id']
+    self.show_annotation(aid)
+
+    for gid in self.imgs.keys():
+        self.show_annotation(gid)
+
     for ann in self.anns.values():
         primary_aid = ann['id']
         print('primary_aid = {!r}'.format(primary_aid))
