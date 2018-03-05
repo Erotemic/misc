@@ -226,6 +226,7 @@ class CocoDataset(object):
                 ann['bbox'] = bbox
                 ann['line'] = [(x1, y1), (x2, y2)]
 
+    def _ensure_imgsize(self):
         from PIL import Image
         for img in ub.ProgIter(list(self.imgs.values())):
             gpath = join(self.img_root, img['file_name'])
@@ -419,12 +420,8 @@ def make_baseline_truthfiles():
     fpaths = list(glob.glob(join(annot_dir, '*.json')))
     # ignore the non-bounding box nwfsc and afsc datasets for now
 
-    exclude = (
-        'nwfsc',
-        # 'afsc',
-        'mouss',
-        'habcam')
-    fpaths = [p for p in fpaths if not basename(p).startswith(exclude)]
+    # exclude = ('nwfsc', 'afsc', 'mouss', 'habcam')
+    # fpaths = [p for p in fpaths if not basename(p).startswith(exclude)]
 
     import json
     dsets = ub.odict()
@@ -439,8 +436,23 @@ def make_baseline_truthfiles():
         json.dump(merged, fp, indent=4)
 
     import copy
-    self = CocoDataset(copy.deepcopy(merged), img_root=img_root)
+    self = CocoDataset(copy.deepcopy(merged), img_root=img_root, autobuild=False)
+    self._build_index()
     self.run_fixes()
+
+    # remove all point annotations
+    to_remove = []
+    for ann in self.dataset['annotations']:
+        if ann['roi_shape'] == 'point':
+            to_remove.append(ann)
+    for ann in to_remove:
+        self.dataset['annotations'].remove(ann)
+    self._build_index()
+
+    for self.gid_to_aids
+
+    # for gid, aids in self.gid_to_aids.items():
+    #     for ann in ub.take(self.anns, ann)
 
     catname_to_nannots = ub.map_keys(lambda x: self.cats[x]['name'],
                                      ub.map_vals(len, self.cid_to_aids))
@@ -448,29 +460,9 @@ def make_baseline_truthfiles():
                                          key=lambda kv: kv[1]))
     print(ub.repr2(catname_to_nannots))
 
-    # aid = list(self.anns.values())[0]['id']
-    # self.show_annotation(aid)
-
-    # Split into train / test  set
-    skf = StratifiedGroupKFold(n_splits=2)
-    groups = [ann['image_id'] for ann in self.anns.values()]
-    y = [ann['category_id'] for ann in self.anns.values()]
-    X = [ann['id'] for ann in self.anns.values()]
-    split = list(skf.split(X=X, y=y, groups=groups))[0]
-
-    train_idx, test_idx = split
-    train_gids = [ann['image_id'] for ann in ub.take(self.anns, ub.take(X, train_idx))]
-    test_gids = [ann['image_id'] for ann in ub.take(self.anns, ub.take(X, test_idx))]
-
-    skf.get_n_splits(X, y)
-
-    from sklearn.model_selection import StratifiedKFold
-    X = np.array([ann['id'] for ann in self.anns])
-    y = np.array([0, 0, 1, 1])
-    skf = StratifiedKFold(n_splits=2)
-    skf.get_n_splits(X, y)
-
     if False:
+        # aid = list(self.anns.values())[0]['id']
+        # self.show_annotation(aid)
         gids = sorted([gid for gid, aids in self.gid_to_aids.items() if aids])
         # import utool as ut
         # for gid in ut.InteractiveIter(gids):
@@ -497,6 +489,26 @@ def make_baseline_truthfiles():
                 print('primary_aid = {!r}'.format(primary_aid))
                 print(len(self.gid_to_aids[ann['image_id']]))
                 break
+
+    # Split into train / test  set
+    skf = StratifiedGroupKFold(n_splits=2)
+    groups = [ann['image_id'] for ann in self.anns.values()]
+    y = [ann['category_id'] for ann in self.anns.values()]
+    X = [ann['id'] for ann in self.anns.values()]
+    split = list(skf.split(X=X, y=y, groups=groups))[0]
+
+    train_idx, test_idx = split
+    train_gids = [ann['image_id'] for ann in ub.take(self.anns, ub.take(X, train_idx))]
+    test_gids = [ann['image_id'] for ann in ub.take(self.anns, ub.take(X, test_idx))]
+
+    train_dset = self.subset(train_gids)
+    test_dset = self.subset(test_gids)
+
+    with open(join(challenge_dir, 'phase0-merged-train.mscoco.json'), 'w') as fp:
+        json.dump(train_dset.dataset, fp, indent=4)
+
+    with open(join(challenge_dir, 'phase0-merged-test.mscoco.json'), 'w') as fp:
+        json.dump(test_dset.dataset, fp, indent=4)
 
     # self = coco.COCO(merged_fpath)
     # cats = coco.loadCats(coco.getCatIds())
