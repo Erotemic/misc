@@ -264,7 +264,8 @@ class CocoDataset(object):
         rect_col = mpl.collections.PatchCollection(rects, match_original=True)
         ax.add_collection(rect_col)
         if points:
-            ax.plot(*list(zip(*points)))
+            print('points = {!r}'.format(points))
+            ax.plot(*list(zip(*points)), 'bo')
 
 
 def make_baseline_truthfiles():
@@ -274,10 +275,11 @@ def make_baseline_truthfiles():
     fpaths = list(glob.glob(join(annot_dir, '*.json')))
     # ignore the non-bounding box nwfsc and afsc datasets for now
 
-    exclude = ('nwfsc',
-               'afsc',
-               # 'mouss',
-               'habcam')
+    exclude = (
+        # 'nwfsc',
+        'afsc',
+        'mouss',
+        'habcam')
     fpaths = [p for p in fpaths if not basename(p).startswith(exclude)]
 
     import json
@@ -305,8 +307,14 @@ def make_baseline_truthfiles():
     aid = list(self.anns.values())[0]['id']
     self.show_annotation(aid)
 
-    for gid in self.imgs.keys():
-        self.show_annotation(gid)
+    import utool as ut
+    gids = sorted([gid for gid, aids in self.gid_to_aids.items() if aids])
+    for gid in ut.InteractiveIter(gids):
+        from matplotlib import pyplot as plt
+        fig = plt.figure(1)
+        fig.clf()
+        self.show_annotation(gid=gid)
+        fig.canvas.draw()
 
     for ann in self.anns.values():
         primary_aid = ann['id']
