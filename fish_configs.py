@@ -310,7 +310,6 @@ class StratifiedGroupKFold(_BaseKFold):
         group_to_idxs = ub.group_items(range(len(groups)), groups)
         # unique_groups = list(group_to_idxs.keys())
         group_idxs = list(group_to_idxs.values())
-        # grouped_ids = list(grouping.keys())
         grouped_y = [y.take(idxs) for idxs in group_idxs]
         grouped_y_counts = np.array([
             bincount(y_, minlength=n_classes) for y_ in grouped_y])
@@ -329,14 +328,12 @@ class StratifiedGroupKFold(_BaseKFold):
         sortx = np.argsort(grouped_y_counts.sum(axis=1))[::-1]
         grouped_splitx = []
         for count, group_idx in enumerate(sortx):
-            # print('---------\n')
             group_freq = grouped_y_counts[group_idx]
             cand_freq = split_freq + group_freq
             cand_ratio = cand_freq / cand_freq.sum(axis=1)[:, None]
             cand_diffs = ((cand_ratio - target_ratio) ** 2).sum(axis=1)
             # Compute loss
             losses = []
-            # others = np.nan_to_num(split_diffs)
             other_diffs = np.array([
                 sum(split_diffs[x + 1:]) + sum(split_diffs[:x])
                 for x in range(n_splits)
@@ -353,7 +350,6 @@ class StratifiedGroupKFold(_BaseKFold):
             losses = ratio_loss + freq_loss
             #-------
             splitx = np.argmin(losses)
-            # print('losses = %r, splitx=%r' % (losses, splitx))
             split_freq[splitx] = cand_freq[splitx]
             split_ratios[splitx] = cand_ratio[splitx]
             split_diffs[splitx] = cand_diffs[splitx]
@@ -541,7 +537,7 @@ def make_baseline_truthfiles():
     )
     ub.writeto(join(work_dir, 'phase0.yaml'), config_text)
 
-    nvidia-docker run -v $WORK_DIR:/work $DATA_DIR:/data -it detectron:c2-cuda9-cudnn7 bash
+    # nvidia-docker run -v $WORK_DIR:/work $DATA_DIR:/data -it detectron:c2-cuda9-cudnn7 bash
 
     # self = coco.COCO(merged_fpath)
     # cats = coco.loadCats(coco.getCatIds())
