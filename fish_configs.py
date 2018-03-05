@@ -1,6 +1,5 @@
 
-
-from pycocotools import coco
+from os.path import basename
 import glob
 from os.path import join
 
@@ -199,7 +198,7 @@ def make_baseline_truthfiles():
     self = CocoDataset(merged, img_root=img_root)
 
     catname_to_nannots = ub.map_keys(lambda x: self.cats[x]['name'],
-                                     ub.map_vals(len, cat_to_anns))
+                                     ub.map_vals(len, self.cat_to_anns))
     catname_to_nannots = ub.odict(sorted(catname_to_nannots.items(),
                                          key=lambda kv: kv[1]))
     print(ub.repr2(catname_to_nannots))
@@ -217,11 +216,10 @@ def parse_fish_data():
     assert exists(annot_dir)
     for fpath in glob.glob(join(annot_dir, '*.json')):
         # ub.cmd('sed -i "s/roi_category/category_id/g" {}'.format(fpath))
-        self = coco.COCO(fpath)
-
+        # self = coco.COCO(fpath)
         break
-        try:
-        except Exception:
-            print(ub.color_text('ERROR: {}'.format(fpath), 'blue'))
-        else:
-            print(ub.color_text('SUCCESS: {}'.format(fpath), 'blue'))
+        # try:
+        # except Exception:
+        #     print(ub.color_text('ERROR: {}'.format(fpath), 'blue'))
+        # else:
+        #     print(ub.color_text('SUCCESS: {}'.format(fpath), 'blue'))
