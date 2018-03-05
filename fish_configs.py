@@ -149,12 +149,12 @@ class CocoDataset(object):
         """ build reverse indexes """
         # create index
         anns, cats, imgs = {}, {}, {}
-        gid_to_anns = ub.ddict(list)
+        gid_to_aids = ub.ddict(list)
         cid_to_gids = ub.ddict(list)
         cid_to_aids = ub.ddict(list)
 
         for ann in self.dataset.get('annotations', []):
-            gid_to_anns[ann['image_id']].append(ann)
+            gid_to_aids[ann['image_id']].append(ann['id'])
             anns[ann['id']] = ann
 
         for img in self.dataset.get('images', []):
@@ -168,29 +168,85 @@ class CocoDataset(object):
                 cid_to_gids[ann['category_id']].append(ann['image_id'])
 
         for cat, gids in cid_to_gids.items():
-            aids = [ann for gid in gids for ann in gid_to_anns[gid]]
+            aids = [aid for gid in gids for aid in gid_to_aids[gid]]
             cid_to_aids[cat] = aids
 
         # create class members
-        self.gid_to_anns = gid_to_anns
+        self.gid_to_aids = gid_to_aids
         self.cid_to_gids = cid_to_gids
         self.cid_to_aids = cid_to_aids
         self.anns = anns
         self.imgs = imgs
         self.cats = cats
 
-    def show_annotation(self, aid):
+    def show_annotation(self, primary_aid):
         import matplotlib as mpl
         from matplotlib import pyplot as plt
         import cv2
         # from clab.util import mplutil
 
-        ann = self.anns[aid]
-        img = self.imgs[ann['image_id']]
-        np_img = cv2.imread(join(self.img_root, img['file_name']))
-        plt.imshow(np_img)
+        primary_ann = self.anns[primary_aid]
+        gid = primary_ann['image_id']
 
-        pass
+        img = self.imgs[gid]
+        aids = self.gid_to_aids[img['id']]
+
+        # Show image
+        np_img = cv2.imread(join(self.img_root, img['file_name']))
+        np_img = cv2.cvtColor(np_img, cv2.COLOR_RGB2BGR)
+        plt.imshow(np_img)
+        ax = plt.gca()
+
+        # Show all annotations inside it
+        import numpy as np
+        segments = []
+        rects = []
+        for aid in aids:
+            ann = self.anns[aid]
+            # Note standard coco bbox is [x,y,width,height]
+            if 'roi_shape' not in ann:
+                ann['roi_shape'] = 'boundingBox'
+
+            # if ann['roi_shape'] == 'boundingBox':
+            #     x1, y1, x2, y2 = ann['bbox']
+            #     w = x2 - x1
+            #     h = y2 - y1
+            #     ann['bbox'] = [x1, x2, w, h]
+            #     ann['roi_shape'] = 'bounding_box'
+
+            if ann['roi_shape'] == 'point' and 'point' not in ann:
+                pass
+
+            if ann['roi_shape'] == 'line' and 'line' not in ann:
+                # hack the roi to fix it
+                x1, y1, x2, y2 = ann['bbox']
+                xc = (x1 + x2) / 2
+                yc = (y1 + y2) / 2
+                length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+                bbox = [(xc - length / 2), (yc - length / 2), length, length]
+                ann['bbox'] = bbox
+                ann['line'] = [(x1, y1), (x2, y2)]
+
+            [x, y, w, h] = ann['bbox']
+
+            color = 'orange' if aid == primary_aid else 'blue'
+            rect = mpl.patches.Rectangle((x, y), w, h, facecolor='none',
+                                         edgecolor=color)
+            rects.append(rect)
+            if 'line' in ann:
+                segments.append(ann['line'])
+
+        if segments:
+            line_group = mpl.collections.LineCollection(segments, 2, color='b')
+            ax.add_collection(line_group)
+
+        rect_group = mpl.collections.PatchCollection(rects, match_original=True)
+        ax.add_collection(rect_group)
+        # w = w - x
+        # h = h - y
+        # rect = mpl.patches.Rectangle((x, y), w, h, facecolor='none',
+        #                              edgecolor='b')
+        # ax.add_artist(rect)
 
 
 def make_baseline_truthfiles():
@@ -200,7 +256,7 @@ def make_baseline_truthfiles():
     fpaths = list(glob.glob(join(annot_dir, '*.json')))
     # ignore the non-bounding box nwfsc and afsc datasets for now
     fpaths = [p for p in fpaths
-              if not basename(p).startswith(('nwfsc', 'afsc'))]
+              if not basename(p).startswith(('nwfsc', 'afsc', 'mouss'))]
 
     import json
     dsets = ub.odict()
@@ -223,6 +279,12 @@ def make_baseline_truthfiles():
     print(ub.repr2(catname_to_nannots))
 
     aid = list(self.anns.values())[0]['id']
+
+    for ann in self.anns.values():
+        primary_aid = ann['id']
+        if ann['roi_shape'] == 'boundingBox':
+
+            break
 
     # self = coco.COCO(merged_fpath)
     # cats = coco.loadCats(coco.getCatIds())
