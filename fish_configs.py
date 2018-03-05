@@ -4,6 +4,8 @@ from os.path import exists
 import glob
 import numpy as np
 import ubelt as ub
+from six.moves import zip
+from sklearn.model_selection._split import (_BaseKFold,)
 
 ub.codeblock(
     """
@@ -179,6 +181,19 @@ class CocoDataset(object):
         self.imgs = imgs
         self.cats = cats
 
+    def subset(self, sub_gids):
+        new_dataset = ub.odict([(k, []) for k in self.dataset])
+        new_dataset['categories'] = self.dataset['categories']
+        new_dataset['info'] = self.dataset['info']
+        new_dataset['licenses'] = self.dataset['licenses']
+
+        sub_aids = sorted([aid for gid in sub_gids
+                           for aid in self.gid_to_aids[gid]])
+        new_dataset['annotations'] = list(ub.take(self.anns, sub_aids))
+        new_dataset['images'] = list(ub.take(self.imgs, sub_gids))
+        sub_dset = CocoDataset(new_dataset)
+        return sub_dset
+
     def run_fixes(self):
         for ann in self.anns.values():
             # Note standard coco bbox is [x,y,width,height]
@@ -211,6 +226,16 @@ class CocoDataset(object):
                 ann['bbox'] = bbox
                 ann['line'] = [(x1, y1), (x2, y2)]
 
+        from PIL import Image
+        for img in ub.ProgIter(list(self.imgs.values())):
+            gpath = join(self.img_root, img['file_name'])
+            if 'width' not in img:
+                pil_img = Image.open(gpath)
+                w, h = pil_img.size
+                pil_img.close()
+                img['width'] = w
+                img['height'] = h
+
     def show_annotation(self, primary_aid=None, gid=None):
         import matplotlib as mpl
         from matplotlib import pyplot as plt
@@ -224,7 +249,8 @@ class CocoDataset(object):
         aids = self.gid_to_aids[img['id']]
 
         # Show image
-        np_img = cv2.imread(join(self.img_root, img['file_name']))
+        gpath = join(self.img_root, img['file_name'])
+        np_img = cv2.imread(gpath)
         np_img = cv2.cvtColor(np_img, cv2.COLOR_RGB2BGR)
         plt.imshow(np_img)
         ax = plt.gca()
@@ -269,6 +295,123 @@ class CocoDataset(object):
             ax.plot(*list(zip(*points)), 'bo')
 
 
+# from sklearn.utils.fixes import bincount
+bincount = np.bincount
+
+
+class StratifiedGroupKFold(_BaseKFold):
+    """Stratified K-Folds cross-validator with Grouping
+
+    Provides train/test indices to split data in train/test sets.
+
+    This cross-validation object is a variation of GroupKFold that returns
+    stratified folds. The folds are made by preserving the percentage of
+    samples for each class.
+
+    Read more in the :ref:`User Guide <cross_validation>`.
+
+    Parameters
+    ----------
+    n_splits : int, default=3
+        Number of folds. Must be at least 2.
+    """
+
+    def __init__(self, n_splits=3, shuffle=False, random_state=None):
+        super(StratifiedGroupKFold, self).__init__(n_splits, shuffle, random_state)
+
+    def _make_test_folds(self, X, y=None, groups=None):
+        """
+        Args:
+            self (?):
+            X (ndarray):  data
+            y (ndarray):  labels(default = None)
+            groups (None): (default = None)
+
+        CommandLine:
+            python -m ibeis.algo.verif.sklearn_utils _make_test_folds
+
+        Example:
+            >>> rng = np.random.RandomState(0)
+            >>> groups = [1, 1, 3, 4, 2, 2, 7, 8, 8]
+            >>> y      = [1, 1, 1, 1, 2, 2, 2, 3, 3]
+            >>> X = np.empty((len(y), 0))
+            >>> self = StratifiedGroupKFold(random_state=rng)
+            >>> skf_list = list(self.split(X=X, y=y, groups=groups))
+        """
+        n_splits = self.n_splits
+        y = np.asarray(y)
+        n_samples = y.shape[0]
+
+        unique_y, y_inversed = np.unique(y, return_inverse=True)
+        n_classes = max(unique_y) + 1
+        group_to_idxs = ub.group_items(range(len(groups)), groups)
+        # unique_groups = list(group_to_idxs.keys())
+        group_idxs = list(group_to_idxs.values())
+        # grouped_ids = list(grouping.keys())
+        grouped_y = [y.take(idxs) for idxs in group_idxs]
+        grouped_y_counts = np.array([
+            bincount(y_, minlength=n_classes) for y_ in grouped_y])
+
+        target_freq = grouped_y_counts.sum(axis=0)
+        target_ratio = target_freq / target_freq.sum()
+
+        # Greedilly choose the split assignment that minimizes the local
+        # * squared differences in target from actual frequencies
+        # * and best equalizes the number of items per fold
+        # Distribute groups with most members first
+        split_freq = np.zeros((n_splits, n_classes))
+        # split_ratios = split_freq / split_freq.sum(axis=1)
+        split_ratios = np.ones(split_freq.shape) / split_freq.shape[1]
+        split_diffs = ((split_freq - target_ratio) ** 2).sum(axis=1)
+        sortx = np.argsort(grouped_y_counts.sum(axis=1))[::-1]
+        grouped_splitx = []
+        for count, group_idx in enumerate(sortx):
+            # print('---------\n')
+            group_freq = grouped_y_counts[group_idx]
+            cand_freq = split_freq + group_freq
+            cand_ratio = cand_freq / cand_freq.sum(axis=1)[:, None]
+            cand_diffs = ((cand_ratio - target_ratio) ** 2).sum(axis=1)
+            # Compute loss
+            losses = []
+            # others = np.nan_to_num(split_diffs)
+            other_diffs = np.array([
+                sum(split_diffs[x + 1:]) + sum(split_diffs[:x])
+                for x in range(n_splits)
+            ])
+            # penalize unbalanced splits
+            ratio_loss = other_diffs + cand_diffs
+            # penalize heavy splits
+            freq_loss = split_freq.sum(axis=1)
+            freq_loss = freq_loss / freq_loss.sum()
+            losses = ratio_loss + freq_loss
+            #-------
+            splitx = np.argmin(losses)
+            # print('losses = %r, splitx=%r' % (losses, splitx))
+            split_freq[splitx] = cand_freq[splitx]
+            split_ratios[splitx] = cand_ratio[splitx]
+            split_diffs[splitx] = cand_diffs[splitx]
+            grouped_splitx.append(splitx)
+
+        test_folds = np.empty(n_samples, dtype=np.int)
+        for group_idx, splitx in zip(sortx, grouped_splitx):
+            idxs = group_idxs[group_idx]
+            test_folds[idxs] = splitx
+
+        return test_folds
+
+    def _iter_test_masks(self, X, y=None, groups=None):
+        test_folds = self._make_test_folds(X, y, groups)
+        for i in range(self.n_splits):
+            yield test_folds == i
+
+    def split(self, X, y, groups=None):
+        """Generate indices to split data into training and test set.
+        """
+        from sklearn.utils.validation import check_array
+        y = check_array(y, ensure_2d=False, dtype=None)
+        return super(StratifiedGroupKFold, self).split(X, y, groups)
+
+
 def make_baseline_truthfiles():
     challenge_dir = ub.truepath('~/data/viame-challenge-2018')
     img_root = join(challenge_dir, 'phase0-imagery')
@@ -305,34 +448,55 @@ def make_baseline_truthfiles():
                                          key=lambda kv: kv[1]))
     print(ub.repr2(catname_to_nannots))
 
-    aid = list(self.anns.values())[0]['id']
-    self.show_annotation(aid)
+    # aid = list(self.anns.values())[0]['id']
+    # self.show_annotation(aid)
 
-    import utool as ut
-    gids = sorted([gid for gid, aids in self.gid_to_aids.items() if aids])
-    for gid in ut.InteractiveIter(gids):
-        from matplotlib import pyplot as plt
-        fig = plt.figure(1)
-        fig.clf()
-        self.show_annotation(gid=gid)
-        fig.canvas.draw()
+    # Split into train / test  set
+    skf = StratifiedGroupKFold(n_splits=2)
+    groups = [ann['image_id'] for ann in self.anns.values()]
+    y = [ann['category_id'] for ann in self.anns.values()]
+    X = [ann['id'] for ann in self.anns.values()]
+    split = list(skf.split(X=X, y=y, groups=groups))[0]
 
-    for ann in self.anns.values():
-        primary_aid = ann['id']
-        print('primary_aid = {!r}'.format(primary_aid))
-        print(len(self.gid_to_aids[ann['image_id']]))
+    train_idx, test_idx = split
+    train_gids = [ann['image_id'] for ann in ub.take(self.anns, ub.take(X, train_idx))]
+    test_gids = [ann['image_id'] for ann in ub.take(self.anns, ub.take(X, test_idx))]
 
-        if 'roi_shape' not in ann:
-            ann['roi_shape'] = 'bounding_box'
+    skf.get_n_splits(X, y)
 
-        if ann['roi_shape'] == 'boundingBox':
-            pass
+    from sklearn.model_selection import StratifiedKFold
+    X = np.array([ann['id'] for ann in self.anns])
+    y = np.array([0, 0, 1, 1])
+    skf = StratifiedKFold(n_splits=2)
+    skf.get_n_splits(X, y)
 
-        if ann['roi_shape'] == 'point':
+    if False:
+        gids = sorted([gid for gid, aids in self.gid_to_aids.items() if aids])
+        # import utool as ut
+        # for gid in ut.InteractiveIter(gids):
+        for gid in gids:
+            from matplotlib import pyplot as plt
+            fig = plt.figure(1)
+            fig.clf()
+            self.show_annotation(gid=gid)
+            fig.canvas.draw()
+
+        for ann in self.anns.values():
             primary_aid = ann['id']
             print('primary_aid = {!r}'.format(primary_aid))
             print(len(self.gid_to_aids[ann['image_id']]))
-            break
+
+            if 'roi_shape' not in ann:
+                ann['roi_shape'] = 'bounding_box'
+
+            if ann['roi_shape'] == 'boundingBox':
+                pass
+
+            if ann['roi_shape'] == 'point':
+                primary_aid = ann['id']
+                print('primary_aid = {!r}'.format(primary_aid))
+                print(len(self.gid_to_aids[ann['image_id']]))
+                break
 
     # self = coco.COCO(merged_fpath)
     # cats = coco.loadCats(coco.getCatIds())
