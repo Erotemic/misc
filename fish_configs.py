@@ -116,10 +116,10 @@ def coco_union(dsets):
             new_cat_id = cat_id_map.get(old_cat_id, None)
             new_img_id = img_id_map.get(old_img_id, None)
             if new_cat_id is None:
-                # continue
+                continue
                 print('annot {} in {} has bad category-id {}'.format(old_annot['id'], key, old_cat_id))
             if new_img_id is None:
-                # continue
+                continue
                 print('annot {} in {} has bad image-id {}'.format(old_annot['id'], key, old_img_id))
             new_annot = ub.odict([
                 ('id', len(merged['annotations']) + 1),
@@ -207,12 +207,12 @@ class CocoDataset(object):
             if 'roi_shape' not in ann:
                 ann['roi_shape'] = 'boundingBox'
 
-            # if ann['roi_shape'] == 'boundingBox':
-            #     x1, y1, x2, y2 = ann['bbox']
-            #     w = x2 - x1
-            #     h = y2 - y1
-            #     ann['bbox'] = [x1, x2, w, h]
-            #     ann['roi_shape'] = 'bounding_box'
+            if ann['roi_shape'] == 'boundingBox':
+                x1, y1, x2, y2 = ann['bbox']
+                w = x2 - x1
+                h = y2 - y1
+                ann['bbox'] = [x1, y1, w, h]
+                ann['roi_shape'] = 'bounding_box'
 
             if ann['roi_shape'] == 'point' and 'point' not in ann:
                 pass
@@ -228,6 +228,17 @@ class CocoDataset(object):
                 ann['line'] = [(x1, y1), (x2, y2)]
 
             [x, y, w, h] = ann['bbox']
+
+            catname = self.cats[ann['category_id']]['name']
+            textkw = {
+                'horizontalalignment': 'left',
+                'verticalalignment': 'top',
+                'backgroundcolor': (0, 0, 0, .3),
+                'color': 'white',
+                'fontproperties': mpl.font_manager.FontProperties(
+                    size=6, family='monospace'),
+            }
+            ax.text(x, y, catname, **textkw)
 
             color = 'orange' if aid == primary_aid else 'blue'
             rect = mpl.patches.Rectangle((x, y), w, h, facecolor='none',
@@ -256,7 +267,10 @@ def make_baseline_truthfiles():
     fpaths = list(glob.glob(join(annot_dir, '*.json')))
     # ignore the non-bounding box nwfsc and afsc datasets for now
     fpaths = [p for p in fpaths
-              if not basename(p).startswith(('nwfsc', 'afsc', 'mouss'))]
+              if not basename(p).startswith(('nwfsc', 'afsc',
+                                             # 'mouss',
+                                             'habcam'
+                                            ))]
 
     import json
     dsets = ub.odict()
@@ -270,7 +284,8 @@ def make_baseline_truthfiles():
     with open(merged_fpath, 'w') as fp:
         json.dump(merged, fp, indent=4)
 
-    self = CocoDataset(merged, img_root=img_root)
+    import copy
+    self = CocoDataset(copy.deepcopy(merged), img_root=img_root)
 
     catname_to_nannots = ub.map_keys(lambda x: self.cats[x]['name'],
                                      ub.map_vals(len, self.cid_to_aids))
@@ -281,9 +296,10 @@ def make_baseline_truthfiles():
     aid = list(self.anns.values())[0]['id']
 
     for ann in self.anns.values():
-        primary_aid = ann['id']
         if ann['roi_shape'] == 'boundingBox':
-
+            primary_aid = ann['id']
+            print('primary_aid = {!r}'.format(primary_aid))
+            print(len(self.gid_to_aids[ann['image_id']]))
             break
 
     # self = coco.COCO(merged_fpath)
