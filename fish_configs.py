@@ -153,7 +153,7 @@ class CocoDataset(object):
                            for aid in self.gid_to_aids[gid]])
         new_dataset['annotations'] = list(ub.take(self.anns, sub_aids))
         new_dataset['images'] = list(ub.take(self.imgs, sub_gids))
-        sub_dset = CocoDataset(new_dataset)
+        sub_dset = CocoDataset(new_dataset, img_root=self.img_root)
         return sub_dset
 
     def run_fixes(self):
@@ -187,6 +187,12 @@ class CocoDataset(object):
                 bbox = [(xc - length / 2), (yc - length / 2), length, length]
                 ann['bbox'] = bbox
                 ann['line'] = [(x1, y1), (x2, y2)]
+
+            # to make detectron happy
+            x, y, w, h = ann['bbox']
+            ann['area'] = w * h
+            ann['segmentation'] = []
+            ann['iscrowd'] = 0
 
     def _ensure_imgsize(self):
         from PIL import Image
@@ -377,7 +383,7 @@ class StratifiedGroupKFold(_BaseKFold):
 
 
 def make_baseline_truthfiles():
-    work_dir = ub.truepath('~/work/viame-challenge-2018')
+    work_dir = ub.truepath('~/work')
     data_dir = ub.truepath('~/data')
 
     challenge_data_dir = join(data_dir, 'viame-challenge-2018')
@@ -391,7 +397,8 @@ def make_baseline_truthfiles():
     # ignore the non-bounding box nwfsc and afsc datasets for now
 
     # exclude = ('nwfsc', 'afsc', 'mouss', 'habcam')
-    # fpaths = [p for p in fpaths if not basename(p).startswith(exclude)]
+    exclude = ('nwfsc', 'afsc', 'mouss',)
+    fpaths = [p for p in fpaths if not basename(p).startswith(exclude)]
 
     import json
     dsets = ub.odict()
@@ -489,6 +496,10 @@ def make_baseline_truthfiles():
     train_dset = self.subset(train_gids)
     test_dset = self.subset(test_gids)
 
+    train_dset._ensure_imgsize()
+    test_dset._ensure_imgsize()
+
+    print('Writing')
     with open(join(challenge_work_dir, 'phase0-merged-train.mscoco.json'), 'w') as fp:
         json.dump(train_dset.dataset, fp, indent=4)
 
@@ -519,13 +530,15 @@ def make_baseline_truthfiles():
           ROI_XFORM_METHOD: RoIAlign
         TRAIN:
           WEIGHTS: https://s3-us-west-2.amazonaws.com/detectron/ImageNetPretrained/MSRA/R-50.pkl
-          DATASETS: ('phase0-merged-train.mscoco.json',)
+          DATASETS: ('/work/viame-challenge-2018/phase0-merged-train.mscoco.json',)
+          IM_DIR: '/data/viame-challenge-2018/phase0-imagery'
           SCALES: (800,)
           MAX_SIZE: 1333
           IMS_PER_BATCH: 1
           BATCH_SIZE_PER_IM: 512
         TEST:
-          DATASETS: ('phase0-merged-test.mscoco.json',)
+          DATASETS: ('/work/viame-challenge-2018/phase0-merged-test.mscoco.json',)
+          IM_DIR: '/data/viame-challenge-2018/phase0-imagery'
           SCALES: (800,)
           MAX_SIZE: 1333
           NMS: 0.5
@@ -534,11 +547,31 @@ def make_baseline_truthfiles():
         OUTPUT_DIR: /work/viame-challenge-2018/output
         """)
     config_text = config_text.format(
-        num_classes=len(self.cats)
+        num_classes=len(self.cats),
     )
-    ub.writeto(join(work_dir, 'phase0.yaml'), config_text)
+    ub.writeto(join(challenge_work_dir, 'phase0-faster-rcnn.yaml'), config_text)
 
-    # nvidia-docker run -v $WORK_DIR:/work $DATA_DIR:/data -it detectron:c2-cuda9-cudnn7 bash
+    docker_cmd = ('nvidia-docker run '
+                  '-v {work_dir}:/work -v {data_dir}:/data '
+                  '-it detectron:c2-cuda9-cudnn7 bash').format(
+                      work_dir=work_dir, data_dir=data_dir)
+
+    train_cmd = ('python2 tools/train_net.py '
+                 '--cfg /work/viame-challenge-2018/phase0-faster-rcnn.yaml '
+                 'OUTPUT_DIR /work/viame-challenge-2018/output')
+
+    hacks = ub.codeblock(
+        """
+        git remote add Erotemic https://github.com/Erotemic/Detectron.git
+        git fetch --all
+        git checkout general_dataset
+
+        # curl https://github.com/Erotemic/Detectron/blob/42d44b2d155c775dc509b6a44518d0c582f8cdf5/tools/train_net.py
+        # wget https://github.com/Erotemic/Detectron/blob/42d44b2d155c775dc509b6a44518d0c582f8cdf5/lib/core/config.py
+        """)
+
+    print(docker_cmd)
+    print(train_cmd)
 
     # self = coco.COCO(merged_fpath)
     # cats = coco.loadCats(coco.getCatIds())
