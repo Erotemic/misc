@@ -397,8 +397,8 @@ def make_baseline_truthfiles():
     # ignore the non-bounding box nwfsc and afsc datasets for now
 
     # exclude = ('nwfsc', 'afsc', 'mouss', 'habcam')
-    exclude = ('nwfsc', 'afsc', 'mouss',)
-    fpaths = [p for p in fpaths if not basename(p).startswith(exclude)]
+    # exclude = ('nwfsc', 'afsc', 'mouss',)
+    # fpaths = [p for p in fpaths if not basename(p).startswith(exclude)]
 
     import json
     dsets = ub.odict()
@@ -419,8 +419,8 @@ def make_baseline_truthfiles():
     self.run_fixes()
 
     if True:
-        print('Fixing')
         # remove all point annotations
+        print('Remove point annotations')
         to_remove = []
         for ann in self.dataset['annotations']:
             if ann['roi_shape'] == 'point':
@@ -430,16 +430,19 @@ def make_baseline_truthfiles():
         self._build_index()
 
         # remove empty images
+        print('Remove empty images')
         to_remove = []
-        for gid, aids in self.gid_to_aids.items():
+        for gid in self.imgs.keys():
+            aids = self.gid_to_aids.get(gid, [])
             if not aids:
                 to_remove.append(self.imgs[gid])
         for img in to_remove:
             self.dataset['images'].remove(img)
         self._build_index()
 
-    # for gid, aids in self.gid_to_aids.items():
-    #     for ann in ub.take(self.anns, ann)
+    print('# self.anns = {!r}'.format(len(self.anns)))
+    print('# self.imgs = {!r}'.format(len(self.imgs)))
+    print('# self.cats = {!r}'.format(len(self.cats)))
 
     catname_to_nannots = ub.map_keys(lambda x: self.cats[x]['name'],
                                      ub.map_vals(len, self.cid_to_aids))
@@ -495,6 +498,15 @@ def make_baseline_truthfiles():
 
     train_dset = self.subset(train_gids)
     test_dset = self.subset(test_gids)
+
+    print('---------')
+    print('# train_dset.anns = {!r}'.format(len(train_dset.anns)))
+    print('# train_dset.imgs = {!r}'.format(len(train_dset.imgs)))
+    print('# train_dset.cats = {!r}'.format(len(train_dset.cats)))
+    print('---------')
+    print('# test_dset.anns = {!r}'.format(len(test_dset.anns)))
+    print('# test_dset.imgs = {!r}'.format(len(test_dset.imgs)))
+    print('# test_dset.cats = {!r}'.format(len(test_dset.cats)))
 
     train_dset._ensure_imgsize()
     test_dset._ensure_imgsize()
