@@ -1,6 +1,8 @@
 make_pypkg(){
     REPO_NAME=$1
+
     REPO_DPATH=$HOME/code/$REPO_NAME
+    PKG_DPATH=$REPO_DPATH/$REPO_NAME
     echo "INITIALIZING $REPO_NAME in $REPO_DPATH"
 
     echo "MOVING TEMPLATE FILES FROM UBELT"
@@ -23,8 +25,8 @@ make_pypkg(){
 
     echo "CREATING PACKAGE STRUCTURE"
     touch $REPO_DPATH/whatsnew.txt
-    mkdir -p $REPO_DPATH/$REPO_NAME
-    touch $REPO_DPATH/$REPO_NAME/__init__.py
+    mkdir -p $PKG_DPATH
+    touch $PKG_DPATH/__init__.py
 
     echo "SETTING BASELINE VERSION NUMBER"
     echo "__version__ = '0.0.1.dev0'" > $REPO_DPATH/$REPO_NAME/__init__.py
@@ -36,11 +38,59 @@ make_pypkg(){
     find . -iname '*.py' | xargs sed -i "s/ubelt/$REPO_NAME/g"
     find . -iname '*.ini' | xargs sed -i "s/ubelt/$REPO_NAME/g"
     find . -iname '*.coveragerc' | xargs sed -i "s/ubelt/$REPO_NAME/g"
+
+    echo "MAKING DOCS"
+    mkdir -p $REPO_DPATH/docs
+
+    echo "$(codeblock "
+    sphinx
+    -e git://github.com/snide/sphinx_rtd_theme.git#egg=sphinx_rtd_theme
+    ")" >  $REPO_DPATH/docs/requirements.txt
+
+    sphinx-quickstart -q --sep \
+        --project=$REPO_NAME \
+        --author="Jon Crall" \
+        --ext-autodoc \
+        --ext-viewcode \
+        --ext-intersphinx \
+        --ext-todo \
+        --extensions=sphinx.ext.napoleon,sphinx.ext.autosummary \
+        $REPO_DPATH/docs
+
+    # Make conf.py use the read-the-docs theme
+    sed -i "s/html_theme = 'alabaster'/import sphinx_rtd_theme  # NOQA\nhtml_theme = 'sphinx_rtd_theme'\nhtml_theme_path = [sphinx_rtd_theme.get_html_theme_path()]/g" $REPO_DPATH/docs/source/conf.py
+
+    # Make conf.py automatically read version info from the package
+    sed -i "s/version = ''/import $REPO_NAME\nversion = '.'.join($REPO_NAME.__version__.split('.')[0:2])/g" $REPO_DPATH/docs/source/conf.py
+
+    (cd $REPO_DPATH/docs && make html)
+
+    sphinx-apidoc -f -o $REPO_DPATH/docs/source $PKG_DPATH --separate
+
+    echo "$(codeblock "
+    todo_include_todos = True
+    napoleon_google_docstring = True
+    napoleon_use_param = False
+    napoleon_use_ivar = True
+    autodoc_inherit_docstrings = False
+    autodoc_member_order = 'bysource'
+
+    html_theme_options = {
+        'collapse_navigation': False,
+        'display_version': True,
+        # 'logo_only': True,
+    }
+        
+    ")" >> $REPO_DPATH/docs/source/conf.py
+    
+    
+    
     echo "FINISHED"
 }
 
 echo "
 source ~/misc/make_new_python_package_repo.sh
+REPO_NAME=timerit
 REPO_NAME=timerit
 make_pypkg $REPO_NAME
 " > /dev/null
