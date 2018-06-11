@@ -89,8 +89,8 @@ make_pypkg(){
 }
 
 echo "
-source ~/misc/make_new_python_package_repo.sh
-REPO_NAME=timerit
-REPO_NAME=timerit
-make_pypkg $REPO_NAME
+Usage:
+    source ~/misc/make_new_python_package_repo.sh
+    REPO_NAME=pydir
+    make_pypkg $REPO_NAME
 " > /dev/null
