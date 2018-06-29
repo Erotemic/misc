@@ -11,6 +11,7 @@ make_pypkg(){
     cp ~/code/ubelt/.coveragerc $REPO_DPATH
     cp ~/code/ubelt/appveyor.yml $REPO_DPATH
     cp ~/code/ubelt/run_tests.py $REPO_DPATH
+    cp ~/code/ubelt/run_doctests.sh $REPO_DPATH
     cp ~/code/ubelt/setup.py $REPO_DPATH
     cp ~/code/ubelt/.gitignore $REPO_DPATH
 
@@ -35,11 +36,14 @@ make_pypkg(){
 
     echo "REPLACING PACKAGE NAME REFERENCES"
     find . -iname '*.yml' | xargs sed -i "s/ubelt/$REPO_NAME/g"
+    find . -iname '*.sh' | xargs sed -i "s/ubelt/$REPO_NAME/g"
     find . -iname '*.py' | xargs sed -i "s/ubelt/$REPO_NAME/g"
     find . -iname '*.ini' | xargs sed -i "s/ubelt/$REPO_NAME/g"
     find . -iname '*.coveragerc' | xargs sed -i "s/ubelt/$REPO_NAME/g"
 
     echo "MAKING DOCS"
+    rm -rf $REPO_DPATH/docs
+
     mkdir -p $REPO_DPATH/docs
 
     echo "$(codeblock "
@@ -63,9 +67,9 @@ make_pypkg(){
     # Make conf.py automatically read version info from the package
     sed -i "s/version = ''/import $REPO_NAME\nversion = '.'.join($REPO_NAME.__version__.split('.')[0:2])/g" $REPO_DPATH/docs/source/conf.py
 
-    (cd $REPO_DPATH/docs && make html)
-
     sphinx-apidoc -f -o $REPO_DPATH/docs/source $PKG_DPATH --separate
+
+    (cd $REPO_DPATH/docs && PYTHONPATH="$REPO_DPATH:$PYTHONPATH" make html)
 
     echo "$(codeblock "
     todo_include_todos = True
@@ -89,8 +93,12 @@ make_pypkg(){
 }
 
 echo "
+Requirements:
+    pip install sphinx sphinx_rtd_theme
+
 Usage:
     source ~/misc/make_new_python_package_repo.sh
     REPO_NAME=pydir
+    REPO_NAME=ovharn
     make_pypkg $REPO_NAME
 " > /dev/null
