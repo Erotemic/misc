@@ -4,6 +4,8 @@ make_pypkg(){
     REPO_DPATH=$HOME/code/$REPO_NAME
     PKG_DPATH=$REPO_DPATH/$REPO_NAME
     echo "INITIALIZING $REPO_NAME in $REPO_DPATH"
+    mkdir -p $REPO_DPATH
+    mkdir -p $PKG_DPATH
 
     echo "MOVING TEMPLATE FILES FROM UBELT"
     cp ~/code/ubelt/pytest.ini $REPO_DPATH
@@ -26,11 +28,10 @@ make_pypkg(){
 
     echo "CREATING PACKAGE STRUCTURE"
     touch $REPO_DPATH/whatsnew.txt
-    mkdir -p $PKG_DPATH
     touch $PKG_DPATH/__init__.py
 
     echo "SETTING BASELINE VERSION NUMBER"
-    echo "__version__ = '0.0.1.dev0'" > $REPO_DPATH/$REPO_NAME/__init__.py
+    echo "__version__ = '0.0.1.dev'" > $REPO_DPATH/$REPO_NAME/__init__.py
 
     cd $REPO_DPATH
 
@@ -99,6 +100,7 @@ Requirements:
 Usage:
     source ~/misc/make_new_python_package_repo.sh
     REPO_NAME=pydir
-    REPO_NAME=ovharn
+    REPO_NAME=xinspect
+    echo "REPO_NAME = $REPO_NAME"
     make_pypkg $REPO_NAME
 " > /dev/null
