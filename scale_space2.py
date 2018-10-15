@@ -190,6 +190,18 @@ class Signal(ub.NiceRepr):
         fourier_mag = np.abs(np.fft.fftshift(np.fft.fft2(self.f_in))) ** 2
         return fourier_mag
 
+    def plot(self):
+        # Compute frequency magnitudes
+        if len(self.f_in.shape) == 1:
+            ft = np.fft.fft(self.f_in)
+            ft_mag = np.abs(ft) ** 2
+        else:
+            ft = np.fft.fft2(self.f_in)
+            ft_shift = np.fft.fftshift(ft)
+            ft_mag = np.abs(ft_shift) ** 2
+        fourier_mag = ft_mag
+        return fourier_mag
+
 
 def demo_addative_property():
     """
