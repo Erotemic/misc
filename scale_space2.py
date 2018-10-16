@@ -1,3 +1,39 @@
+"""
+Notes:
+    This is related to a [previous question][1], but is perhaps a more concise phrasing.
+
+    I have an `N x N` image and I want to know what the minimum `σ` is that I need before I can downsample my image by a factor of two without losing any information (w.r.t the information in the blurred image).
+
+    Here is my own attempt to think through this problem:
+
+    Setup:
+
+     * I have a 1D discrete signal `F`
+     * I measure `F` to obtain a discrete signal `f` with N uniformly spaced samples. Lets call the distance between each sample `1u` for one unit (e.g. seconds, millimeters, pixels with a known intrinsic camera calibration).
+     * The Nyquist Sampling Theorem states that the highest frequency signal that can be accurately represented in these `N` samples is `N / 2`.
+
+
+    Thus,
+
+    FREQ: cycles per u=1
+    RATE: u=1 per cycle
+
+    * Because the samples are spaced `u` units apart, this means the measurement's sampling rate is `u` and the sampling frequency is `1 / u`.
+    * From the Nyquist Sampling Theorum, this means that the highest frequency accurately represented in the discrete signal is `N * u / 2`.
+
+    WIP:
+
+    * If we blur with a `σ`, then this attenuates higher frequencies, effectively cutting off frequencies over `something that depends on σ / u`.
+    * Therefore if we choose `σ=?`, then the highset frequency that remains in the image will be `1 / (u * 4)`, which means we can capture that signal using `N / 2` samples, thus making it safe to downsample.
+
+
+Example:
+    if N = 512u
+    Then the higest frequency representable is 512/2 = 256 cycles/u
+
+
+      [1]: https://dsp.stackexchange.com/questions/52607/question-about-down-sampling-a-scale-space-representation
+"""
 import scipy
 import scipy.ndimage
 import numpy as np
