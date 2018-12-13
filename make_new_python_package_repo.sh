@@ -16,6 +16,7 @@ make_pypkg(){
     cp ~/code/ubelt/run_doctests.sh $REPO_DPATH
     cp ~/code/ubelt/setup.py $REPO_DPATH
     cp ~/code/ubelt/.gitignore $REPO_DPATH
+    cp -r ~/code/ubelt/.circleci $REPO_DPATH
 
     source $HOME/local/init/utils.sh
     echo "$(codeblock "
@@ -24,6 +25,33 @@ make_pypkg(){
     xdoctest >= 0.3.0
     pytest-cov
     ")" >  $REPO_DPATH/requirements.txt
+
+    
+    echo "$(codeblock "
+    # Install dependency packages
+    pip install -r requirements.txt
+
+    # Install irharn in developer mode
+    pip install -e .
+
+    # Compile C extensions to improve runtime
+    #python setup.py build_ext --inplace
+
+    cat README.md
+    ")" >  $REPO_DPATH/run_developer_setup.py
+    chmod +x $REPO_DPATH/run_developer_setup.py
+
+
+    echo "$(codeblock "
+    [build-system]
+    requires = [\"setuptools\", \"wheel\", \"scikit-build\", \"cmake\", \"cython\", \"ninja\", \"ubelt\"]
+    ")" >  $REPO_DPATH/pyproject.toml
+
+
+    echo "$(codeblock "
+    mkinit $REPO_NAME
+    ")" >  $REPO_DPATH/_autogen_init.py
+    chmod +x $REPO_DPATH/_autogen_init.py
     
 
     echo "CREATING PACKAGE STRUCTURE"
@@ -31,7 +59,7 @@ make_pypkg(){
     touch $PKG_DPATH/__init__.py
 
     echo "SETTING BASELINE VERSION NUMBER"
-    echo "__version__ = '0.0.1.dev'" > $REPO_DPATH/$REPO_NAME/__init__.py
+    echo "__version__ = '0.0.1.dev0'" > $REPO_DPATH/$REPO_NAME/__init__.py
 
     cd $REPO_DPATH
 
@@ -41,6 +69,31 @@ make_pypkg(){
     find . -iname '*.py' | xargs sed -i "s/ubelt/$REPO_NAME/g"
     find . -iname '*.ini' | xargs sed -i "s/ubelt/$REPO_NAME/g"
     find . -iname '*.coveragerc' | xargs sed -i "s/ubelt/$REPO_NAME/g"
+
+    echo "REPLACING THINGS IN SETUP.PY"
+            '',
+            'Topic :: Software Development :: Libraries :: Python Modules',
+    
+    sed -i "s/'Development Status :: 4 - Beta'/'Development Status :: 3 - Alpha'/g" setup.py
+
+    sed -i "s/'Intended Audience :: Developers'/#'Intended Audience :: <?TODO: Developers>'/g" setup.py
+    sed -i "s/'Topic :: Software Development :: Libraries :: Python Modules'/#'Topic :: <?TODO: Software Development :: Libraries :: Python Modules>'/g" setup.py
+    sed -i "s/'Topic :: Utilities/#'Topic :: <?TODO: Utilities>'/g" setup.py
+
+    #sed -i "s/'Intended Audience :: Developers'.*\\n*//g" setup.py
+    #sed -i "s/'Topic :: Software Development :: Libraries :: Python Modules'.*\\n*//g" setup.py
+    #sed -i "s/'Topic :: Utilities.*\\n*',//g" setup.py
+
+    #sed -i "s/'Programming Language :: Python :: 2.7//g" setup.py
+
+
+    echo "FIXING PERMISSIONS"
+    chmod +x $REPO_DPATH/setup.py
+    chmod +x $REPO_DPATH/run_developer_setup.py
+    chmod +x $REPO_DPATH/run_doctests.py
+    chmod +x $REPO_DPATH/run_tests.py
+    chmod +x $REPO_DPATH/_autogen_init.py
+
 
     echo "MAKING DOCS"
     rm -rf $REPO_DPATH/docs
@@ -100,7 +153,9 @@ Requirements:
 Usage:
     source ~/misc/make_new_python_package_repo.sh
     REPO_NAME=pydir
-    REPO_NAME=kwel
+    #REPO_NAME=kwel
+
+    REPO_NAME=ndsampler
     echo "REPO_NAME = $REPO_NAME"
-    make_pypkg $REPO_NAME
+    source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 " > /dev/null
