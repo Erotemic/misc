@@ -66,6 +66,29 @@ class Signal(ub.NiceRepr):
         (half a pixel standard deviation). This also means that σ=σn=0.5 is the
         finest scale that can actually be computed
 
+
+        According to Shannon's sampling theorem, in order to preserve the spatial
+        resolution of the original image, the digitizing device must utilize a sampling
+        interval that is no greater than one-half the size of the smallest resolvable
+        feature of the optical image. This is equivalent to acquiring samples at twice
+        the highest spatial frequency contained in the image, a reference point
+        commonly referred to as the Nyquist criterion. If the Abbe limit of resolution
+        in the optical image is approximately 0.22 micrometers, the digitizer must
+        sample at intervals that correspond in the specimen space to 0.11 micrometers
+        or less. A digitizer that samples 512 points per horizontal scan line would
+        then have a maximum horizontal field of view of approximately 56 micrometers
+        (512 × 0.11 micrometers). An increased number of digital samples per scan line
+        or unit specimen area, which could be brought about by too great an optical
+        magnification, would not yield more spatial information and the image would be
+        said to be oversampled. Note that oversampling is often done intentionally to
+        examine or display diffraction patterns or point spread functions, to produce a
+        reduced field of view, or to acquire redundant values to ensure fidelity of the
+        displayed image. In most cases, to ensure adequate sampling for high-resolution
+        imaging, an interval of 2.5 to 3 samples for the smallest resolvable feature is
+        desirable.
+        [source](https://www.olympus-lifescience.com/en/microscope-resource/primer/java/digitalimaging/processing/samplefrequency/)
+
+
     References:
         https://en.wikipedia.org/wiki/Scale_space
         https://en.wikipedia.org/wiki/Scale_space_implementation
@@ -174,6 +197,13 @@ class Signal(ub.NiceRepr):
         have small differences. Ideally both numbers returned here will be
         reasonably small.
         """
+        # NOTE: We are never going to get the pixels to be exactly the same
+        # what we are looking for is agreement between extrema.
+
+        # Consider downsampling an image.  Even after appropriate smoothing
+        # sampling with [1::2] and [0::2] will result in slightly different
+        # pixel values. The key thing that lets downsampling be OK is that you
+        # don't introduce any new extreme points (maxima or minima).
 
         a = self.f_in
         b = other.f_in

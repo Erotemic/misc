@@ -100,7 +100,7 @@ Requirements:
 Usage:
     source ~/misc/make_new_python_package_repo.sh
     REPO_NAME=pydir
-    REPO_NAME=xinspect
+    REPO_NAME=kwel
     echo "REPO_NAME = $REPO_NAME"
     make_pypkg $REPO_NAME
 " > /dev/null
