@@ -55,3 +55,4 @@ RUN mkdir -p $HOME/code
 RUN git clone --recursive https://github.com/pytorch/pytorch $HOME/code/pytorch
 WORKDIR /root/code/pytorch
 RUN source $HOME/conda_bashrc.sh && python setup.py install
+RUN source $HOME/conda_bashrc.sh && python setup.py develop
