@@ -56,3 +56,15 @@ RUN git clone --recursive https://github.com/pytorch/pytorch $HOME/code/pytorch
 WORKDIR /root/code/pytorch
 RUN source $HOME/conda_bashrc.sh && python setup.py install
 RUN source $HOME/conda_bashrc.sh && python setup.py develop
+
+RUN apt install vim -y
+
+RUN source $HOME/conda_bashrc.sh && \
+    git remote add Erotemic https://github.com/Erotemic/pytorch && \
+    git fetch --all && \
+    git checkout dev/integrate_xdoctest 
+
+#RUN source $HOME/conda_bashrc.sh && \
+#    ./tools/run_doctests.sh
+
+#git remote add Erotemic https://github.com/Erotemic/pytorch &&

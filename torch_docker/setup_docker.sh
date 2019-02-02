@@ -1,6 +1,10 @@
 # http://torch.ch/docs/getting-started.html
 
 apt_install_docker(){
+    # FIXME: 
+    # Doesn't work on Ooo.
+    # Worked on Namek.
+
     # Create a docker group if one does not exist
     if [[ $(groups | grep docker) == "" ]]; then
         sudo groupadd docker
@@ -80,4 +84,5 @@ build_torch_dockerfile(){
     cd ~/misc/torch_docker
     docker build -f ./Dockerfile --tag torch_dev_env .
     docker run --runtime=nvidia --rm -it torch_dev_env bash
+    docker run --rm -it torch_dev_env bash
 }
