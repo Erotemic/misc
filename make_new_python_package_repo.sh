@@ -152,10 +152,18 @@ Requirements:
 
 Usage:
     source ~/misc/make_new_python_package_repo.sh
+<<<<<<< Updated upstream
     REPO_NAME=pydir
     #REPO_NAME=kwel
 
     REPO_NAME=ndsampler
+||||||| merged common ancestors
+    REPO_NAME=pydir
+    REPO_NAME=xinspect
+=======
+    REPO_NAME=xinspect
+    REPO_NAME=lava
+>>>>>>> Stashed changes
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 " > /dev/null
