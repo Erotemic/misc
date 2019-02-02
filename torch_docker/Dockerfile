@@ -53,4 +53,5 @@ RUN source $HOME/conda_bashrc.sh && conda install numpy pyyaml mkl mkl-include s
 WORKDIR /root
 RUN mkdir -p $HOME/code
 RUN git clone --recursive https://github.com/pytorch/pytorch $HOME/code/pytorch
-WORKDIR $HOME/code/pytorch
+WORKDIR /root/code/pytorch
+RUN source $HOME/conda_bashrc.sh && python setup.py install
