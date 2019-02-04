@@ -73,9 +73,9 @@ RUN source $HOME/conda_bashrc.sh && python setup.py develop
 
 #git remote add Erotemic https://github.com/Erotemic/pytorch &&
 
-RUN __DUMMY_COMMANDS_="
-    cd ~/misc/torch_docker
-    docker build -f ./Dockerfile --tag torch_dev_env .
+#RUN __DUMMY_COMMANDS_="
+#    cd ~/misc/torch_docker
+#    docker build -f ./Dockerfile --tag torch_dev_env .
 
-    docker run --runtime=nvidia --rm -it torch_dev_env bash
-"
+#    docker run --runtime=nvidia --rm -it torch_dev_env bash
+#"
