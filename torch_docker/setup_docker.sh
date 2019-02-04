@@ -90,7 +90,6 @@ build_torch_dockerfile(){
 
     docker run --rm -it ./tools/run_doctests.sh
     __INSIDE_DOCKER_COMMANDS__='''
-
     ./tools/run_doctests.sh
     '''
 }
