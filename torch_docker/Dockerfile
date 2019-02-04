@@ -48,20 +48,25 @@ RUN source $HOME/conda_bashrc.sh && pip install xdoctest
 
 RUN source $HOME/conda_bashrc.sh && conda install numpy pyyaml mkl mkl-include setuptools cmake cffi typing six Cython scipy -y
 
+
+# FORGOT TO INSTALL VIM!
+RUN apt install vim -y
+
 # Note: we cannot use $HOME in docker commands other than RUN.
 # Note that the default home directory is /root
 WORKDIR /root
 RUN mkdir -p $HOME/code
-RUN git clone --recursive https://github.com/pytorch/pytorch $HOME/code/pytorch
+
+RUN git clone --branch dev/integrate_xdoctest --recursive https://github.com/Erotemic/pytorch $HOME/code/pytorch
 WORKDIR /root/code/pytorch
 RUN source $HOME/conda_bashrc.sh && python setup.py develop
 
-RUN apt install vim -y
+#RUN git clone --recursive https://github.com/pytorch/pytorch $HOME/code/pytorch
+#RUN source $HOME/conda_bashrc.sh && \
+#    git remote add Erotemic https://github.com/Erotemic/pytorch && \
+#    git fetch --all && \
+#    git checkout dev/integrate_xdoctest && git submodule update --recursive
 
-RUN source $HOME/conda_bashrc.sh && \
-    git remote add Erotemic https://github.com/Erotemic/pytorch && \
-    git fetch --all && \
-    git checkout dev/integrate_xdoctest 
 
 #RUN source $HOME/conda_bashrc.sh && \
 #    ./tools/run_doctests.sh
