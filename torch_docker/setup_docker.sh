@@ -85,8 +85,8 @@ build_torch_dockerfile(){
     docker build -f ./Dockerfile --tag torch_dev_env .
     docker run --runtime=nvidia --rm -it torch_dev_env bash
 
-    cd ~/misc/torch_docker
-    docker run --rm -it torch_dev_env bash
+    #cd ~/misc/torch_docker
+    #docker run --rm -it torch_dev_env bash
 
     docker run --rm -it ./tools/run_doctests.sh
     __INSIDE_DOCKER_COMMANDS__='''
