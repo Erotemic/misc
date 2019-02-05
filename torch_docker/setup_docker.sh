@@ -72,6 +72,8 @@ apt_install_docker(){
 
         sudo systemctl restart docker
     fi
+
+    # NOTE :see  https://github.com/nvidia/nvidia-container-runtime#docker-engine-setup
 }
 
 test_install_worked(){

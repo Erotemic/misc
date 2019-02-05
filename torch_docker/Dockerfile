@@ -63,6 +63,7 @@ RUN source $HOME/conda_bashrc.sh && \
     git fetch --all && \
     git checkout dev/integrate_xdoctest 
 RUN source $HOME/conda_bashrc.sh && python setup.py develop
+#RUN source $HOME/conda_bashrc.sh && python setup.py install
 
 #RUN git clone --branch dev/integrate_xdoctest --recursive https://github.com/Erotemic/pytorch $HOME/code/pytorch
 #WORKDIR /root/code/pytorch
