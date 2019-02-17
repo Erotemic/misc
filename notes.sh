@@ -353,3 +353,20 @@ make: *** [all] Error 2
 # perhaps it had to do with that depricated previous build flags
 
 #http://www.viametoolkit.org/cvpr-2018-workshop-data-challenge/
+
+
+"""
+
+KWA*
+Kitware Assorted Vision
+
+kwak
+kwac
+
+kwal
+kwail
+
+kwartz
+
+KWARTZ - Kitware's Awesome Research ToolZ
+"""
