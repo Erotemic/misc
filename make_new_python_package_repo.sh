@@ -28,18 +28,15 @@ make_pypkg(){
 
     
     echo "$(codeblock "
+    #!/bin/bash 
+
     # Install dependency packages
     pip install -r requirements.txt
 
     # Install irharn in developer mode
     pip install -e .
-
-    # Compile C extensions to improve runtime
-    #python setup.py build_ext --inplace
-
-    cat README.md
-    ")" >  $REPO_DPATH/run_developer_setup.py
-    chmod +x $REPO_DPATH/run_developer_setup.py
+    ")" >  $REPO_DPATH/run_developer_setup.sh
+    chmod +x $REPO_DPATH/run_developer_setup.sh
 
 
     echo "$(codeblock "
