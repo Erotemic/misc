@@ -45,10 +45,10 @@ make_pypkg(){
     ")" >  $REPO_DPATH/pyproject.toml
 
 
-    echo "$(codeblock "
-    mkinit $REPO_NAME
-    ")" >  $REPO_DPATH/_autogen_init.py
-    chmod +x $REPO_DPATH/_autogen_init.py
+    #echo "$(codeblock "
+    #mkinit $REPO_NAME
+    #")" >  $REPO_DPATH/_autogen_init.sh
+    #chmod +x $REPO_DPATH/_autogen_init.sh
     
 
     echo "CREATING PACKAGE STRUCTURE"
