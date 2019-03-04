@@ -1,3 +1,50 @@
+echo "
+Requirements:
+    pip install sphinx sphinx_rtd_theme
+
+Usage:
+    source ~/misc/make_new_python_package_repo.sh
+    REPO_NAME=mytest
+
+    echo "REPO_NAME = $REPO_NAME"
+    source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
+" > /dev/null
+ostrta
+one style to rule them all
+OStRtA
+OSRA
+OORA
+O*ne O*_ to R*ule them A*ll
+
+
+update_pypkg(){
+    cd $REPO_DPATH
+    cp -r ~/code/progiter/requirements .
+    cp -r ~/code/progiter/requirements .
+    cp -r ~/code/ubelt/.circleci .
+
+    chmod +x ./setup.py
+    chmod +x ./run_developer_setup.sh
+    chmod +x ./run_doctests.py
+    chmod +x ./run_tests.py
+
+    # <FIXME>
+    TEXT="$(codeblock "
+    Update Requirments:
+        # Requirements are broken down by type in the requirements folder, and
+        # requirments.txt lists them all. Thus we autogenerate via:
+        cat requirements/*.txt > requirements.txt
+        
+    ")" 
+    echo "TEXT = $TEXT"
+    sed "s/Pypi:/${TEXT}Pypi:/g" setup.py
+    # </FIXME>
+
+
+    #>> $REPO_DPATH/docs/source/conf.py
+}
+
+
 make_pypkg(){
     REPO_NAME=$1
 
@@ -17,14 +64,20 @@ make_pypkg(){
     cp ~/code/ubelt/setup.py $REPO_DPATH
     cp ~/code/ubelt/.gitignore $REPO_DPATH
     cp -r ~/code/ubelt/.circleci $REPO_DPATH
+    cp -r ~/code/ubelt/publish.sh $REPO_DPATH
+    #cp -r ~/code/ubelt/run_developer_setup.sh $REPO_DPATH
 
     source $HOME/local/init/utils.sh
+
+    mkdir -p $REPO_DPATH/requirements
     echo "$(codeblock "
     pytest >= 3.3.1
     coverage >= 4.3.4
     xdoctest >= 0.3.0
     pytest-cov
-    ")" >  $REPO_DPATH/requirements.txt
+    ")" >  $REPO_DPATH/requirements/tests.txt
+    touch $REPO_DPATH/requirements/runtime.txt
+    #touch $REPO_DPATH/requirements/build.txt
 
     
     echo "$(codeblock "
@@ -86,10 +139,9 @@ make_pypkg(){
 
     echo "FIXING PERMISSIONS"
     chmod +x $REPO_DPATH/setup.py
-    chmod +x $REPO_DPATH/run_developer_setup.py
+    chmod +x $REPO_DPATH/run_developer_setup.sh
     chmod +x $REPO_DPATH/run_doctests.py
     chmod +x $REPO_DPATH/run_tests.py
-    chmod +x $REPO_DPATH/_autogen_init.py
 
 
     echo "MAKING DOCS"
@@ -142,16 +194,3 @@ make_pypkg(){
     
     echo "FINISHED"
 }
-
-echo "
-Requirements:
-    pip install sphinx sphinx_rtd_theme
-
-Usage:
-    source ~/misc/make_new_python_package_repo.sh
-    REPO_NAME=ndsampler
-    REPO_NAME=xinspect
-
-    echo "REPO_NAME = $REPO_NAME"
-    source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
-" > /dev/null
