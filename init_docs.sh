@@ -74,11 +74,6 @@ init_docs(){
 
     REPO_NICE=$REPO_NICE
 
-    You have to populate the index page yourself 
-
-    TODO: have someone who understands this write docs
-
-
     .. The __init__ files contains the top-level documentation overview
     .. automodule:: $REPO_NAME.__init__
        :show-inheritance:
