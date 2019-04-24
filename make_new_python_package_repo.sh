@@ -9,12 +9,6 @@ Usage:
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 " > /dev/null
-ostrta
-one style to rule them all
-OStRtA
-OSRA
-OORA
-O*ne O*_ to R*ule them A*ll
 
 
 update_pypkg(){
