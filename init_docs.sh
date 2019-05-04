@@ -107,7 +107,7 @@ init_docs(){
 
     # Build documentation in the docs/ directory with Sphinx
     sphinx:
-      configuration: docs/souce/conf.py
+      configuration: docs/source/conf.py
 
     # Optionally build your docs in additional formats such as PDF and ePub
     formats: all
