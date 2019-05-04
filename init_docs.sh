@@ -1,8 +1,8 @@
 #!/bin/bash
 
 init_docs(){
-
     REPO_NAME=$1
+
     REPO_NICE=$REPO_NAME
     #REPO_NICE=$2
     #Timerit
@@ -12,21 +12,24 @@ init_docs(){
     PKG_DPATH=$REPO_DPATH/$REPO_NAME
 
 
+    echo "REPO_NAME = $REPO_NAME"
     echo "REPO_DPATH = $REPO_DPATH"
     echo "PKG_DPATH = $PKG_DPATH"
-
     echo "MAKING DOCS"
 
 
+    #rm -rf $REPO_DPATH/docs
+    #mkdir -p $REPO_DPATH/docs
+
     echo "$(codeblock "
     sphinx
-    -e git://github.com/snide/sphinx_rtd_theme.git#egg=sphinx_rtd_theme
+    sphinx-rtd-theme
+    #git://github.com/snide/sphinx_rtd_theme.git#egg=sphinx_rtd_theme
     ")" >  $REPO_DPATH/docs/requirements.txt
+
     pip install -r $REPO_DPATH/docs/requirements.txt
 
 
-    rm -rf $REPO_DPATH/docs
-    mkdir -p $REPO_DPATH/docs
     sphinx-quickstart -q --sep \
         --project=$REPO_NAME \
         --author="Jon Crall" \
@@ -39,7 +42,6 @@ init_docs(){
 
 
     # Now populate $REPO_DPATH/docs/source/index.rst and $REPO_DPATH/docs/source/conf.py 
-
 
     # Make conf.py use the read-the-docs theme
     sed -i "s/html_theme = 'alabaster'/import sphinx_rtd_theme  # NOQA\nhtml_theme = 'sphinx_rtd_theme'\nhtml_theme_path = [sphinx_rtd_theme.get_html_theme_path()]/g" $REPO_DPATH/docs/source/conf.py
@@ -64,17 +66,12 @@ init_docs(){
 
     ")" >> $REPO_DPATH/docs/source/conf.py
 
-
     echo "$(codeblock "
 
-    :github_url: https://github.com/Erotemic/ubelt
-
-    reponice documentation
-    ======================
-
-    REPO_NICE=$REPO_NICE
+    :github_url: https://github.com/Erotemic/$REPO_NAME
 
     .. The __init__ files contains the top-level documentation overview
+    .. The package __init__ file should include an RST title for this page
     .. automodule:: $REPO_NAME.__init__
        :show-inheritance:
 
@@ -93,14 +90,11 @@ init_docs(){
 
 
 
-    cd $REPO_DPATH/docs
-    sphinx-apidoc -f -o $REPO_DPATH/docs/source $PKG_DPATH --separate
+    (cd $REPO_DPATH/docs && sphinx-apidoc -f -o $REPO_DPATH/docs/source $PKG_DPATH --separate)
 
-    cd $REPO_DPATH/docs
-    make html
+    (cd $REPO_DPATH/docs && make html)
 
-    google-chrome build/html/index.html
-
+    google-chrome $REPO_DPATH/docs/build/html/index.html
 
 
     echo "$(codeblock "
@@ -120,13 +114,12 @@ init_docs(){
 
     # Optionally set the version of Python and requirements required to build your docs
     python:
-      version: 3.7
-      install:
-        requirements:
-           - docs/requirements.txt
-        extra_requirements:
-           - docs
-        
+       version: 3.7
+       install:
+          - method: pip
+            path: .
+            extra_requirements:
+               - docs
 
     ")" > $REPO_DPATH/.readthedocs.yml
 
@@ -135,7 +128,10 @@ init_docs(){
 
 dev_main(){
     source "$HOME/misc/init_docs.sh"
-    init_docs progiter
+    #init_docs progiter
+    REPO_NAME=xdoctest
+    init_docs $REPO_NAME
 }
+
 
 #init_docs $1
