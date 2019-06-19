@@ -5,6 +5,7 @@ Requirements:
 Usage:
     source ~/misc/make_new_python_package_repo.sh
     REPO_NAME=mytest
+    REPO_NAME=iceharn
 
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
@@ -99,7 +100,7 @@ make_pypkg(){
     
 
     echo "CREATING PACKAGE STRUCTURE"
-    touch $REPO_DPATH/whatsnew.txt
+    touch $REPO_DPATH/CHANGELOG.md
     touch $PKG_DPATH/__init__.py
 
     echo "SETTING BASELINE VERSION NUMBER"
