@@ -5,7 +5,7 @@ Requirements:
 Usage:
     source ~/misc/make_new_python_package_repo.sh
     REPO_NAME=mytest
-    REPO_NAME=iceharn
+    REPO_NAME=bioharn
 
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
@@ -73,6 +73,11 @@ make_pypkg(){
     ")" >  $REPO_DPATH/requirements/tests.txt
     touch $REPO_DPATH/requirements/runtime.txt
     #touch $REPO_DPATH/requirements/build.txt
+
+    echo "$(codeblock "
+    -r requirements/runtime.txt
+    -r requirements/tests.txt
+    ")" >  $REPO_DPATH/requirements.txt
 
     
     echo "$(codeblock "
