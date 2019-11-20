@@ -5,7 +5,7 @@ Requirements:
 Usage:
     source ~/misc/make_new_python_package_repo.sh
     REPO_NAME=mytest
-    REPO_NAME=bioharn
+    REPO_NAME=kwannot
 
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
@@ -87,7 +87,7 @@ make_pypkg(){
     pip install -r requirements.txt
 
     # Install irharn in developer mode
-    pip install -e .
+    python setup.py develop
     ")" >  $REPO_DPATH/run_developer_setup.sh
     chmod +x $REPO_DPATH/run_developer_setup.sh
 
