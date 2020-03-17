@@ -13,7 +13,10 @@ def cmake_clean(dpath='.'):
     """
     dpath = ub.expandpath(dpath)
     cmake_cache_fpath = join(dpath, 'CMakeCache.txt')
-    assert exists(cmake_cache_fpath)
+    if not exists(cmake_cache_fpath):
+        raise Exception(
+            'This does not look like a cmake build directory. '
+            'No CMakeCache.txt exists')
     fpath_set = set(glob.glob(join(dpath, '*'))) - {cmake_cache_fpath}
 
     for fpath in list(fpath_set):
