@@ -11,7 +11,7 @@ import ubelt as ub
 def cmake_clean(dpath='.'):
     """
     """
-    dpath = ub.truepath(dpath)
+    dpath = ub.expandpath(dpath)
     cmake_cache_fpath = join(dpath, 'CMakeCache.txt')
     assert exists(cmake_cache_fpath)
     fpath_set = set(glob.glob(join(dpath, '*'))) - {cmake_cache_fpath}
@@ -26,7 +26,7 @@ def cmake_clean(dpath='.'):
 
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         python ~/misc/cmake_clean.py
     """
