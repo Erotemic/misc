@@ -1,6 +1,7 @@
 #!/bin/env python
 """
-Simlar to make clean, removes files, but (tries to) keeps relevant cmake cache information
+Simlar to make clean, removes files, but (tries to) keeps relevant cmake cache
+information
 """
 import glob
 from os.path import exists, basename, join
