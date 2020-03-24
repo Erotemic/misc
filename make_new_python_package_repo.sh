@@ -5,7 +5,7 @@ Requirements:
 Usage:
     source ~/misc/make_new_python_package_repo.sh
     REPO_NAME=mytest
-    REPO_NAME=isolator
+    REPO_NAME=liberator
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 " > /dev/null
