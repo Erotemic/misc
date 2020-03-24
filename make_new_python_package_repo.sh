@@ -5,8 +5,7 @@ Requirements:
 Usage:
     source ~/misc/make_new_python_package_repo.sh
     REPO_NAME=mytest
-    REPO_NAME=kwannot
-
+    REPO_NAME=isolator
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 " > /dev/null
@@ -86,7 +85,7 @@ make_pypkg(){
     # Install dependency packages
     pip install -r requirements.txt
 
-    # Install irharn in developer mode
+    # Install in developer mode
     python setup.py develop
     ")" >  $REPO_DPATH/run_developer_setup.sh
     chmod +x $REPO_DPATH/run_developer_setup.sh

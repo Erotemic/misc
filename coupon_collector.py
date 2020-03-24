@@ -1,4 +1,6 @@
+import numpy as np
 import ubelt as ub
+from scipy import integrate
 
 
 class CouponCollector(object):
@@ -36,6 +38,9 @@ class CouponCollector(object):
         https://www.combinatorics.org/ojs/index.php/eljc/article/view/v20i2p33/pdf
         https://kainwen.com/2019/08/20/coupon-collectors-problem-a-infinite-series-perspective/
         https://stackoverflow.com/questions/54539128/compute-an-integral-using-scipy-where-the-integrand-is-a-product-with-parameters
+
+        https://math.stackexchange.com/questions/1176813/coupon-collector-problem-for-non-uniform-coupons-on-the-number-of-missed-coupon
+        https://mathoverflow.net/questions/198857/coupon-collector-problem-for-non-uniform-coupons-bound-on-the-number-of-missed/198988#198988
     """
 
     def __init__(self, probs):
@@ -93,7 +98,6 @@ class CouponCollector(object):
             >>> ev_monte = self.expected_samples(target=1.0, method='montecarlo')
             >>> print('ev_monte = {!r}'.format(ev_monte))
         """
-        import numpy as np
         probs = self.probs
 
         if method == 'exact':
@@ -105,10 +109,10 @@ class CouponCollector(object):
             # Theoretical approximation (this is not exactly right)
             def _integrand(t):
                 return self.prob_sampled_in(target, t, method=method)
-            from scipy import integrate
-            ev, abserr = integrate.quad(func=_integrand,
-                    a=len(self.probs),  # These bounds are dubious
-                    b=len(self.probs) ** 2)
+            ev, abserr = integrate.quad(
+                func=_integrand,
+                a=len(self.probs),  # These bounds are dubious
+                b=len(self.probs) ** 2)
             # def func(t):
             #     return (self.prob_sampled_in(target, t) - 0.5) ** 2
             # x0 = len(probs) * np.log(len(probs))
@@ -158,8 +162,6 @@ def coupon_collector_expected_samples(probs):
         https://stackoverflow.com/questions/54539128/scipy-integrand-is-product
 
     Example:
-        >>> import numpy as np
-        >>> import ubelt as ub
         >>> # Check EV of samples for a non-uniform distribution
         >>> probs = [0.38, 0.05, 0.36, 0.16, 0.05]
         >>> ev = coupon_collector_expected_samples(probs)
@@ -178,11 +180,54 @@ def coupon_collector_expected_samples(probs):
         >>> uniform_ev = float(sympy.harmonic(n) * n)
         >>> assert np.isclose(ev, uniform_ev)
     """
-    import numpy as np
-    from scipy import integrate
     probs = np.asarray(probs)
     # Philippe Flajolet's generalized expected value integral
     def _integrand(t):
         return 1 - np.product(1 - np.exp(-probs * t))
     ev, abserr = integrate.quad(func=_integrand, a=0, b=np.inf)
     return ev
+
+
+def nth_harmonic(n):
+    """
+    Example:
+        >>> n = 10
+        >>> want = float(sympy.harmonic(n))
+        >>> got = nth_harmonic(n)
+        >>> np.isclose(want, got)
+    """
+    return np.sum(1 / np.arange(1, n + 1))
+
+
+def uniform_coupon_ev(n):
+    ev = n * nth_harmonic(n)
+    return ev
+
+
+def uniform_coupon_ev_to_collect_k(n, k):
+    i = np.arange(n)
+    prob_new = (n - i + 1) / n
+    ev_new = 1 / prob_new
+    ev = np.sum(ev_new[0:k])
+    return ev
+
+
+def bound_ev_coupons_seen(probs, num_samples):
+    """
+    This seems incorrect, but probably works as a bound
+
+    Args:
+        probs: non-uniform probability for each coupon
+
+    References:
+        https://math.stackexchange.com/questions/1176813/coupon-collector-problem-for-non-uniform-coupons-on-the-number-of-missed-coupon
+
+    Example:
+        >>> probs = np.random.rand(1000)
+        >>> probs /= probs.sum()
+        >>> num_samples = len(probs)
+        >>> bound_ev_coupons_seen(probs, num_samples)
+    """
+    ev_notseen = ((1 - probs) ** num_samples).sum()
+    ev_seen = len(probs) - ev_notseen
+    return ev_seen
