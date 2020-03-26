@@ -1,11 +1,18 @@
 
+delete_remote_tags(){
+    # https://stackoverflow.com/questions/5480258/how-to-delete-a-remote-tag
+    git push --delete origin test-tag4
+    git tag --delete test-tag4
+
+}
+
 
 finish_deployment(){
     MODNAME=$1
     DEPLOY_REMOTE=$2
     DEPLOY_BRANCH=$3
     echo "
-    Ensure you've merged the release into master
+    Ensure you've merged the topic-branch into master
 
     MODNAME = $MODNAME
     DEPLOY_REMOTE = $DEPLOY_REMOTE
@@ -14,19 +21,17 @@ finish_deployment(){
 
     cd $HOME/code/$MODNAME
     VERSION=$(python -c "import $MODNAME; print($MODNAME.__version__)")
-    DEPLOY_REMOTE=public
-    DEPLOY_BRANCH=release
     TAG_NAME="${VERSION}"
     NEXT_VERSION=$(python -c "print('.'.join('$VERSION'.split('.')[0:2]) + '.' + str(int('$VERSION'.split('.')[2]) + 1))")
     echo "VERSION = $VERSION"
     echo "NEXT_VERSION = $NEXT_VERSION"
-    git checkout master
+    git checkout master || git checkout $DEPLOY_REMOTE/master -b master
     git fetch $DEPLOY_REMOTE
     git pull $DEPLOY_REMOTE
     git push $DEPLOY_REMOTE master:release
     #git tag "${TAG_NAME}" "${TAG_NAME}"^{} -f -m "tarball tag ${VERSION}"
-    git tag "${TAG_NAME}" -f -m "tarball tag ${VERSION}"
-    git push --tags $DEPLOY_REMOTE 
+    #git tag "${TAG_NAME}" -f -m "tarball tag ${VERSION}"
+    #git push --tags $DEPLOY_REMOTE 
 
     echo "NEXT_VERSION = $NEXT_VERSION"
     git co -b dev/$NEXT_VERSION
@@ -42,6 +47,17 @@ finish_deployment(){
 
 mypkgs(){
     source ~/misc/bump_versions.sh
+
+    MODNAME=liberator
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+
+    MODNAME=scriptconfig
+    DEPLOY_REMOTE=public
+    DEPLOY_BRANCH=release
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+
     MODNAME=kwarray
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
@@ -63,5 +79,7 @@ mypkgs(){
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     MODNAME=netharn
+    DEPLOY_REMOTE=public
+    DEPLOY_BRANCH=release
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 }

@@ -4,8 +4,8 @@ Requirements:
 
 Usage:
     source ~/misc/make_new_python_package_repo.sh
-    REPO_NAME=mytest
-    REPO_NAME=liberator
+
+    REPO_NAME=kwcoco
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 " > /dev/null
@@ -13,9 +13,7 @@ Usage:
 
 update_pypkg(){
     cd $REPO_DPATH
-    cp -r ~/code/progiter/requirements .
-    cp -r ~/code/progiter/requirements .
-    cp -r ~/code/ubelt/.circleci .
+    cp -r ~/misc/PYPKG/.circleci .
 
     chmod +x ./setup.py
     chmod +x ./run_developer_setup.sh
@@ -48,18 +46,22 @@ make_pypkg(){
     mkdir -p $REPO_DPATH
     mkdir -p $PKG_DPATH
 
-    echo "MOVING TEMPLATE FILES FROM UBELT"
-    cp ~/code/ubelt/pytest.ini $REPO_DPATH
-    cp ~/code/ubelt/.travis.yml $REPO_DPATH
-    cp ~/code/ubelt/.coveragerc $REPO_DPATH
-    cp ~/code/ubelt/appveyor.yml $REPO_DPATH
-    cp ~/code/ubelt/run_tests.py $REPO_DPATH
-    cp ~/code/ubelt/run_doctests.sh $REPO_DPATH
-    cp ~/code/ubelt/setup.py $REPO_DPATH
-    cp ~/code/ubelt/.gitignore $REPO_DPATH
-    cp -r ~/code/ubelt/.circleci $REPO_DPATH
-    cp -r ~/code/ubelt/publish.sh $REPO_DPATH
-    #cp -r ~/code/ubelt/run_developer_setup.sh $REPO_DPATH
+    echo "MOVING TEMPLATE FILES"
+
+    cp ~/misc/templates/PYPKG/setup.py $REPO_DPATH
+    cp ~/misc/templates/PYPKG/.gitignore $REPO_DPATH
+
+    cp -r ~/misc/templates/PYPKG/publish.sh $REPO_DPATH
+    cp ~/misc/templates/PYPKG/pytest.ini $REPO_DPATH
+
+    cp ~/misc/templates/PYPKG/.travis.yml $REPO_DPATH
+    cp ~/misc/templates/PYPKG/.gitlab-ci.yml $REPO_DPATH
+    cp ~/misc/templates/PYPKG/appveyor.yml $REPO_DPATH
+    cp -r ~/misc/templates/PYPKG/.circleci $REPO_DPATH
+
+    cp ~/misc/templates/PYPKG/.coveragerc $REPO_DPATH
+    cp ~/misc/templates/PYPKG/run_tests.py $REPO_DPATH
+    cp ~/misc/templates/PYPKG/run_doctests.sh $REPO_DPATH
 
     source $HOME/local/init/utils.sh
 
@@ -70,78 +72,88 @@ make_pypkg(){
     xdoctest >= 0.3.0
     pytest-cov
     ")" >  $REPO_DPATH/requirements/tests.txt
-    touch $REPO_DPATH/requirements/runtime.txt
-    #touch $REPO_DPATH/requirements/build.txt
+
+    echo "$(codeblock "
+    ubelt
+    ")" >  $REPO_DPATH/requirements/runtime.txt
+    
+    echo "$(codeblock "
+    numpy
+    ")" >  $REPO_DPATH/requirements/optional.txt
+
+    #echo "$(codeblock "
+    #scikit-build
+    #cmake
+    #numpy
+    #ninja
+    #cython
+    #")" >  $REPO_DPATH/requirements/optional.txt
 
     echo "$(codeblock "
     -r requirements/runtime.txt
+    -r requirements/optional.txt
     -r requirements/tests.txt
     ")" >  $REPO_DPATH/requirements.txt
+    #-r requirements/build.txt
 
     
     echo "$(codeblock "
     #!/bin/bash 
 
-    # Install dependency packages
+    # Install all dependency packages
     pip install -r requirements.txt
 
     # Install in developer mode
-    python setup.py develop
+    pip install -e .
     ")" >  $REPO_DPATH/run_developer_setup.sh
     chmod +x $REPO_DPATH/run_developer_setup.sh
 
 
     echo "$(codeblock "
     [build-system]
-    requires = [\"setuptools\", \"wheel\", \"scikit-build\", \"cmake\", \"cython\", \"ninja\", \"ubelt\"]
+    requires = [\"setuptools\", \"wheel\"]
     ")" >  $REPO_DPATH/pyproject.toml
 
-
-    #echo "$(codeblock "
-    #mkinit $REPO_NAME
-    #")" >  $REPO_DPATH/_autogen_init.sh
-    #chmod +x $REPO_DPATH/_autogen_init.sh
     
-
     echo "CREATING PACKAGE STRUCTURE"
-    touch $REPO_DPATH/CHANGELOG.md
-    touch $PKG_DPATH/__init__.py
+    echo "$(codeblock "
+    # Changelog
 
-    echo "SETTING BASELINE VERSION NUMBER"
-    echo "__version__ = '0.0.1.dev0'" > $REPO_DPATH/$REPO_NAME/__init__.py
+    We are currently working on porting this changelog to the specifications in
+    [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+    This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+    ## [Version 0.0.1] - 
+     
+    ### Added
+    * Initial version
+    ")" >  $REPO_DPATH/CHANGELOG.md
+
+    echo "__version__ = '0.0.1'" > $PKG_DPATH/__init__.py
 
     cd $REPO_DPATH
 
     echo "REPLACING PACKAGE NAME REFERENCES"
-    find . -iname '*.yml' | xargs sed -i "s/ubelt/$REPO_NAME/g"
-    find . -iname '*.sh' | xargs sed -i "s/ubelt/$REPO_NAME/g"
-    find . -iname '*.py' | xargs sed -i "s/ubelt/$REPO_NAME/g"
-    find . -iname '*.ini' | xargs sed -i "s/ubelt/$REPO_NAME/g"
-    find . -iname '*.coveragerc' | xargs sed -i "s/ubelt/$REPO_NAME/g"
+    find . -iname '*.yml' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
+    find . -iname '*.sh' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
+    find . -iname '*.py' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
+    find . -iname '*.ini' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
+    find . -iname '*.coveragerc' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
+    find . -iname '*.py' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
+    find . -iname '*' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
 
     echo "REPLACING THINGS IN SETUP.PY"
-            '',
-            'Topic :: Software Development :: Libraries :: Python Modules',
-    
-    sed -i "s/'Development Status :: 4 - Beta'/'Development Status :: 3 - Alpha'/g" setup.py
 
-    sed -i "s/'Intended Audience :: Developers'/#'Intended Audience :: <?TODO: Developers>'/g" setup.py
-    sed -i "s/'Topic :: Software Development :: Libraries :: Python Modules'/#'Topic :: <?TODO: Software Development :: Libraries :: Python Modules>'/g" setup.py
-    sed -i "s/'Topic :: Utilities/#'Topic :: <?TODO: Utilities>'/g" setup.py
-
-    #sed -i "s/'Intended Audience :: Developers'.*\\n*//g" setup.py
-    #sed -i "s/'Topic :: Software Development :: Libraries :: Python Modules'.*\\n*//g" setup.py
-    #sed -i "s/'Topic :: Utilities.*\\n*',//g" setup.py
-
-    #sed -i "s/'Programming Language :: Python :: 2.7//g" setup.py
-
+    AUTHOR=$(git config --global user.name)
+    AUTHOR_EMAIL=$(git config --global user.email)
+    sed -i "s/<AUTHOR>/${AUTHOR}/g" setup.py
+    sed -i "s/<AUTHOR_EMAIL>/${AUTHOR_EMAIL}/g" setup.py
 
     echo "FIXING PERMISSIONS"
     chmod +x $REPO_DPATH/setup.py
     chmod +x $REPO_DPATH/run_developer_setup.sh
     chmod +x $REPO_DPATH/run_doctests.py
     chmod +x $REPO_DPATH/run_tests.py
-
 
     echo "MAKING DOCS"
     rm -rf $REPO_DPATH/docs
@@ -155,7 +167,7 @@ make_pypkg(){
 
     sphinx-quickstart -q --sep \
         --project=$REPO_NAME \
-        --author="Jon Crall" \
+        --author="$AUTHOR" \
         --ext-autodoc \
         --ext-viewcode \
         --ext-intersphinx \
