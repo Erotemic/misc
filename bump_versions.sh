@@ -58,6 +58,11 @@ mypkgs(){
     DEPLOY_BRANCH=release
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
+    MODNAME=kwcoco
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+
     MODNAME=kwarray
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
