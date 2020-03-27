@@ -58,6 +58,7 @@ mypkgs(){
     DEPLOY_BRANCH=release
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
+    source ~/misc/bump_versions.sh
     MODNAME=kwcoco
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
@@ -78,6 +79,7 @@ mypkgs(){
     DEPLOY_BRANCH=release
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
+    source ~/misc/bump_versions.sh
     MODNAME=ndsampler
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
