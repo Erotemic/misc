@@ -48,6 +48,16 @@ finish_deployment(){
 mypkgs(){
     source ~/misc/bump_versions.sh
 
+    MODNAME=bioharn
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+
+    MODNAME=torch_liberator
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+
     MODNAME=liberator
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
