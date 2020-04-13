@@ -7,6 +7,26 @@ delete_remote_tags(){
 }
 
 
+prep_next_version(){
+    MODNAME=$(python -c "import setup; print(setup.NAME)")
+    VERSION=$(python -c "import setup; print(setup.VERSION)")
+    TAG_NAME="${VERSION}"
+    NEXT_VERSION=$(python -c "print('.'.join('$VERSION'.split('.')[0:2]) + '.' + str(int('$VERSION'.split('.')[2]) + 1))")
+    echo "MODNAME = $MODNAME"
+    echo "VERSION = $VERSION"
+    echo "NEXT_VERSION = $NEXT_VERSION"
+
+    echo "NEXT_VERSION = $NEXT_VERSION"
+    git co -b dev/$NEXT_VERSION
+
+    rob sedr "'$VERSION'" "'$NEXT_VERSION'" True
+    echo "" >> CHANGELOG.md
+    echo "## Version $NEXT_VERSION - Unreleased" >> CHANGELOG.md
+
+    git commit -am "Start branch for $NEXT_VERSION"
+}
+
+
 finish_deployment(){
     MODNAME=$1
     DEPLOY_REMOTE=$2
