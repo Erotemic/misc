@@ -48,7 +48,7 @@ finish_deployment(){
     echo "NEXT_VERSION = $NEXT_VERSION"
     git checkout master || git checkout $DEPLOY_REMOTE/master -b master
     git fetch $DEPLOY_REMOTE
-    git pull $DEPLOY_REMOTE
+    git pull $DEPLOY_REMOTE master
     git push $DEPLOY_REMOTE master:release
     #git tag "${TAG_NAME}" "${TAG_NAME}"^{} -f -m "tarball tag ${VERSION}"
     #git tag "${TAG_NAME}" -f -m "tarball tag ${VERSION}"
@@ -58,6 +58,7 @@ finish_deployment(){
     git co -b dev/$NEXT_VERSION
 
     rob sedr "'$VERSION'" "'$NEXT_VERSION'" True
+    rob sedr "'dev/$VERSION'" "'dev/$NEXT_VERSION'" True
     echo "" >> CHANGELOG.md
     echo "## Version $NEXT_VERSION - Unreleased" >> CHANGELOG.md
 
