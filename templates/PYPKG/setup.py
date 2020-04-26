@@ -188,6 +188,15 @@ if __name__ == '__main__':
         },
         license='Apache 2',
         packages=find_packages('.'),
+        entry_points={
+            "console_scripts": [
+                "git-gud=gitgud.gitgud:git.gud",
+                "git-job=gitgud.gitgud:git.job",
+                "git-rekt=gitgud.gitgud:git.rekt",
+                "git-spooked=gitgud.gitgud:git.spooked",
+                "git-money=gitgud.gitgud:git.money",
+            ],
+        },
         classifiers=[
             # List of classifiers available at:
             # https://pypi.python.org/pypi?%3Aaction=list_classifiers

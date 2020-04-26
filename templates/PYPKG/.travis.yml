@@ -1,9 +1,206 @@
 env:
     global:
-        - secure: "TODO"
+        - secure: "SEE INSTRUCTIONS FOR ENCRYPTING SECRETS TO CORRECTLY GENERATE THIS"
+
+
+# Abuse YAML notation to make a heredoc. This will be ignored by the CI.
+.__heredoc__: &__heredoc__
+    - | 
+        __doc__="""
+        ============
+        TRAVIS-CI INSTRUCTIONS
+        ============
+
+        This file was designed to be used as a template. You can adapt it to
+        new projects with a few simple changes.  Namely perform the following
+        search and replaces.
+
+        ```bash
+        cat .gitlab-ci.yml | \
+            sed 's|PYPKG|<YOUR-REPO>|g' | \
+            sed 's|travis-ci-Erotemic|<YOUR-GPG-ID>|g' | \
+            sed 's|CI_GITHUB_SECRET|<YOUR_CI_SECRET>|g' | \
+            sed 's|github.com/Erotemic|github.com/<YourName>|g' | \
+        tee /tmp/repl && colordiff .gitlab-ci.yml /tmp/repl
+        ```
+
+        To use this script you need the following configurations on your GitHub
+        / TravisCI account.
+
+        GITHUB SECRETS
+        --------------
+
+        Almost all of the stages in this pipeline can be performed on a local
+        machine (making it much easier to debug) as well as the travis-ci
+        machine. However, there are a handeful of required environment
+        variables which will contain sensitive information. These variables are
+
+        * TWINE_USERNAME - this is your pypi username
+            twine info is only needed if you want to automatically publish to
+            pypi
+
+        * TWINE_PASSWORD - this is your pypi password 
+
+        * CI_GITHUB_SECRET - We will use this as a secret key to
+            encrypt/decrypt gpg secrets This is only needed if you want to
+            automatically sign published wheels with a gpg key.
+
+        * PERSONAL_GITHUB_PUSH_TOKEN - 
+            This is only needed if you want to automatically git-tag release
+            branches. This token is global to an entire account, so it only
+            needs to be done once per user.
+
+            To create this token go to:
+            https://github.com/settings/tokens/new
+
+            And create a token with "write:packages" checked. 
+            Name (via the Note field) the token something like "github-push-token".
+            Copy the value of that token and store it somewhere secure (like a
+            secret environment file). 
+            The environment variable should have the form:
+
+            PERSONAL_GITHUB_PUSH_TOKEN="{token-name}:{token-password}"
+
+            For instance it may look like this: 
+            PERSONAL_GITHUB_PUSH_TOKEN=git-push-token:62zutpzqga6tvrhklkdjqm
+
+        ENCRYPTING SECRETS
+        ------------------
+        The following script demonstrates how to securely encrypt a secret GPG
+        key. It is assumed that you have a file secret_loader.sh that looks
+        like this
+
+        ```bash
+            source secretfile
+        ```
+
+        and then a secretfile that looks like this
+        ```bash
+            #!/bin/bash
+            echo /some/secret/file 
+
+            export TWINE_USERNAME=<pypi-username>
+            export TWINE_PASSWORD=<pypi-password>
+            export CI_GITHUB_SECRET="<a-very-long-secret-string>"
+            export PERSONAL_GITHUB_PUSH_TOKEN='git-push-token:<token-password>'
+        ```
+
+        You should also make a secret_unloader.sh that points to a script that
+        unloads these secret variables from the environment.
+
+        You will also need the travis CLI utility to encrypt your secrets. On
+        Ubuntu these can be installed via
+
+        ```bash
+        sudo apt install ruby ruby-dev -y
+        sudo gem install travis
+        ```
+
+        Given this file-structure setup, you can then run the following
+        commands verbatim. Alternatively just populate the environment
+        variables and run line-by-line without creating the secret
+        loader/unloader scripts.
+
+        ```bash
+        # Load or generate secrets
+        source $(secret_loader.sh)
+        echo $TWINE_USERNAME
+        echo $TWINE_PASSWORD
+        echo $CI_GITHUB_SECRET
+        echo $PERSONAL_GITHUB_PUSH_TOKEN
+
+        # In your repo directory run the command to ensure travis recognizes the repo
+        # It will say: Detected repository as <user>/<repo>, is this correct? |yes|
+        # Answer yes before running the encrypt commands.
+        travis status
+
+        # encrypt relevant travis variables (requires travis cli)
+        SECURE_TWINE_USERNAME=$(travis encrypt --no-interactive TWINE_USERNAME=$TWINE_USERNAME)
+        SECURE_TWINE_PASSWORD=$(travis encrypt --no-interactive TWINE_PASSWORD=$TWINE_PASSWORD)
+        SECURE_CI_GITHUB_SECRET=$(travis encrypt --no-interactive CI_GITHUB_SECRET=$CI_GITHUB_SECRET)
+        SECURE_PERSONAL_GITHUB_PUSH_TOKEN=$(travis encrypt --no-interactive PERSONAL_GITHUB_PUSH_TOKEN=$PERSONAL_GITHUB_PUSH_TOKEN)
+        echo "
+        Add the following lines to your .travis.yml
+
+        env:
+            global:
+                - secure: $SECURE_TWINE_USERNAME
+                - secure: $SECURE_TWINE_PASSWORD
+                - secure: $SECURE_CI_GITHUB_SECRET
+                - secure: $SECURE_PERSONAL_GITHUB_PUSH_TOKEN
+        "
+
+        # HOW TO ENCRYPT YOUR SECRET GPG KEY
+        IDENTIFIER="travis-ci-Erotemic"
+        KEYID=$(gpg --list-keys --keyid-format LONG "$IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
+        echo "KEYID = $KEYID"
+
+        # Export plaintext gpg public keys, private keys, and trust info
+        mkdir -p dev
+        gpg --armor --export-secret-keys $KEYID > dev/travis_secret_gpg_key.pgp
+        gpg --armor --export $KEYID > dev/travis_public_gpg_key.pgp
+        gpg --export-ownertrust > dev/gpg_owner_trust
+
+        # Encrypt gpg keys and trust with CI secret
+        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_public_gpg_key.pgp > dev/travis_public_gpg_key.pgp.enc
+        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_secret_gpg_key.pgp > dev/travis_secret_gpg_key.pgp.enc
+        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
+        echo $KEYID > dev/public_gpg_key
+
+        source $(secret_unloader.sh)
+
+        # Look at what we did, clean up, and add it to git
+        ls dev/*.enc
+        rm dev/gpg_owner_trust dev/*.pgp
+        git status
+        git add dev/*.enc
+        git add dev/public_gpg_key
+        ```
+
+        TEST GIT_PUSH_TOKEN 
+        -------------------
+        To auto-tag a github hosted project we need to generate a personal
+        access token with write access.
+
+        First go to: 
+        https://github.com/settings/tokens/new
+
+        And create a token with "write:packages" checked. Name the token something like
+        github-push-token
+        copy that token and store it somewhere secure. 
+
+        PERSONAL_GITHUB_PUSH_TOKEN=<token-name>:<secret-value>
+
+        Also go to your github project settings page and add a new secret
+        variable named PERSONAL_GITHUB_PUSH_TOKEN with the secret value.
+
+        <token-name>:<secret-value>
+
+        for example: github-push-token:ffjdksajklfdsjak
+
+        https://github.com/Erotemic/PYPKG/settings/secrets
+        
+        # Also here
+        https://travis-ci.org/github/Erotemic/xdoctest/settings
+
+        # Test that this works in a docker image
+        URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
+        echo "URL_HOST = $URL_HOST"
+        git config user.email "travis-ci@github.com"
+        git config user.name "Travis-CI"
+        git tag "test-tag-v5"
+        git push --tags "https://${PERSONAL_GITHUB_PUSH_TOKEN}@${URL_HOST}"
+
+
+        REFERENCES
+        ----------
+
+        https://stackoverflow.com/questions/51465858/how-do-you-push-to-a-gitlab-repo-using-a-gitlab-ci-job
+        https://github.com/travis-ci/travis.rb
+        https://docs.travis-ci.com/user/encrypting-files/
+        
+        """ # "  # hack for vim yml syntax highlighter
        
-
-
 language: python
 sudo: false
 
@@ -38,64 +235,6 @@ after_success:
     - gpg2 --version
     - export GPG_EXECUTABLE=gpg2
     - openssl version
-    - | 
-        __heredoc__='''
-        # THE SCRIPT IN THIS HEREDOC IS USED TO SETUP SECRET REPO VARIABLES
-        #
-        # Load or generate secrets
-        source $(secret_loader.sh)
-        echo $TWINE_USERNAME
-        echo $TWINE_PASSWORD
-        echo $CI_GITHUB_SECRET
-
-        # In your repo directory run the command to ensure travis recognizes the repo
-        # It will say: Detected repository as <user>/<repo>, is this correct? |yes|
-        # Answer yes before running the encrypt commands.
-        travis status
-
-        # encrypt relevant travis variables (requires travis cli)
-        #sudo apt install ruby ruby-dev -y
-        #sudo gem install travis
-        SECURE_TWINE_USERNAME=$(travis encrypt --no-interactive TWINE_USERNAME=$TWINE_USERNAME)
-        SECURE_TWINE_PASSWORD=$(travis encrypt --no-interactive TWINE_PASSWORD=$TWINE_PASSWORD)
-        SECURE_CI_GITHUB_SECRET=$(travis encrypt --no-interactive CI_GITHUB_SECRET=$CI_GITHUB_SECRET)
-        echo "
-        Add the following lines to your .travis.yml
-
-        env:
-            global:
-                - secure: $SECURE_TWINE_USERNAME
-                - secure: $SECURE_TWINE_PASSWORD
-                - secure: $SECURE_CI_GITHUB_SECRET
-        "
-
-        # HOW TO ENCRYPT YOUR SECRET GPG KEY
-        IDENTIFIER="travis-ci-Erotemic"
-        KEYID=$(gpg --list-keys --keyid-format LONG "$IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
-        echo "KEYID = $KEYID"
-
-        # Export plaintext gpg public keys, private keys, and trust info
-        mkdir -p dev
-        gpg --armor --export-secret-keys $KEYID > dev/travis_secret_gpg_key.pgp
-        gpg --armor --export $KEYID > dev/travis_public_gpg_key.pgp
-        gpg --export-ownertrust > dev/gpg_owner_trust
-
-        # Encrypt gpg keys and trust with CI secret
-        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_public_gpg_key.pgp > dev/travis_public_gpg_key.pgp.enc
-        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/travis_secret_gpg_key.pgp > dev/travis_secret_gpg_key.pgp.enc
-        TSP=$CI_GITHUB_SECRET openssl enc -aes-256-cbc -md MD5 -pass env:TSP -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
-        echo $KEYID > dev/public_gpg_key
-
-        source $(secret_unloader.sh)
-
-        # Look at what we did, clean up, and add it to git
-        ls dev/*.enc
-        rm dev/gpg_owner_trust dev/*.pgp
-        git status
-        git add dev/*.enc
-        git add dev/public_gpg_key
-
-        '''  # <hack vim "regex" parser> '
     - |
         # Install a more recent version of GPG
         # https://gnupg.org/download/
@@ -204,3 +343,14 @@ after_success:
             DEPLOY_BRANCH=release \
             TAG_AND_UPLOAD=$TAG_AND_UPLOAD \
             ./publish.sh
+
+        # TODO: incorporate git tagging into release script 
+        if [[ "$TRAVIS_BRANCH" == "release" ]]; then
+            URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
+            echo "URL_HOST = $URL_HOST"
+            git config user.email "travis-ci@github.com"
+            git config user.name "Travis-CI"
+            VERSION=$(python -c "import setup; print(setup.VERSION)")
+            git tag $VERSION -m "tarball tag $VERSION"
+            git push --tags "https://${PERSONAL_GITHUB_PUSH_TOKEN}@${URL_HOST}"
+        fi

@@ -5,7 +5,7 @@ Requirements:
 Usage:
     source ~/misc/make_new_python_package_repo.sh
 
-    REPO_NAME=kwcoco
+    REPO_NAME=git_sync
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 " > /dev/null
@@ -62,6 +62,8 @@ make_pypkg(){
     cp ~/misc/templates/PYPKG/.coveragerc $REPO_DPATH
     cp ~/misc/templates/PYPKG/run_tests.py $REPO_DPATH
     cp ~/misc/templates/PYPKG/run_doctests.sh $REPO_DPATH
+
+    cp ~/misc/templates/PYPKG/README.rst $REPO_DPATH
 
     source $HOME/local/init/utils.sh
 
@@ -141,6 +143,7 @@ make_pypkg(){
     find . -iname '*.coveragerc' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
     find . -iname '*.py' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
     find . -iname '*' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
+    find . -iname '*.rst' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
 
     echo "REPLACING THINGS IN SETUP.PY"
 
