@@ -177,7 +177,7 @@ if __name__ == '__main__':
         author='<AUTHOR>',
         author_email='<AUTHOR_EMAIL>',
         description=('The PYPKG Module'),
-        url='PYPKG',
+        url='<PYPKG url>',
         long_description=parse_description(),
         long_description_content_type='text/x-rst',
         install_requires=parse_requirements('requirements/runtime.txt'),
@@ -188,15 +188,11 @@ if __name__ == '__main__':
         },
         license='Apache 2',
         packages=find_packages('.'),
-        entry_points={
-            "console_scripts": [
-                "git-gud=gitgud.gitgud:git.gud",
-                "git-job=gitgud.gitgud:git.job",
-                "git-rekt=gitgud.gitgud:git.rekt",
-                "git-spooked=gitgud.gitgud:git.spooked",
-                "git-money=gitgud.gitgud:git.money",
-            ],
-        },
+        # entry_points={
+        #     "console_scripts": [
+        #         "{SCRIPT_NAME}={MODPATH}:{CALLNAME}",
+        #     ],
+        # },
         classifiers=[
             # List of classifiers available at:
             # https://pypi.python.org/pypi?%3Aaction=list_classifiers

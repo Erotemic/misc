@@ -26,6 +26,28 @@ prep_next_version(){
     git commit -am "Start branch for $NEXT_VERSION"
 }
 
+update_master(){
+    MODNAME=$1
+    DEPLOY_REMOTE=$2
+    # -----
+    echo "
+    Ensure you've merged the topic-branch into master
+
+    MODNAME = $MODNAME
+    DEPLOY_REMOTE = $DEPLOY_REMOTE
+    "
+
+    cd $HOME/code/$MODNAME
+    VERSION=$(python -c "import $MODNAME; print($MODNAME.__version__)")
+    TAG_NAME="${VERSION}"
+    NEXT_VERSION=$(python -c "print('.'.join('$VERSION'.split('.')[0:2]) + '.' + str(int('$VERSION'.split('.')[2]) + 1))")
+    echo "VERSION = $VERSION"
+    echo "NEXT_VERSION = $NEXT_VERSION"
+    git checkout master || git checkout $DEPLOY_REMOTE/master -b master
+    git fetch $DEPLOY_REMOTE
+    git pull $DEPLOY_REMOTE master
+}
+
 
 finish_deployment(){
     MODNAME=$1
@@ -73,52 +95,63 @@ mypkgs(){
     MODNAME=bioharn
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     MODNAME=torch_liberator
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     MODNAME=liberator
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     MODNAME=scriptconfig
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
     MODNAME=kwcoco
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     MODNAME=kwarray
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
+    source ~/misc/bump_versions.sh
     MODNAME=kwimage
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     MODNAME=kwplot
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
     MODNAME=ndsampler
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     MODNAME=netharn
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 }
