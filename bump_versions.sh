@@ -110,6 +110,7 @@ mypkgs(){
     update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
+    source ~/misc/bump_versions.sh
     MODNAME=scriptconfig
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
