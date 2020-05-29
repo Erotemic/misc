@@ -98,6 +98,7 @@ mypkgs(){
     update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
+    source ~/misc/bump_versions.sh
     MODNAME=torch_liberator
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
