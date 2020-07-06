@@ -16,7 +16,7 @@ env:
         search and replaces.
 
         ```bash
-        cat .gitlab-ci.yml | \
+        cat .travis.yml | \
             sed 's|PYPKG|<YOUR-REPO>|g' | \
             sed 's|travis-ci-Erotemic|<YOUR-GPG-ID>|g' | \
             sed 's|CI_GITHUB_SECRET|<YOUR_CI_SECRET>|g' | \
@@ -62,7 +62,7 @@ env:
             PERSONAL_GITHUB_PUSH_TOKEN="{token-name}:{token-password}"
 
             For instance it may look like this: 
-            PERSONAL_GITHUB_PUSH_TOKEN=git-push-token:62zutpzqga6tvrhklkdjqm
+            PERSONAL_GITHUB_PUSH_TOKEN=git-push-token:thisshouldbealongrandomsecretstringfj62fdsla
 
         ENCRYPTING SECRETS
         ------------------
@@ -119,6 +119,7 @@ env:
         SECURE_TWINE_PASSWORD=$(travis encrypt --no-interactive TWINE_PASSWORD=$TWINE_PASSWORD)
         SECURE_CI_GITHUB_SECRET=$(travis encrypt --no-interactive CI_GITHUB_SECRET=$CI_GITHUB_SECRET)
         SECURE_PERSONAL_GITHUB_PUSH_TOKEN=$(travis encrypt --no-interactive PERSONAL_GITHUB_PUSH_TOKEN=$PERSONAL_GITHUB_PUSH_TOKEN)
+        # print out the special lines to add to the .travis.yml
         echo "
         Add the following lines to your .travis.yml
 
@@ -171,12 +172,15 @@ env:
 
         PERSONAL_GITHUB_PUSH_TOKEN=<token-name>:<secret-value>
 
-        Also go to your github project settings page and add a new secret
-        variable named PERSONAL_GITHUB_PUSH_TOKEN with the secret value.
+        **If you did not add this encrypted variable as a secret**,
+        then also go to your github project settings page and add a
+        new secret variable named PERSONAL_GITHUB_PUSH_TOKEN with the
+        secret value. (not necessary if PERSONAL_GITHUB_PUSH_TOKEN 
+        was added as an encrypted travis secret to this yaml file)
 
         <token-name>:<secret-value>
 
-        for example: github-push-token:ffjdksajklfdsjak
+        for example: git-push-token:thisshouldbealongrandomsecretstringfj62fdsla
 
         https://github.com/Erotemic/PYPKG/settings/secrets
         
@@ -213,7 +217,7 @@ cache:
         - $HOME/download
 
 python:
-  - "2.7"
+  #- "2.7"
   - "3.5"
   - "3.6"
   - "3.7"
