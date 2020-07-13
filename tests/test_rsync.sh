@@ -1,6 +1,12 @@
 __heredoc__="""
 Inspection and demonstration of rsync behaviors so I don't forget them
 
+
+Notes:
+    Putting a '/' at the end of a directory means look inside the directory,
+    and compare its contents to the destination.
+
+
 """
 
 REMOTE=namek
