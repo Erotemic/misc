@@ -36,12 +36,12 @@ update_pypkg(){
     #>> $REPO_DPATH/docs/source/conf.py
 }
 
-
 make_pypkg(){
     REPO_NAME=$1
 
     REPO_DPATH=$HOME/code/$REPO_NAME
     PKG_DPATH=$REPO_DPATH/$REPO_NAME
+
     echo "INITIALIZING $REPO_NAME in $REPO_DPATH"
     mkdir -p $REPO_DPATH
     mkdir -p $PKG_DPATH
@@ -158,6 +158,21 @@ make_pypkg(){
     chmod +x $REPO_DPATH/run_doctests.py
     chmod +x $REPO_DPATH/run_tests.py
 
+
+    init_pypkg_docs $REPO_NAME
+    
+    
+    echo "FINISHED"
+}
+
+
+init_pypkg_docs(){
+    REPO_NAME=$1
+    echo "REPO_NAME = $REPO_NAME"
+
+    REPO_DPATH=$HOME/code/$REPO_NAME
+    PKG_DPATH=$REPO_DPATH/$REPO_NAME
+
     echo "MAKING DOCS"
     rm -rf $REPO_DPATH/docs
 
@@ -165,9 +180,18 @@ make_pypkg(){
 
     echo "$(codeblock "
     sphinx
-    -e git://github.com/snide/sphinx_rtd_theme.git#egg=sphinx_rtd_theme
+    sphinx-autobuild 
+    sphinx_rtd_theme 
+    sphinxcontrib-napoleon
+    sphinx-autoapi
+    six
+    Pygments
+    ubelt
     ")" >  $REPO_DPATH/docs/requirements.txt
 
+    pip install -r $REPO_DPATH/docs/requirements.txt
+
+    AUTHOR=$(git config --global user.name)
     sphinx-quickstart -q --sep \
         --project=$REPO_NAME \
         --author="$AUTHOR" \
@@ -184,11 +208,14 @@ make_pypkg(){
     # Make conf.py automatically read version info from the package
     sed -i "s/version = ''/import $REPO_NAME\nversion = '.'.join($REPO_NAME.__version__.split('.')[0:2])/g" $REPO_DPATH/docs/source/conf.py
 
+
+    # NOTE: this still isnt working 100% with read-the-docs. 
+    # I dont like having to run this manually. It can create stale files and
+    # it is difficult to clean / redo.
     sphinx-apidoc -f -o $REPO_DPATH/docs/source $PKG_DPATH --separate
 
-    (cd $REPO_DPATH/docs && PYTHONPATH="$REPO_DPATH:$PYTHONPATH" make html)
-
     echo "$(codeblock "
+
     todo_include_todos = True
     napoleon_google_docstring = True
     napoleon_use_param = False
@@ -201,10 +228,62 @@ make_pypkg(){
         'display_version': True,
         # 'logo_only': True,
     }
-        
+
+    master_doc = 'index' 
+    
     ")" >> $REPO_DPATH/docs/source/conf.py
+
+    REPO_URL=$(cd $REPO_DPATH && git remote -v | grep origin | cut  -f2 | cut -d' ' -f1)
+    echo "REPO_URL = $REPO_URL"
     
-    
-    
-    echo "FINISHED"
+    (cd $REPO_DPATH/docs && PYTHONPATH="$REPO_DPATH:$PYTHONPATH" make html)
+
+    echo "You will likely need to manually edit: $REPO_DPATH/docs/source/index.rst"
+
+
+    echo "A Good template for what should be in there is:
+
+    :gitlab_url: $REPO_URL
+
+    Welcome to $REPO_NAME's documentation!
+    ==================================
+
+    .. The __init__ files contains the top-level documentation overview
+    .. automodule:: kwcoco.__init__
+       :show-inheritance:
+
+    .. toctree::
+
+       $REPO_NAME
+
+    Indices and tables
+    ==================
+
+    * :ref:`genindex`
+    * :ref:`modindex`
+    * :ref:`search`
+
+    "
+
+    cp ~/misc/templates/PYPKG/.readthedocs.yml $REPO_DPATH
+
+    echo "
+
+    To enable the read-the-docs go to https://readthedocs.org/dashboard/ and login
+
+    Make sure you have a .readthedocs.yml file
+
+    Click import project: (for github you can select, but gitlab you need to import manually)
+
+
+    Set the Repository NAME: $REPO_NAME
+    Set the Repository URL: $REPO_URL
+
+    For gitlab you also need to setup an integrations and add gitlab incoming webhook
+
+    Then go to $REPO_URL/hooks and add the URL
+
+
+
+    "
 }
