@@ -11,19 +11,17 @@ Notes:
 
 
 TEST_BASE=rsync_test
-
 #REMOTE_DPATH=$HOME/remote/$REMOTE
-
-REMOTE_DPATH=$HOME/tmp/test-remote
-LOCAL_DPATH=$HOME/tmp/test-local
+REMOTE_DPATH=$HOME/tmp/rsync-test/remote
+LOCAL_DPATH=$HOME/tmp/rsync-test/local
 
 
 # CASE 1:
 # Use a non-local remote
 REMOTE=namek
 #mount-remotes.sh $REMOTE
-REMOTE_MOUNT=$HOME/remote/$REMOTE/tmp/test-remote
-REMOTE_URI=namek:tmp/test-remote
+REMOTE_MOUNT=$HOME/remote/$REMOTE/tmp/rsync-test/remote
+REMOTE_URI=namek:tmp/rsync-test/remote
 
 
 # CASE 2:
@@ -32,18 +30,18 @@ REMOTE_URI=$REMOTE_DPATH
 REMOTE_MOUNT=$REMOTE_DPATH
 
 
-reset_rsync_test_setup()
+reset_rsync_test_remote()
 {
 
     # In the case of a non-local setup this must be run on the real server to
     # get correct symlink
 
     # Clean
-    if [ -d "$REMOTE_DPATH/$TEST_BASE" ]; then
-        rm -rf $REMOTE_DPATH/$TEST_BASE 
+    if [ -d "$REMOTE_DPATH" ]; then
+        rm -rf $REMOTE_DPATH
     fi
 
-    mkdir -p $REMOTE_DPATH/$TEST_BASE 
+    mkdir -p $REMOTE_DPATH
 
 
     # Setup remote data
@@ -67,27 +65,41 @@ reset_rsync_test_setup()
     ln -s $REMOTE_DPATH/$TEST_BASE/outside_dir $REMOTE_DPATH/$TEST_BASE/root/links/outside_dlink
     ln -s $REMOTE_DPATH/$TEST_BASE/root/inside_dir $REMOTE_DPATH/$TEST_BASE/root/links/inside_dlink
 
-    tree $REMOTE_DPATH/$TEST_BASE
+    ln -sr $REMOTE_DPATH/$TEST_BASE/root/inside_dir/inside_file.txt $REMOTE_DPATH/$TEST_BASE/root/links/rel_inside_flink.txt
+    ln -sr $REMOTE_DPATH/$TEST_BASE/outside_dir/outside_file.txt $REMOTE_DPATH/$TEST_BASE/root/links/rel_outside_flink.txt
+    ln -sr $REMOTE_DPATH/$TEST_BASE/outside_dir $REMOTE_DPATH/$TEST_BASE/root/links/rel_outside_dlink
+    ln -sr $REMOTE_DPATH/$TEST_BASE/root/inside_dir $REMOTE_DPATH/$TEST_BASE/root/links/rel_inside_dlink
+
+    tree $REMOTE_DPATH/
 
     _checks="
     cd $REMOTE_DPATH/$TEST_BASE
     "
+}
 
-
+reset_rsync_test_local(){
     # Setup home data
-    if [ -d "$LOCAL_DPATH/$TEST_BASE" ]; then
-        rm -rf $LOCAL_DPATH/$TEST_BASE 
+    echo "LOCAL_DPATH = $LOCAL_DPATH"
+    if [ -d "$LOCAL_DPATH" ]; then
+        rm -rf $LOCAL_DPATH
     fi
-    mkdir -p $LOCAL_DPATH/$TEST_BASE 
-    tree $LOCAL_DPATH/$TEST_BASE
-    _checks="
-    cd $LOCAL_DPATH/$TEST_BASE
-    "
+    mkdir -p $LOCAL_DPATH
+    mkdir -p $LOCAL_DPATH/$TEST_BASE
+
+    # Make an existing link on the destination that we will sync to
+    mkdir -p $LOCAL_DPATH/link-dest1
+    mkdir -p $LOCAL_DPATH/link-dest2
+    ln -s $LOCAL_DPATH/link-dest1 $LOCAL_DPATH/rsync_test-link
+    ln -s $LOCAL_DPATH/link-dest2 $LOCAL_DPATH/rsync_test-link/root
+
+    tree $LOCAL_DPATH
 }
 
 
 incorrect_rsync_invoke(){
-    reset_rsync_test_setup
+    reset_rsync_test_remote
+    reset_rsync_test_local
+
     rsync -avrP $REMOTE_DPATH/$TEST_BASE $LOCAL_DPATH/$TEST_BASE
     if [ -d "$LOCAL_DPATH/$TEST_BASE/rsync_test" ]; then
         echo "WE NESTED RSYNC_TEST INSIDE RSYNC_TEST. NOT WANTED"
@@ -95,18 +107,53 @@ incorrect_rsync_invoke(){
 
     # Incorrect way to invoke part 3
     rsync -avrP $REMOTE_DPATH/$TEST_BASE/./root/dir_L0_X2_D $LOCAL_DPATH/$TEST_BASE
+
+    # Incorrect way to sync to a linked dir
+    rsync -avrPR $REMOTE_URI/$TEST_BASE/./root $LOCAL_DPATH/rsync_test-link  
+    ls -al $LOCAL_DPATH/
+    ls -al $LOCAL_DPATH/rsync_test-link/
+    if [ ! -L "$LOCAL_DPATH/rsync_test-link/root" ]; then
+        echo "
+        We got the expected error
+        this displays how the previous root (which was a link) was clobbered.
+        "
+    else
+        echo "We did not get the expected error"
+    fi
 }
 
 
 correct_rsync_invoke(){
 
-    reset_rsync_test_setup
+    reset_rsync_test_remote
+    reset_rsync_test_local
+
+    # TEST THAT THIS WILL WORK IF WE TRY TO SYNC TO A SYMLINK
+    # The -K is important when syncing to a destination dir that is a symlink
+    # The -L will resolve any symlinks
+    #     this grabs everything however, all files will be copied over as hard files
+
+    # Alternatively using -k --copy-unsafe-links will get almost everything 
+    # links inside the relative directory are copied as links, links outside
+    # the relative dir are copied as files, except relative outside files for
+    # whatever reason. 
+
+    # Remember -a / --archive == -rlptgoD (no -H,-A,-X)
+
+    reset_rsync_test_local
+    # It seems -KL is the safest thing if you want to ensure all the files are moved
+    # might take extra space though. 
+    #rsync -avrPRKk --copy-unsafe-links $REMOTE_URI/$TEST_BASE/./root $LOCAL_DPATH/rsync_test-link  
+    rsync -avPRKL $REMOTE_URI/$TEST_BASE/./root $LOCAL_DPATH/rsync_test-link  
+    ls -al $LOCAL_DPATH/
+    ls -al $LOCAL_DPATH/rsync_test-link/
+    tree $LOCAL_DPATH/link-dest2
 
     # Rsync to empty directory (make sure the "." is in the right place)
     #rsync -avrP $REMOTE_DPATH/$TEST_BASE/./root $LOCAL_DPATH/$TEST_BASE  # This works
 
-    rsync -avrPR $REMOTE_URI/$TEST_BASE/./root $LOCAL_DPATH/$TEST_BASE  # This also works, probably safer
-
+    # NOTE: THIS DOES NOT PRESERVER LINKS
+    rsync -avrPR $REMOTE_URI/$TEST_BASE/./root $LOCAL_DPATH/$TEST_BASE 
     tree $REMOTE_MOUNT/$TEST_BASE
     tree $LOCAL_DPATH/$TEST_BASE
 
