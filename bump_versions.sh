@@ -59,10 +59,11 @@ update_master(){
 
     cd $HOME/code/$MODNAME
     VERSION=$(python -c "import $MODNAME; print($MODNAME.__version__)")
-    TAG_NAME="${VERSION}"
     NEXT_VERSION=$(python -c "print('.'.join('$VERSION'.split('.')[0:2]) + '.' + str(int('$VERSION'.split('.')[2]) + 1))")
-    echo "VERSION = $VERSION"
-    echo "NEXT_VERSION = $NEXT_VERSION"
+    echo "
+    VERSION = $VERSION
+    NEXT_VERSION = $NEXT_VERSION
+    "
     git checkout master || git checkout $DEPLOY_REMOTE/master -b master
     git fetch $DEPLOY_REMOTE
     git pull $DEPLOY_REMOTE master
@@ -87,12 +88,11 @@ finish_deployment(){
 
     cd $HOME/code/$MODNAME
     VERSION=$(python -c "import $MODNAME; print($MODNAME.__version__)")
-    TAG_NAME="${VERSION}"
+    #TAG_NAME="${VERSION}"
     NEXT_VERSION=$(python -c "print('.'.join('$VERSION'.split('.')[0:2]) + '.' + str(int('$VERSION'.split('.')[2]) + 1))")
     echo "
     VERSION = $VERSION
     NEXT_VERSION = $NEXT_VERSION
-    TAG_NAME = $TAG_NAME
     "
     git checkout master || git checkout $DEPLOY_REMOTE/master -b master
     git fetch $DEPLOY_REMOTE
@@ -109,7 +109,7 @@ finish_deployment(){
     rob sedr "'dev/$VERSION'" "'dev/$NEXT_VERSION'" True
 
     DATE_STR=$(date +'%Y-%m-%d')
-    sed -i "s|Unreleased|$DATE_STR|g" CHANGELOG.md
+    sed -i "s|Unreleased|Released $DATE_STR|g" CHANGELOG.md
 
     # Old code to insert the new line in a bad spot
     #echo "## Version $NEXT_VERSION - Unreleased" >> CHANGELOG.md
@@ -119,7 +119,7 @@ finish_deployment(){
         text = file.read()
     lines = text.split(chr(10))
     for ix, line in enumerate(lines):
-        if '## Version' in line:
+        if 'Version ' in line:
             break
     newline = '## Version $NEXT_VERSION - Unreleased'
     newlines = lines[:ix] + [newline, '', ''] + lines[ix:]
@@ -206,4 +206,22 @@ mypkgs(){
     DEPLOY_BRANCH=release
     update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+
+
+    source ~/misc/bump_versions.sh
+    MODNAME=ubelt
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+
+
+    source ~/misc/bump_versions.sh
+    MODNAME=xdoctest
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    update_master $MODNAME $DEPLOY_REMOTE
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+
+
 }
