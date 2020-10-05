@@ -203,17 +203,30 @@ class Pokemon(ub.NiceRepr):
         parts.append(self.name)
         if self.level is not None:
             parts.append(str(self.level))
+
+        needs_441 = False
+
         if self.ivs and all(v is not None for v in self.ivs):
             parts.extend(list(map(str, self.ivs)))
+            needs_441 = True
         if self.shadow:
             parts.append('shadow')
+            needs_441 = True
 
-        parts.append('4-4-1')  # no idea what this is
+        if needs_441:
+            parts.append('4-4-1')  # no idea what this is
 
         if self.moves:
             parts.append('m')
             moves = self.moves + ([None] * max(0, 3 - len(self.moves)))
             fm, cm1, cm2 = moves
+
+            fixup = {
+                'FUTURE_SIGHT': 'FUTURESIGHT',
+            }
+            cm1 = fixup.get(cm1, cm1)
+            cm2 = fixup.get(cm2, cm2)
+
             fm_idx = learnable[self.name]['fast'].index(fm)
             cm1_idx = learnable[self.name]['charge'].index(cm1) + 1
             parts.append(str(fm_idx))
@@ -251,6 +264,16 @@ dewgong,ICE_SHARD,ICY_WIND,WATER_PULSE,26.5,15,08,15
 umbreon,SNARL,FOUL_PLAY,LAST_RESORT,24.5,15,10,15
 farfetchd_galarian,FURY_CUTTER,LEAF_BLADE,BRAVE_BIRD,33.5,12,15,15
 hypno,CONFUSION,SHADOW_BALL,FOCUS_BLAST,25.5,13,15,14
+        ''')
+
+
+    candidate_csv_text = ub.codeblock(
+        '''
+cresselia,PSYCHO_CUT,MOONBLAST,FUTURE_SIGHT
+togekiss,CHARM,FLAMETHROWER,ANCIENT_POWER
+articuno,ICE_SHARD,ICY_WIND,HURRICANE
+swampert,MUD_SHOT,MUDDY_WATER,EARTHQUAKE
+venusaur,VINE_WHIP,FRENZY_PLANT,SLUDGE_BOMB
         ''')
 
     candidates = []
@@ -321,31 +344,33 @@ hypno,CONFUSION,SHADOW_BALL,FOCUS_BLAST,25.5,13,15,14
         learnable[self.name]['fast'] = sorted(fast_moves)
         learnable[self.name]['charge'] = sorted(charge_moves)
 
-    for self in candidates:
-        print('self = {!r}'.format(self))
-        print(self.calc_cp())
+    # for self in candidates:
+    #     print('self = {!r}'.format(self))
+    #     print(self.calc_cp())
 
     print(ub.repr2(learnable))
 
-    great_base = 'https://pvpoke.com/team-builder/all/1500'
+    # base = 'https://pvpoke.com/team-builder/all/1500'
+    base = 'https://pvpoke.com/team-builder/all/2500'
     sep = '%2C'
     import itertools as it
+    print('candidates = {!r}'.format(candidates))
     for team in it.combinations(candidates, 3):
-        if not any(p.name == 'registeel' for p in team):
-            continue
+        # if not any(p.name == 'registeel' for p in team):
+        #     continue
         if len(set(p.name for p in team)) != 3:
             continue
         suffix = sep.join([p.to_pvpoke_url() for p in team])
-        url = great_base + '/' + suffix
+        url = base + '/' + suffix
         print(url)
 
     # altaria-26.5-14-12-13-4-4-1-m-0-3-2%2Cskarmory-26-11-13-10-4-4-1-m-0-3-2%2Cazumarill-38-12-15-13-4-4-1-m-0-2-1
 
     # !pip install beautifulsoup4
 
-    from bs4 import BeautifulSoup
-    import requests
-    got = requests.request('get', url)
+    # from bs4 import BeautifulSoup
+    # import requests
+    # got = requests.request('get', url)
     # print(got.text)
     # soup = BeautifulSoup(got.text, 'html.parser')
     # for div in soup.find_all(name='div'):

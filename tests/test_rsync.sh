@@ -7,6 +7,9 @@ Notes:
     and compare its contents to the destination.
 
 
+    Using --stats with -n will report differences
+    
+    rsync -avrcn --stats $HOME/data/public_data_registry/.dvc/cache hermes:/data/shared/dvc-cache/public_data_registry
 """
 
 
@@ -120,6 +123,53 @@ incorrect_rsync_invoke(){
     else
         echo "We did not get the expected error"
     fi
+}
+
+
+demo_stats_command(){
+
+    reset_rsync_test_remote
+    reset_rsync_test_local
+
+    rsync -avrPLn --stats $REMOTE_URI/$TEST_BASE/root/links/ $LOCAL_DPATH/$TEST_BASE/links
+
+    # Create links folder on the destination and copy the hard (K) contents of the links folder from the remote
+    rsync -avrPL --stats $REMOTE_URI/$TEST_BASE/root/links/ $LOCAL_DPATH/$TEST_BASE/links
+    rsync -avrPL --stats $REMOTE_URI/$TEST_BASE/root/links/ $LOCAL_DPATH/$TEST_BASE/links
+
+    tree $REMOTE_URI/$TEST_BASE/./root
+    tree $LOCAL_DPATH/$TEST_BASE
+
+    # First invocation will show:
+    #Number of files: 13 (reg: 8, dir: 5)
+    #Number of created files: 13 (reg: 8, dir: 5)
+    #Number of deleted files: 0
+    #Number of regular files transferred: 8
+
+    # Second invocation will show:
+    #Number of files: 13 (reg: 8, dir: 5)
+    #Number of created files: 0
+    #Number of deleted files: 0
+    #Number of regular files transferred: 0
+    
+
+    # Test sync of the rest of the data
+    rsync -avrPLn --stats $REMOTE_URI/$TEST_BASE/root/ $LOCAL_DPATH/$TEST_BASE/ 
+    #Number of files: 22 (reg: 12, dir: 10)
+    #Number of created files: 8 (reg: 4, dir: 4)
+    #Number of deleted files: 0
+    #Number of regular files transferred: 4
+
+    # And actually do it
+    rsync -avrPL --stats $REMOTE_URI/$TEST_BASE/root/ $LOCAL_DPATH/$TEST_BASE/ 
+    
+
+    ls $REMOTE_URI/$TEST_BASE/./root
+    ls $LOCAL_DPATH/$TEST_BASE
+
+    tree $REMOTE_URI/$TEST_BASE/./root
+    tree $LOCAL_DPATH/$TEST_BASE
+
 }
 
 
