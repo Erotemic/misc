@@ -46,6 +46,32 @@ delete_remote_tags(){
 #    git commit -am "Start branch for $NEXT_VERSION"
 #}
 
+
+git_checkeven(){
+    # https://stackoverflow.com/questions/31982954/how-can-i-check-whether-two-branches-are-even
+    if [ $# -ne 2 ]; then
+        printf "usage: git checkeven <revA> <revB>\n\n"
+        return 3
+    fi
+
+    revA=$1
+    revB=$2
+
+    nA2B="$(git rev-list --count $revA..$revB)"
+    nB2A="$(git rev-list --count $revB..$revA)"
+
+    if [ "$nA2B" -eq 0 -a "$nB2A" -eq 0 ]; then
+      printf "$revA is even with $revB\n"
+      return 0
+    elif [ "$nA2B" -gt 0 ]; then
+      printf "$revA is $nA2B commits behind $revB\n"
+      return 1
+    else
+      printf "$revA is $nB2A commits ahead of $revB\n"
+      return 2
+    fi
+}
+
 update_master(){
     MODNAME=$1
     DEPLOY_REMOTE=$2
@@ -64,9 +90,19 @@ update_master(){
     VERSION = $VERSION
     NEXT_VERSION = $NEXT_VERSION
     "
-    git checkout master || git checkout $DEPLOY_REMOTE/master -b master
+
     git fetch $DEPLOY_REMOTE
+    git_checkeven $DEPLOY_REMOTE/release $DEPLOY_REMOTE/master
+    RES=$?
+    if [ "$RES" == "0" ]; then
+        echo "WARNING: master is up to date with release, did you forget to merge the topic branch?"
+    else
+        echo "master is different than release, that is expected"
+    fi
+
+    git checkout master || git checkout $DEPLOY_REMOTE/master -b master
     git pull $DEPLOY_REMOTE master
+
 }
 
 
