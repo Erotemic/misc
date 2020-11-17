@@ -76,7 +76,6 @@ def reencode_problems(seq1, seq2, index_to_node1, index_to_node2,
             if open_idx is not None:
                 alt_open_tok = chr(open_idx + offset)
                 alt_open_to_close[alt_open_tok] = alt_tok
-
         alt_seq = ''.join(alt_seq)
         return alt_seq, alt_open_to_close
 
@@ -330,3 +329,127 @@ def balanced_decomp_unsafe2(sequence, indices, open_to_close):
     decomp["head_tail"] = decomp["head"] + decomp["tail"]
     decomp_idxs["head_tail"] = decomp_idxs["head"] + decomp_idxs["tail"]
     return decomp, decomp_idxs
+
+
+def test_sequence_reencode():
+    """
+    Test that we can reencode two sequences to determine which indices are part
+    of the solution.
+    """
+    from networkx.algorithms.string.balanced_sequence import random_balanced_sequence
+    from networkx.algorithms.string.balanced_sequence import generate_balance
+    from networkx.algorithms.string.balanced_sequence import longest_common_balanced_sequence
+
+    seq1, open_to_close = random_balanced_sequence(3, mode="paren")
+    seq2, open_to_close = random_balanced_sequence(3, mode="paren")
+
+    def reencode_seq(seq, open_to_close, offset=0):
+        alt_seq = []
+        alt_open_to_close = {}
+        for idx, info in enumerate(generate_balance(seq, open_to_close)):
+            flag, token, open_idx = info
+            alt_tok = chr(idx + offset)
+            alt_seq.append(alt_tok)
+            if open_idx is not None:
+                alt_open_tok = chr(open_idx + offset)
+                alt_open_to_close[alt_open_tok] = alt_tok
+        alt_seq = ''.join(alt_seq)
+        return alt_seq, alt_open_to_close
+
+    alt_seq1, alt_open_to_close1 = reencode_seq(seq1, open_to_close, offset=0)
+    offset = ord(alt_seq1[-1]) + 1
+    alt_seq2, alt_open_to_close2 = reencode_seq(seq2, open_to_close, offset=offset)
+
+    alt_open_to_close = {}
+    alt_open_to_close.update(alt_open_to_close1)
+    alt_open_to_close.update(alt_open_to_close2)
+
+    alt_open_to_node = {}
+    alt_open_to_node.update(dict(zip(alt_seq1, seq1)))
+    alt_open_to_node.update(dict(zip(alt_seq2, seq2)))
+
+    alt_best, alt_value = longest_common_balanced_sequence(
+        alt_seq1, alt_seq2, alt_open_to_close,
+        open_to_node=alt_open_to_node, node_affinity="eq",
+        impl="auto")
+
+    alt_subseq1, alt_subseq2 = alt_best
+
+    # decode to positions
+    subidxs1 = [ord(c) for c in alt_subseq1]
+    subidxs2 = [ord(c) - offset for c in alt_subseq2]
+
+    recon_subseq1 = ''.join([seq1[idx] for idx in subidxs1])
+    recon_subseq2 = ''.join([seq2[idx] for idx in subidxs2])
+
+    indicator1 = [' '] * len(seq1)
+    for idx in subidxs1:
+        indicator1[idx] = 'x'
+
+    indicator2 = [' '] * len(seq2)
+    for idx in subidxs2:
+        indicator2[idx] = 'x'
+
+    print('seq1 = {!r}'.format(seq1))
+    print('     = {!r}'.format(''.join(indicator1)))
+    print('seq2 = {!r}'.format(seq2))
+    print('     = {!r}'.format(''.join(indicator2)))
+
+    best, value = longest_common_balanced_sequence(
+        seq1, seq2, open_to_close, node_affinity="eq", impl="auto")
+    subseq1, subseq2 = best
+
+    print('alt_value = {!r}'.format(alt_value))
+    print('value     = {!r}'.format(value))
+
+    print('recon_subseq1 = {!r}'.format(recon_subseq1))
+    print('recon_subseq2 = {!r}'.format(recon_subseq2))
+
+    print('subseq1       = {!r}'.format(subseq1))
+    print('subseq2       = {!r}'.format(subseq2))
+
+    assert value == alt_value
+
+    # Note that the longest common subsequence is not always unique
+    # For instance
+    # There are 3 distinct longest common subsequence for
+    # seq1 = '({}[])'
+    # seq2 = '[{}()]'
+    # You have  '{}', '[]', and '()'.
+    # assert recon_subseq1 == subseq1
+    # assert recon_subseq2 == subseq2
+
+
+def benchmark_generate_balance():
+    from networkx.algorithms.string.balanced_sequence import random_balanced_sequence
+    from networkx.algorithms.string.balanced_sequence import generate_balance
+
+    seq, open_to_close = random_balanced_sequence(100, mode="paren")
+
+    import timerit
+    ti = timerit.Timerit(100, bestof=10, verbose=2)
+    for timer in ti.reset('time'):
+        with timer:
+            list(generate_balance(seq, open_to_close))
+
+    import timerit
+    ti = timerit.Timerit(100, bestof=10, verbose=2)
+    for timer in ti.reset('time'):
+        with timer:
+            list(generate_balance2(seq, open_to_close))
+
+    import timerit
+    ti = timerit.Timerit(100, bestof=10, verbose=2)
+    for timer in ti.reset('time'):
+        with timer:
+            for t in seq:
+                pass
+
+    import timerit
+    ti = timerit.Timerit(100, bestof=10, verbose=2)
+    for timer in ti.reset('time'):
+        with timer:
+            for t in enumerate(seq):
+                pass
+
+            list(generate_balance2(seq, open_to_close))
