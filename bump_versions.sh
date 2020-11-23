@@ -47,6 +47,91 @@ delete_remote_tags(){
 #}
 
 
+accept_latest_dev_mr(){
+    __doc__='
+    Accepts an MR if the pipeline is passing.
+
+    Requires that you have loaded a loaded secret
+
+    load_secrets
+    MODNAME=kwimage
+    DEPLOY_REMOTE=origin
+    '
+    MODNAME=$1
+    DEPLOY_REMOTE=$2
+
+    cd $HOME/code/$MODNAME
+    MERGE_BRANCH=$(git branch --show-current)
+    GROUP_NAME=$(git remote get-url $DEPLOY_REMOTE | cut -d ":" -f 2 | cut -d "/" -f 1)
+    HOST=https://$(git remote get-url $DEPLOY_REMOTE | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
+
+    echo "
+        REPO=$REPO
+        DEPLOY_REMOTE=$DEPLOY_REMOTE
+        HOST=$HOST
+        GROUP_NAME=$GROUP_NAME
+        MERGE_BRANCH=$MERGE_BRANCH
+        "
+
+    if [[ "$HOST" != *"gitlab"* ]]; then
+      echo "This function only supports the Gitlab Restful API at the moment"
+      return 1
+    fi
+
+    # You must have a way of loading an authentication token here
+    # The function ``git_token_for`` should map a hostname to the 
+    # authentication token used for that hostname
+    PRIVATE_GITLAB_TOKEN=$(git_token_for $HOST)
+
+    if [[ "$PRIVATE_GITLAB_TOKEN" == "ERROR" ]]; then
+        echo "Failed to load authentication key"
+        return 1
+    fi
+
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups" > all_group_info
+    GROUP_ID=$(cat all_group_info | jq ". | map(select(.name==\"$GROUP_NAME\")) | .[0].id")
+    echo "GROUP_ID = $GROUP_ID"
+
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID" > group_info
+    PROJ_ID=$(cat group_info | jq ".projects | map(select(.name==\"$MODNAME\")) | .[0].id")
+    echo "PROJ_ID = $PROJ_ID"
+
+    curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/?state=opened" > open_mr_info
+    MERGE_IID=$(cat open_mr_info | jq ". | map(select(.source_branch==\"$MERGE_BRANCH\")) | .[0].iid")
+    echo "MERGE_IID = $MERGE_IID"
+
+    curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID" > merge_info
+    cat merge_info| jq .
+    CAN_MERGE=$(cat merge_info| jq .user.can_merge | sed -e 's/^"//' -e 's/"$//')
+    MERGE_STATUS=$(cat merge_info| jq .head_pipeline.status | sed -e 's/^"//' -e 's/"$//')
+    echo "CAN_MERGE = $CAN_MERGE"
+    echo "MERGE_STATUS = $MERGE_STATUS"
+
+    if [[ "$CAN_MERGE" == "true" &&  "$MERGE_STATUS" == "success" ]]; then
+        echo "MR is mergable and the pipelines has passed"
+    else
+        echo "The MR is not in a mergable state"
+        return 1
+    fi
+
+    DRAFT_STATUS=$(cat merge_info| jq .work_in_progress | sed -e 's/^"//' -e 's/"$//')
+    echo "DRAFT_STATUS = $DRAFT_STATUS"
+
+    # TODO: Figure out how to resolve draft status via the API
+    #if [[ "$DRAFT_STATUS" == "true" ]]; then
+    #    # https://docs.gitlab.com/ee/user/project/quick_actions.html#quick-actions-for-issues-merge-requests-and-epics
+    #    curl --request PUT --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID/merge/work_in_progress" > toggle_status
+    #    cat toggle_status | jq .
+    #fi
+
+    # Click the accept button
+    curl --request PUT --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID/merge" > status
+    cat status | jq .
+    cat status | jq .message
+
+}
+
+
 git_checkeven(){
     # https://stackoverflow.com/questions/31982954/how-can-i-check-whether-two-branches-are-even
     if [ $# -ne 2 ]; then
@@ -217,9 +302,11 @@ mypkgs(){
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
+    load_secrets
     MODNAME=kwimage
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
+    accept_latest_dev_mr $MODNAME $DEPLOY_REMOTE
     update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
