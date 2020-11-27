@@ -307,6 +307,7 @@ stages:
         - $GPG_EXECUTABLE --list-keys  || echo "first one fails for some reason"
         - $GPG_EXECUTABLE --list-keys  
         # The publish script only builds wheels and does gpg signing if TAG_AND_UPLOAD is False
+        - pip install requests[security] twine 
         - MB_PYTHON_TAG=$MB_PYTHON_TAG USE_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE DEPLOY_BRANCH=release TAG_AND_UPLOAD=False ./publish.sh 
 
     artifacts:
