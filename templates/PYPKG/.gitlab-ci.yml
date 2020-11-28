@@ -306,9 +306,9 @@ stages:
         - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
         - $GPG_EXECUTABLE --list-keys  || echo "first one fails for some reason"
         - $GPG_EXECUTABLE --list-keys  
-        # The publish script only builds wheels and does gpg signing if TAG_AND_UPLOAD is False
+        # The publish script only builds wheels and does gpg signing if TAG_AND_UPLOAD is no
         - pip install requests[security] twine 
-        - MB_PYTHON_TAG=$MB_PYTHON_TAG USE_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE DEPLOY_BRANCH=release TAG_AND_UPLOAD=False ./publish.sh 
+        - MB_PYTHON_TAG=$MB_PYTHON_TAG USE_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE DEPLOY_BRANCH=release TAG_AND_UPLOAD=no ./publish.sh 
 
     artifacts:
         paths:
