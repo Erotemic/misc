@@ -6,6 +6,11 @@ References:
     https://www.logicalincrements.com/
 """
 import ubelt as ub
+import slugify
+
+
+def slugify_key(text):
+    return slugify.slugify(text, separator='_', lowercase=True)
 
 
 def varied_values(dict_list, min_variations=1):
@@ -18,6 +23,9 @@ def varied_values(dict_list, min_variations=1):
             converted into tuples.
 
         min_variations (int, default=1): minimum number of variations to return
+
+    TODO:
+        - [ ] Is this a ubelt function?
 
     Example:
         >>> num_keys = 10
@@ -55,11 +63,49 @@ def varied_values(dict_list, min_variations=1):
     return varied
 
 
+def motherboard_info():
+    """
+    REQUIRES SUDO
+    """
+    import re
+    info = ub.cmd('sudo dmidecode -t 9')
+    pcie_slots = []
+    chunks = info['out'].split('\n\n')
+    for chunk in chunks:
+        item = {}
+        for line in chunk.split('\n'):
+            # doesn't get all data correctly (e.g. characteristics)
+            parts = re.split('\t*:', line, maxsplit=1)
+            if len(parts) == 2:
+                key, val = parts
+                key = key.strip()
+                val = val.strip()
+                if key in item:
+                    raise KeyError(f'key={key} already exists')
+                item[key] = val
+        if item:
+            item = ub.map_keys(slugify_key, item)
+            pcie_slots.append(item)
+
+    pcie_usage = ub.dict_hist(item['current_usage'] for item in pcie_slots)
+
+    _varied = varied_values(pcie_slots, min_variations=0)
+    _varied = ub.map_keys(slugify_key, _varied)
+    unvaried = {k: ub.peek(v) for k, v in _varied.items() if len(v) == 1}
+    varied = {k: v for k, v in _varied.items() if len(v) > 1}
+
+    print(info['out'])
+
+    # info = ub.cmd('sudo dmidecode -t baseboard')
+    # print(info['out'])
+
+
 def parse_cpu_info(percore=False):
     """
     Get a nice summary of CPU information
 
-    pip install python-slugify
+    Requirements:
+        pip install python-slugify
 
     Ignore:
         print('cpu_info = {}'.format(ub.repr2(cpu_info, nl=3)))
@@ -80,13 +126,9 @@ def parse_cpu_info(percore=False):
                     raise KeyError(f'key={key} already exists')
                 core[key] = val
         if len(core):
+            core = ub.map_keys(slugify_key, core)
             cores.append(core)
     _varied = varied_values(cores, min_variations=0)
-    import slugify
-    def myslug(text):
-        return slugify.slugify(text, separator='_', lowercase=True)
-    _varied = ub.map_keys(myslug, _varied)
-
     unvaried = {k: ub.peek(v) for k, v in _varied.items() if len(v) == 1}
     varied = {k: v for k, v in _varied.items() if len(v) > 1}
 
@@ -136,15 +178,17 @@ options = [
     {'type': 'Motherboard', 'name': 'GIGABYTE TRX40 Pro', 'price': 399, 'tier': 'monstrous'},
 ]
 
-grouped = ub.group_items(options, lambda x: x['type'])
 
-build = {}
+def main():
+    grouped = ub.group_items(options, lambda x: x['type'])
 
-for key, values in grouped.items():
-    print('key = {!r}'.format(key))
-    values = sorted(values, key=lambda x: x['price'])
-    chosen = values[-1]
-    print('chosen = {!r}'.format(chosen))
-    build[key] = chosen
+    build = {}
 
-print('build = {}'.format(ub.repr2(build, nl=2)))
+    for key, values in grouped.items():
+        print('key = {!r}'.format(key))
+        values = sorted(values, key=lambda x: x['price'])
+        chosen = values[-1]
+        print('chosen = {!r}'.format(chosen))
+        build[key] = chosen
+
+    print('build = {}'.format(ub.repr2(build, nl=2)))
