@@ -273,9 +273,11 @@ mypkgs(){
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
+    load_secrets
     MODNAME=torch_liberator
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
+    accept_latest_dev_mr $MODNAME $DEPLOY_REMOTE
     update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
@@ -293,9 +295,11 @@ mypkgs(){
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
+    load_secrets
     MODNAME=kwcoco
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
+    accept_latest_dev_mr $MODNAME $DEPLOY_REMOTE
     update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
@@ -332,9 +336,11 @@ mypkgs(){
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
+    load_secrets
     MODNAME=netharn
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
+    accept_latest_dev_mr $MODNAME $DEPLOY_REMOTE
     update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 

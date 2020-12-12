@@ -1,9 +1,85 @@
 
 """
+Reviews:
+    https://www.gamersnexus.net/reviews/hwreviews
+
+Lists:
+    https://pcpartpicker.com/user/erotemic/saved/qHnY99
+    https://pcpartpicker.com/user/erotemic/saved/DFYMbv
+    https://pcpartpicker.com/user/erotemic/saved/gcyjZL
+
+
+
 References:
     https://pcpartpicker.com/products/cpu/#sort=-rating&s=61&page=1
     https://pcpartpicker.com/list/
     https://www.logicalincrements.com/
+
+
+CPU Options:
+
+    Top Picks:
+
+    Intel Core i9-9900KF   8  3.6 GHz  5 GHz     95 W  None  Yes   (12) $359.99 - good value budget, lower power
+
+    Intel Core i9-10900X  10  3.7 GHz  4.7 GHz  165 W  None  Yes   (0)  $562.00 - CascadeLake deep learning optimizations
+
+    Others:
+
+    Intel Core i9-10900KF 10  3.7 GHz  5.3 GHz  125 W  None  Yes   (3)  $529.99
+    Intel Core i9-10920X  12  3.5 GHz  4.8 GHz  165 W  None  Yes   (0)  $642.00
+    Intel Core i9-9920X   12  3.5 GHz  4.4 GHz  165 W  None  Yes   (1)  $669.60
+    Intel Core i9-9900X   10  3.5 GHz  4.4 GHz  165 W  None  Yes   (1)  $602.00
+    Intel Core i9-9920X   12  3.5 GHz  4.4 GHz  165 W  None  Yes   (0)  $478.50
+    Intel Core i9-9900X   10  3.5 GHz  4.4 GHz  165 W  None  Yes   (0)  $564.54
+
+Coolers:
+
+    Noctua is one of the best brands. The NH-D15 is considered a classic / staple.
+
+    NOTE: you need to check your RAM to make sure it has space when using the D15
+
+    NZXT Kraken X61 - 800 - 2000 RPM  20 - 37 dB    280 mm   (132)
+    Noctua NH-D15   - 300 - 1500 RPM  19.2 - 24.6 dB       (120)  $89.95
+
+    Noctua NH-D15 CHROMAX.BLACK 82.52 CFM CPU Cooler - https://pcpartpicker.com/product/84MTwP/noctua-nh-d15-chromaxblack-8252-cfm-cpu-cooler-nh-d15-chromaxblack
+
+
+SSD:
+    You really want an M.2 Drive that supports The Gen4 PCIE interface.
+
+    sabrent seems to be a good manufacter, not as confident as D15
+
+
+MOBO:
+    Best mobo manufactuers are: Asus, Asrock, Gigabyte, MSI
+
+    One reviewer mentioned good customer service from: EVGA, Corsair, Logitech, NZXT and to a lesser extent MSI.
+    One reviewer mentioned bad customer service from: Asus, Gigabyte, Powercolor, Asrock
+
+
+    Asus ROG Strix X299-E Gaming II
+    MSI X299 PRO
+
+
+Cases:
+    https://www.ranker.com/list/the-best-computer-case-manufacturers/computer-hardware
+
+    Corsair, NZXT
+
+    https://www.anandtech.com/show/7124/corsair-carbide-air-540-case-review/5
+
+    Deep Silence 5 Full Tower E-ATX Case for Sensitive Audio Workstation and Storage Dense Applications, Black
+
+    https://www.amazon.com/Lian-Li-LAN2MRW-Tempered-LANCOOL/dp/B08DX68X9W/ref=sr_1_1?dchild=1&keywords=Lian%2BLi%2BLancool%2BII%2BMesh&qid=1607712965&sr=8-1&th=1
+
+
+
+
+Current Build:
+    * EVGA T2 1000 W 80+ Titanium Certified Fully Modular ATX Power Supply
+
+
 """
 import ubelt as ub
 import slugify
@@ -166,8 +242,8 @@ options = [
     {'type': 'RAM', 'name': '32GB DDR4', 'price': 128, 'tier': 'monstrous'},
 
 
-    {'type': 'CPU', 'name': 'Intel Core i9-109080XE', 'price': 969.99, 'TDP': '165 W', 'cores': 18, 'clock': '4.4 GHz' },
-    {'type': 'CPU', 'name': 'Intel Core i9-9900K', 'price': 399.99, 'TDP': '165 W', 'cores': 8, 'clock': '3.6 GHz'},
+    # {'type': 'CPU', 'name': 'Intel Core i9-109080XE', 'price': 969.99, 'TDP': '165 W', 'cores': 18, 'clock': '4.4 GHz' },
+    {'type': 'CPU', 'name': 'Intel Core i9-9900KF', 'price': 399.99, 'TDP': '165 W', 'cores': 8, 'clock': '3.6 GHz'},
 
 
     {'type': 'SSD', 'name': 'Crucial P1 1TB PCIe SSD', 'price': 93.99, 'TDP': '7 W', 'size': '1TB'},

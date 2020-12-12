@@ -98,6 +98,10 @@ learnable = {
 
 
 def calc_cp(attack, defense, stamina, level):
+    """
+    References:
+        https://www.dragonflycave.com/pokemon-go/stats
+    """
     cpm_step_lut = {
         0: 0.009426125469,
         10: 0.008919025675,
@@ -129,23 +133,170 @@ def calc_cp(attack, defense, stamina, level):
     # https://gamepress.gg/pokemongo/cp-multiplier
     # https://gamepress.gg/pokemongo/pokemon-stats-advanced#:~:text=Calculating%20CP,*%20CP_Multiplier%5E2)%20%2F%2010
     a, d, s = attack, defense, stamina
+
+    adjusted = {
+        'attack': a * cp_multiplier,
+        'defense': d * cp_multiplier,
+        'stamina': int(s * cp_multiplier),
+    }
     cp = int(a * (d ** 0.5) * (s ** 0.5) * (cp_multiplier ** 2) / 10)
-    return cp
+    return cp, adjusted
+
+
+# class Moves():
+#     def __init__(moves):
+#         pass
+#     pass
 
 
 class Pokemon(ub.NiceRepr):
-    def __init__(self, name, level, ivs, moves, shadow=False):
+    """
+
+    Example:
+        import sys, ubelt
+        sys.path.append(ubelt.expandpath('~/misc/pkmn'))
+        from query_team_builder import *  # NOQA
+        self = Pokemon('beedrill')
+
+    """
+    def __init__(self, name, level=None, ivs=None, moves=None, shadow=False,
+                 form='Normal'):
         self.name = name
         self.level = level
         self.ivs = ivs
         self.moves = moves
         self.shadow = shadow
+        if shadow:
+            form = 'Shadow'
+        self.form = form
+
+    def lookup_moves(self):
+        possible_moves = name_to_items[self.name]
+        return possible_moves
+
+    def populate_stats(self):
+        self.form
+        try:
+            items = name_to_items[self.name]
+            all_stats = name_to_stats[self.name]
+            form = 'Normal'
+        except Exception:
+            if self.name.endswith('galarian'):
+                form = 'Galarian'
+                name = self.name.split('_galarian')[0]
+                if name == 'farfetchd':
+                    name = "farfetch\u2019d"
+                all_stats = name_to_stats[name]
+                items = name_to_items[name]
+            else:
+                raise
+        for _stats in all_stats:
+            if _stats['form'] == form:
+                stats = _stats
+
+        fast_moves = set()
+        charge_moves = set()
+
+        def normalize(n):
+            return n.upper().replace(' ', '_')
+
+        for item in items:
+            if form == 'Galarian':
+                if item['form'] != form:
+                    continue
+
+            for move in item['fast_moves']:
+                fast_moves.add(normalize(move))
+            for move in item['elite_fast_moves']:
+                fast_moves.add(normalize(move))
+            for move in item['charged_moves']:
+                charge_moves.add(normalize(move))
+            for move in item['elite_charged_moves']:
+                charge_moves.add(normalize(move))
+
+            if form == 'Normal':
+                if item['form'] == 'Shadow':
+                    charge_moves.add('FRUSTRATION')
+                    charge_moves.add('RETURN')
+
+            # if item['form'] == form:
+            #     found = item
+        if self.name not in learnable:
+            learnable[self.name] = {}
+
+        learnable[self.name]['fast'] = sorted(fast_moves)
+        learnable[self.name]['charge'] = sorted(charge_moves)
+
+        self.learnable = learnable[self.name]
+        self.stats = stats
+        # self.items = items
+
+    def find_leage_rankings(self, max_cp=1500):
+        """
+        Calculate the leage rankings for this pokemon's IVs, based on the
+        adjusted stat product heuristic.
+
+        Ignore:
+            >>> import sys, ubelt
+            >>> sys.path.append(ubelt.expandpath('~/misc/pkmn'))
+            >>> from query_team_builder import *  # NOQA
+            >>> self = Pokemon('beedrill')
+            >>> self.populate_stats()
+            >>> beedrill_df = self.find_leage_rankings(max_cp=1500)
+
+            >>> self = Pokemon('empoleon')
+            >>> self.populate_stats()
+            >>> empoleon_ultra_df = self.find_leage_rankings(max_cp=2500)
+            >>> empoleon_greak_df = self.find_leage_rankings(max_cp=1500)
+
+        """
+        rows = []
+        import itertools as it
+        import numpy as np
+
+        for iva, ivd, ivs in it.product(range(16), range(16), range(16)):
+            attack = self.stats['base_attack'] + iva
+            defense = self.stats['base_defense'] + ivd
+            stamina = self.stats['base_stamina'] + ivs
+
+            best_level = None
+            best_cp = None
+            best_adjusted = None
+            for level in np.arange(1, 45, 0.5):
+                cand_cp, adjusted = calc_cp(attack, defense, stamina, level)
+                if cand_cp <= max_cp:
+                    best_cp = cand_cp
+                    best_level = level
+                    best_adjusted = adjusted
+                else:
+                    break
+
+            row = {
+                'iva': iva,
+                'ivd': ivd,
+                'ivs': ivs,
+                'cp': best_cp,
+                'level': best_level,
+                'attack': best_adjusted['attack'],
+                'defense': best_adjusted['defense'],
+                'stamina': best_adjusted['stamina'],
+            }
+            rows.append(row)
+
+        import kwarray
+        df = kwarray.DataFrameArray.from_dict(rows)
+        df = df.pandas()
+        df['stat_product'] = (df['attack'] * df['defense'] * df['stamina']) / 1000
+        df = df.sort_values('stat_product', ascending=False)
+        df['rank'] = np.arange(1, len(df) + 1)
+        df = df.set_index('rank')
+        return df
 
     def calc_cp(self):
         if self.level is None:
             best_cp = 0
             best_level = 0
-            levels = [y + x for x in range(1, 45) for y in [0, 0.5]]
+            # levels = [y + x for x in range(1, 45) for y in [0, 0.5]]
             for level in range(1, 45):
                 iva, ivd, ivs = self.ivs
                 if iva is None:
@@ -170,14 +321,30 @@ class Pokemon(ub.NiceRepr):
         attack = self.stats['base_attack'] + iva
         defense = self.stats['base_defense'] + ivd
         stamina = self.stats['base_stamina'] + ivs
-        return calc_cp(attack, defense, stamina, level)
+        cp, adjusted = calc_cp(attack, defense, stamina, level)
+        return cp
 
     def __nice__(self):
-        return str([self.name] + self.moves + [self.level] + self.ivs)
+        info = '{}, {}, {}, {}'.format(self.name, self.moves, self.level, self.ivs)
+        return info
+        # return str([self.name] + self.moves + [self.level] + self.ivs)
 
     @classmethod
     def from_pvpoke_row(cls, row):
+        """
+        Example:
+            from query_team_builder import *  # NOQA
+            row = 'victreebel_shadow-shadow,RAZOR_LEAF,LEAF_BLADE,FRUSTRATION,22.5,4,14,14'
+            self = Pokemon.from_pvpoke_row(row)
+        """
         name = row[0]
+        shadow = False
+        if name.endswith('-shadow'):
+            name = name.split('-shadow')[0]
+            # weird case for victreebel
+            if name.endswith('_shadow'):
+                name = name.split('_shadow')[0]
+            shadow = True
         level = None
         ivs = [None, None, None]
 
@@ -195,7 +362,7 @@ class Pokemon(ub.NiceRepr):
         idx += 1
         if idx < len(row):
             ivs = list(map(int, row[idx:]))
-        self = cls(name, level, ivs, moves)
+        self = cls(name, level, ivs, moves, shadow=shadow)
         return self
 
     def to_pvpoke_url(self):
@@ -232,7 +399,11 @@ class Pokemon(ub.NiceRepr):
             parts.append(str(fm_idx))
             parts.append(str(cm1_idx))
             if cm2 is not None:
-                cm2_idx = learnable[self.name]['charge'].index(cm2) + 1
+                if cm2.lower() == 'frustration':
+                    # hack for frustration
+                    cm2_idx = 0
+                else:
+                    cm2_idx = learnable[self.name]['charge'].index(cm2) + 1
                 parts.append(str(cm2_idx))
         else:
             parts.append('m-1-1-2')
@@ -250,31 +421,39 @@ class Pokemon(ub.NiceRepr):
 
 
 def main():
-    candidate_csv_text = ub.codeblock(
-        '''
-registeel,LOCK_ON,FLASH_CANNON,FOCUS_BLAST,22,10,14,15
-stunfisk_galarian,MUD_SHOT,ROCK_SLIDE,EARTHQUAKE,25,11,14,14
-altaria,DRAGON_BREATH,SKY_ATTACK,DRAGON_PULSE,26.5,14,12,13
+    mode = 'great'
+    if mode == 'great':
+        candidate_csv_text = ub.codeblock(
+            '''
+            registeel,LOCK_ON,FLASH_CANNON,FOCUS_BLAST,22,10,14,15
+            stunfisk_galarian,MUD_SHOT,ROCK_SLIDE,EARTHQUAKE,25,11,14,14
+            # altaria,DRAGON_BREATH,SKY_ATTACK,DRAGON_PULSE,26.5,14,12,13
 
-skarmory,AIR_SLASH,SKY_ATTACK,FLASH_CANNON,26,11,13,10
+            skarmory,AIR_SLASH,SKY_ATTACK,FLASH_CANNON,26,11,13,10
 
-azumarill,BUBBLE,ICE_BEAM,HYDRO_PUMP,38,12,15,13
-hypno,CONFUSION,SHADOW_BALL,THUNDER_PUNCH,25.5,13,15,14
-dewgong,ICE_SHARD,ICY_WIND,WATER_PULSE,26.5,15,08,15
-umbreon,SNARL,FOUL_PLAY,LAST_RESORT,24.5,15,10,15
-farfetchd_galarian,FURY_CUTTER,LEAF_BLADE,BRAVE_BIRD,33.5,12,15,15
-hypno,CONFUSION,SHADOW_BALL,FOCUS_BLAST,25.5,13,15,14
-        ''')
+            azumarill,BUBBLE,ICE_BEAM,HYDRO_PUMP,38,12,15,13
+            dewgong,ICE_SHARD,ICY_WIND,WATER_PULSE,26.5,15,08,15
 
+            # umbreon,SNARL,FOUL_PLAY,LAST_RESORT,24.5,15,10,15
+            # farfetchd_galarian,FURY_CUTTER,LEAF_BLADE,BRAVE_BIRD,33.5,12,15,15
 
-    candidate_csv_text = ub.codeblock(
-        '''
-cresselia,PSYCHO_CUT,MOONBLAST,FUTURE_SIGHT
-togekiss,CHARM,FLAMETHROWER,ANCIENT_POWER
-articuno,ICE_SHARD,ICY_WIND,HURRICANE
-swampert,MUD_SHOT,MUDDY_WATER,EARTHQUAKE
-venusaur,VINE_WHIP,FRENZY_PLANT,SLUDGE_BOMB
-        ''')
+            hypno,CONFUSION,SHADOW_BALL,THUNDER_PUNCH,25.5,13,15,14
+            # hypno,CONFUSION,SHADOW_BALL,FOCUS_BLAST,25.5,13,15,14
+
+            # machamp-shadow,COUNTER,ROCK_SLIDE,CROSS_CHOP,18,5,11,10
+            victreebel_shadow-shadow,RAZOR_LEAF,LEAF_BLADE,FRUSTRATION,22.5,4,14,14
+            ''')
+    elif mode == 'ultra':
+        candidate_csv_text = ub.codeblock(
+            '''
+            cresselia,PSYCHO_CUT,MOONBLAST,FUTURE_SIGHT
+            togekiss,CHARM,FLAMETHROWER,ANCIENT_POWER
+            articuno,ICE_SHARD,ICY_WIND,HURRICANE
+            swampert,MUD_SHOT,MUDDY_WATER,EARTHQUAKE
+            venusaur,VINE_WHIP,FRENZY_PLANT,SLUDGE_BOMB
+            ''')
+    else:
+        raise KeyError(mode)
 
     candidates = []
     for line in candidate_csv_text.split('\n'):
@@ -287,62 +466,12 @@ venusaur,VINE_WHIP,FRENZY_PLANT,SLUDGE_BOMB
             candidates.append(cand)
 
     for self in candidates:
-        try:
-            items = name_to_items[self.name]
-            all_stats = name_to_stats[self.name]
-            form = 'Normal'
-        except Exception:
-            if self.name.endswith('galarian'):
-                form = 'Galarian'
-                name = self.name.split('_galarian')[0]
-                if name == 'farfetchd':
-                    name = "farfetch\u2019d"
-                all_stats = name_to_stats[name]
-                items = name_to_items[name]
-            else:
-                raise
 
-        self.form = form
-        assert len(items)
-        found = None
+        self.populate_stats()
 
-        fast_moves = set()
-        charge_moves = set()
+        items = self.items
+        form = self.form
 
-        def normalize(n):
-            return n.upper().replace(' ', '_')
-
-        stats = None
-        for _stats in all_stats:
-            if _stats['form'] == form:
-                stats = _stats
-        self.stats = stats
-
-        for item in items:
-            if form == 'Galarian':
-                if item['form'] != form:
-                    continue
-
-            for move in item['fast_moves']:
-                fast_moves.add(normalize(move))
-            for move in item['elite_fast_moves']:
-                fast_moves.add(normalize(move))
-            for move in item['charged_moves']:
-                charge_moves.add(normalize(move))
-            for move in item['elite_charged_moves']:
-                charge_moves.add(normalize(move))
-
-            if form == 'Normal':
-                if item['form'] == 'Shadow':
-                    charge_moves.add('RETURN')
-
-            # if item['form'] == form:
-            #     found = item
-        if self.name not in learnable:
-            learnable[self.name] = {}
-
-        learnable[self.name]['fast'] = sorted(fast_moves)
-        learnable[self.name]['charge'] = sorted(charge_moves)
 
     # for self in candidates:
     #     print('self = {!r}'.format(self))
@@ -350,14 +479,18 @@ venusaur,VINE_WHIP,FRENZY_PLANT,SLUDGE_BOMB
 
     print(ub.repr2(learnable))
 
-    # base = 'https://pvpoke.com/team-builder/all/1500'
-    base = 'https://pvpoke.com/team-builder/all/2500'
+    if mode == 'ultra':
+        base = 'https://pvpoke.com/team-builder/all/2500'
+    elif mode == 'great':
+        base = 'https://pvpoke.com/team-builder/all/1500'
     sep = '%2C'
     import itertools as it
     print('candidates = {!r}'.format(candidates))
     for team in it.combinations(candidates, 3):
-        # if not any(p.name == 'registeel' for p in team):
+        # if not any('registeel' in p.name for p in team):
         #     continue
+        if not any('victree' in p.name for p in team):
+            continue
         if len(set(p.name for p in team)) != 3:
             continue
         suffix = sep.join([p.to_pvpoke_url() for p in team])
