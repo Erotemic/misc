@@ -81,6 +81,20 @@ name_to_items = dict(name_to_items)
 # base = 'http://pokeapi.co/api/v2/pokemon/'
 
 
+cp_multiplier_fpath = ub.grabdata('https://pogoapi.net/api/v1/cp_multiplier.json')
+with open(cp_multiplier_fpath, 'r') as file:
+    cp_multipliers = json.load(file)
+
+evolutions_fpath = ub.grabdata('https://pogoapi.net/api/v1/pokemon_evolutions.json')
+with open(evolutions_fpath, 'r') as file:
+    evolutions = json.load(file)
+
+
+
+if 0:
+    print(ub.repr2({item['level']: item['multiplier'] for item in cp_multipliers}))
+
+
 learnable = {
     'stunfisk_galarian': {
         'fast': [
@@ -102,29 +116,43 @@ def calc_cp(attack, defense, stamina, level):
     References:
         https://www.dragonflycave.com/pokemon-go/stats
     """
-    cpm_step_lut = {
-        0: 0.009426125469,
-        10: 0.008919025675,
-        20: 0.008924905903,
-        30: 0.00445946079,
-    }
+    # cpm_step_lut = {
+    #     0: 0.009426125469,
+    #     10: 0.008919025675,
+    #     20: 0.008924905903,
+    #     30: 0.00445946079,
+    # }
     cmp_lut = {
-        1: 0.094, 1.5: 0.1351374318, 2: 0.16639787, 2.5: 0.192650919, 3: 0.21573247,
-        3.5: 0.2365726613, 4: 0.25572005, 4.5: 0.2735303812, 5: 0.29024988, 5.5: 0.3060573775,
-        6: 0.3210876, 6.5: 0.3354450362, 7: 0.34921268, 7.5: 0.3624577511, 8: 0.3752356,
-        8.5: 0.387592416, 9: 0.39956728, 9.5: 0.4111935514, 10: 0.4225, 10.5: 0.4329264091,
-        11: 0.44310755, 11.5: 0.4530599591, 12: 0.4627984, 12.5: 0.472336093, 13: 0.48168495, 13.5: 0.4908558003,
-        14: 0.49985844, 14.5: 0.508701765, 15: 0.51739395, 15.5: 0.5259425113, 16: 0.5343543, 16.5: 0.5426357375,
-        17: 0.5507927, 17.5: 0.5588305862, 18: 0.5667545, 18.5: 0.5745691333, 19: 0.5822789, 19.5: 0.5898879072,
-        20: 0.5974, 20.5: 0.6048236651, 21: 0.6121573, 21.5: 0.6194041216, 22: 0.6265671, 22.5: 0.6336491432,
-        23: 0.64065295, 23.5: 0.6475809666, 24: 0.65443563, 24.5: 0.6612192524, 25: 0.667934, 25.5: 0.6745818959,
-        26: 0.6811649, 26.5: 0.6876849038, 27: 0.69414365, 27.5: 0.70054287, 28: 0.7068842, 28.5: 0.7131691091,
-        29: 0.7193991, 29.5: 0.7255756136, 30: 0.7317, 30.5: 0.7347410093, 31: 0.7377695,
-        31.5: 0.7407855938, 32: 0.74378943, 32.5: 0.7467812109, 33: 0.74976104, 33.5: 0.7527290867,
-        34: 0.7556855, 34.5: 0.7586303683, 35: 0.76156384, 35.5: 0.7644860647, 36: 0.76739717,
-        36.5: 0.7702972656, 37: 0.7731865, 37.5: 0.7760649616, 38: 0.77893275, 38.5: 0.7817900548,
-        39: 0.784637, 39.5: 0.7874736075, 40: 0.7903, 41: 0.79530001, 42: 0.8003, 43: 0.8053,
-        44: 0.81029999, 45: 0.81529999,
+        1: 0.09399999678134918, 1.5: 0.1351374313235283, 2.0: 0.16639786958694458,
+        2.5: 0.1926509141921997, 3.0: 0.21573247015476227, 3.5: 0.23657265305519104,
+        4.0: 0.2557200491428375, 4.5: 0.27353037893772125, 5.0: 0.29024988412857056,
+        5.5: 0.3060573786497116, 6.0: 0.3210875988006592, 6.5: 0.33544503152370453,
+        7.0: 0.3492126762866974, 7.5: 0.362457737326622, 8.0: 0.37523558735847473,
+        8.5: 0.38759241108516856, 9.0: 0.39956727623939514, 9.5: 0.4111935495172506,
+        10.0: 0.4225000143051148, 10.5: 0.4329264134104144, 11.0: 0.443107545375824,
+        11.5: 0.4530599538719858, 12.0: 0.46279838681221, 12.5: 0.4723360780626535,
+        13.0: 0.4816849529743195, 13.5: 0.4908558102324605, 14.0: 0.4998584389686584,
+        14.5: 0.5087017565965652, 15.0: 0.517393946647644, 15.5: 0.5259425118565559,
+        16.0: 0.5343543291091919, 16.5: 0.5426357612013817, 17.0: 0.5507926940917969,
+        17.5: 0.5588305993005633, 18.0: 0.5667545199394226, 18.5: 0.574569147080183,
+        19.0: 0.5822789072990417, 19.5: 0.5898879119195044, 20.0: 0.5974000096321106,
+        20.5: 0.6048236563801765, 21.0: 0.6121572852134705, 21.5: 0.6194041110575199,
+        22.0: 0.6265671253204346, 22.5: 0.633649181574583, 23.0: 0.6406529545783997,
+        23.5: 0.6475809663534164, 24.0: 0.654435634613037, 24.5: 0.6612192690372467,
+        25.0: 0.667934000492096, 25.5: 0.6745819002389908, 26.0: 0.6811649203300476,
+        26.5: 0.6876849085092545, 27.0: 0.6941436529159546, 27.5: 0.7005428969860077,
+        28.0: 0.7068842053413391, 28.5: 0.7131690979003906, 29.0: 0.719399094581604,
+        29.5: 0.7255756109952927, 30.0: 0.7317000031471252, 30.5: 0.7347410172224045,
+        31.0: 0.7377694845199585, 31.5: 0.740785576403141, 32.0: 0.7437894344329834,
+        32.5: 0.7467812150716782, 33.0: 0.7497610449790955, 33.5: 0.7527291029691696,
+        34.0: 0.7556855082511902, 34.5: 0.7586303651332855, 35.0: 0.7615638375282288,
+        35.5: 0.7644860669970512, 36.0: 0.7673971652984619, 36.5: 0.7702972739934921,
+        37.0: 0.7731865048408508, 37.5: 0.7760649472475052, 38.0: 0.7789327502250671,
+        38.5: 0.78179006, 39.0: 0.78463697, 39.5: 0.78747358,
+        40.0: 0.79030001, 40.5: 0.79280001, 41.0: 0.79530001,
+        41.5: 0.79780001, 42.0: 0.8003, 42.5: 0.8028,
+        43.0: 0.8053, 43.5: 0.8078, 44.0: 0.81029999,
+        44.5: 0.81279999, 45.0: 0.81529999,
     }
     # cpm_step = cpm_step_lut[(level // 10) * 10]
     # cpm_step
@@ -231,6 +259,72 @@ class Pokemon(ub.NiceRepr):
         self.stats = stats
         # self.items = items
 
+    def check_evolution_cps(self, max_cp=1500):
+        """
+        self = Pokemon('gastly', ivs=[6, 13, 15])
+        """
+
+        # TODO :get evolutionary line
+
+        other = Pokemon('gengar', ivs=self.ivs)
+        other.populate_stats()
+
+        iva, ivd, ivs = other.ivs
+        attack = other.stats['base_attack'] + iva
+        defense = other.stats['base_defense'] + ivd
+        stamina = other.stats['base_stamina'] + ivs
+
+        import numpy as np
+
+        best_level = None
+        for level in list(np.arange(1, 40, 0.5)) + list(range(40, 46)):
+            cand_cp, adjusted = calc_cp(attack, defense, stamina, level)
+            if cand_cp <= max_cp:
+                best_level = level
+            else:
+                break
+
+        self.populate_stats()
+        iva, ivd, ivs = self.ivs
+        attack = self.stats['base_attack'] + iva
+        defense = self.stats['base_defense'] + ivd
+        stamina = self.stats['base_stamina'] + ivs
+        cp, adjusted = calc_cp(attack, defense, stamina, best_level)
+        print('Pokemon CP must be less than this to be used in league')
+        print('cp = {!r}'.format(cp))
+
+    def leage_rankings_for(self, have_ivs):
+        self.populate_stats()
+        ultra_df = self.find_leage_rankings(max_cp=2500).set_index(['iva', 'ivd', 'ivs'])
+        great_df = self.find_leage_rankings(max_cp=1500).set_index(['iva', 'ivd', 'ivs'])
+        rows = []
+        for haves in have_ivs:
+            ultra_row = ultra_df.loc[haves]
+            great_row = great_df.loc[haves]
+            rows.append({
+                'iva': haves[0],
+                'ivd': haves[1],
+                'ivs': haves[2],
+                'ultra_rank': ultra_row['rank'],
+                'great_rank': great_row['rank'],
+                'ultra_cp': ultra_row['cp'],
+                'great_cp': great_row['cp'],
+            })
+        import pandas as pd
+        rankings = pd.DataFrame.from_dict(rows)
+        #
+        print('')
+        print('Great Rankings')
+        print(rankings.sort_values('great_rank'))
+        print('self = {!r}'.format(self))
+        #
+
+        if abs(ultra_df['cp'].max() - 2500) < 200:
+            # don't bother printing it wont work
+            print('')
+            print('Ultra Rankings')
+            print(rankings.sort_values('ultra_rank'))
+
     def find_leage_rankings(self, max_cp=1500):
         """
         Calculate the leage rankings for this pokemon's IVs, based on the
@@ -244,10 +338,110 @@ class Pokemon(ub.NiceRepr):
             >>> self.populate_stats()
             >>> beedrill_df = self.find_leage_rankings(max_cp=1500)
 
+            >>> # Find the best IVs that we have for PVP
             >>> self = Pokemon('empoleon')
+            >>> have_ivs = [
+            >>>     (0, 10, 14),
+            >>>     (1, 11, 5),
+            >>>     (1, 5, 7),
+            >>>     (1, 9, 13),
+            >>>     (2, 15, 13),
+            >>>     (2, 2, 10),
+            >>>     (2, 6, 9),
+            >>>     (3, 13, 11),
+            >>>     (3, 3, 2),
+            >>>     (4, 13, 13),
+            >>>     (5, 13, 14),
+            >>>     (4, 14, 14),
+            >>>     (7, 13, 3),
+            >>>     (13, 14, 14),
+            >>>     (15, 14, 14),
+            >>> ]
+
+            >>> self = Pokemon('beedrill')
+            >>> have_ivs = [
+            >>>     (0, 8, 14),
+            >>>     (0, 12, 14),
+            >>>     (4, 11, 13),
+            >>>     (4, 14, 13),
+            >>>     (1, 13, 7),
+            >>>     (4, 13, 13),
+            >>>     (4, 14, 14),
+            >>>     (11, 15, 14),
+            >>>     (15, 15, 15),
+            >>>     (12, 15, 15),
+            >>> ]
+
+            >>> have_ivs = [
+            >>>     (4, 13, 10),
+            >>>     (5, 11, 14),
+            >>>     (4, 13, 11),
+            >>>     (6, 13, 15),
+            >>>     (7, 12, 13),
+            >>>     (7, 14, 14),
+            >>>     (7, 2, 9),
+            >>>     (10, 15, 11),
+            >>>     (15, 15, 15),
+            >>>     (7, 15, 15),
+            >>> ]
+            >>> self = Pokemon('gengar')
+            >>> self.leage_rankings_for(have_ivs)
+            >>> self = Pokemon('haunter')
+            >>> self.leage_rankings_for(have_ivs)
+
+            >>> have_ivs = [
+            >>>     (12, 11, 14),
+            >>>     (12, 15, 15),
+            >>>     (15, 15, 15),
+            >>> ]
+            >>> Pokemon('blaziken').leage_rankings_for(have_ivs)
+
+            >>> have_ivs = [
+            >>>     (0, 2, 14),
+            >>>     (4, 2, 13),
+            >>>     (11, 13, 12),
+            >>>     (4, 13, 9),
+            >>>     (15, 12, 13),
+            >>>     (13, 14, 13),
+            >>>     (13, 14, 13),
+            >>>     (14, 14, 10),
+            >>> ]
+            >>> Pokemon('swampert').leage_rankings_for(have_ivs)
+
+
+
+            >>> have_ivs = [
+            >>>     (7, 13, 15),
+            >>>     (1, 14, 11),
+            >>>     (4, 12, 15),
+            >>>     (4, 10, 13),
+            >>>     (3, 5, 2),
+            >>> ]
+            >>> Pokemon('gyarados').leage_rankings_for(have_ivs)
+
             >>> self.populate_stats()
-            >>> empoleon_ultra_df = self.find_leage_rankings(max_cp=2500)
-            >>> empoleon_greak_df = self.find_leage_rankings(max_cp=1500)
+            >>> ultra_df = self.find_leage_rankings(max_cp=2500).set_index(['iva', 'ivd', 'ivs'])
+            >>> great_df = self.find_leage_rankings(max_cp=1500).set_index(['iva', 'ivd', 'ivs'])
+            >>> rows = []
+            >>> for haves in have_ivs:
+            >>>     rows.append({
+            >>>         'iva': haves[0],
+            >>>         'ivd': haves[1],
+            >>>         'ivs': haves[2],
+            >>>         'ultra_rank': ultra_df.loc[haves]['rank'],
+            >>>         'great_rank': great_df.loc[haves]['rank'],
+            >>>     })
+            >>> import pandas as pd
+            >>> rankings = pd.DataFrame.from_dict(rows)
+            >>> #
+            >>> print('')
+            >>> print('Great Rankings')
+            >>> print(rankings.sort_values('great_rank'))
+            >>> print('self = {!r}'.format(self))
+            >>> #
+            >>> print('')
+            >>> print('Ultra Rankings')
+            >>> print(rankings.sort_values('ultra_rank'))
 
         """
         rows = []
@@ -262,7 +456,7 @@ class Pokemon(ub.NiceRepr):
             best_level = None
             best_cp = None
             best_adjusted = None
-            for level in np.arange(1, 45, 0.5):
+            for level in list(np.arange(1, 40, 0.5)) + list(range(40, 46)):
                 cand_cp, adjusted = calc_cp(attack, defense, stamina, level)
                 if cand_cp <= max_cp:
                     best_cp = cand_cp
@@ -289,7 +483,7 @@ class Pokemon(ub.NiceRepr):
         df['stat_product'] = (df['attack'] * df['defense'] * df['stamina']) / 1000
         df = df.sort_values('stat_product', ascending=False)
         df['rank'] = np.arange(1, len(df) + 1)
-        df = df.set_index('rank')
+        df = df.set_index('rank', drop=False)
         return df
 
     def calc_cp(self):
