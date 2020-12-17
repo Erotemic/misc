@@ -74,6 +74,13 @@ Cases:
     https://www.amazon.com/Lian-Li-LAN2MRW-Tempered-LANCOOL/dp/B08DX68X9W/ref=sr_1_1?dchild=1&keywords=Lian%2BLi%2BLancool%2BII%2BMesh&qid=1607712965&sr=8-1&th=1
 
 
+Mid tower possibilities:
+
+    Lian Li Lancool II Mesh
+
+    Phanteks P500A Digital
+
+
 
 
 Current Build:
@@ -142,6 +149,8 @@ def varied_values(dict_list, min_variations=1):
 def motherboard_info():
     """
     REQUIRES SUDO
+
+    xdoctest -m ~/misc/notes/buildapc.py motherboard_info
     """
     import re
     info = ub.cmd('sudo dmidecode -t 9')
