@@ -62,127 +62,6 @@ zweilous,DRAGON_BREATH,BODY_SLAM,DARK_PULSE
 """
 
 
-def pvp_inventory():
-    """
-    The idea is you put info about your candidates here and we find good mons
-    to power up.
-    """
-    inventory = [
-        Pokemon('Magnezone', (14, 14, 14), cp=1815, form='Normal'),
-        Pokemon('Magnemite', (7, 14, 9), cp=792),
-        Pokemon('Magnemite', (10, 14, 13), cp=747),
-        Pokemon('Magnemite', (13, 9, 15), cp=602),
-        Pokemon('Magneton', (13, 14, 13), cp=550, form='Shadow'),
-        Pokemon('Magnemite', (15, 13, 7), cp=293, form='Shadow'),
-        Pokemon('Magnemite', (2, 14, 15), cp=283, form='Shadow'),
-    ]
-
-    inventory = [
-        Pokemon('sirfetch’d', (4, 11, 12), cp=1924, form='Galarian'),
-        Pokemon('farfetch’d', (12, 15, 15), cp=1495, form='Galarian'),
-        Pokemon('farfetch’d', (14, 14, 15), cp=948, form='Galarian'),
-    ]
-
-    inventory = [
-        Pokemon('bulbasaur', (7, 13, 12), cp=382, form='Shadow'),
-        Pokemon('bulbasaur', (4, 8, 13), cp=366, form='Shadow'),
-        Pokemon('bulbasaur', (7, 12, 8), cp=227, form='Shadow'),
-    ]
-
-    inventory = [
-        Pokemon('Clefable', (12, 13, 12), cp=1828),
-        Pokemon('Clefairy', (4, 2, 7), cp=389),
-    ]
-
-    inventory = [
-        Pokemon('Jigglypuff', (10, 14, 15), cp=631),
-        Pokemon('Jigglypuff', (10, 12, 15), cp=286),
-    ]
-
-    inventory = [
-        Pokemon('poliwag', (10, 13, 14), cp=335),
-        Pokemon('poliwag', (10, 14, 13), cp=335),
-    ]
-
-    inventory = [
-        Pokemon('drifloon', (15, 15, 1), cp=695),
-        Pokemon('drifloon', (0, 9, 14), cp=527),
-        Pokemon('drifloon', (15, 15, 12), cp=509),
-        Pokemon('drifloon', (14, 15, 14), cp=508),
-        Pokemon('drifloon', (14, 11, 14), cp=497),
-        Pokemon('drifloon', (11, 13, 12), cp=489, shiny=True),
-        Pokemon('drifloon', (0, 4, 8), cp=336),
-        Pokemon('drifloon', (12, 10, 12), cp=118),
-    ]
-
-    inventory = [
-        Pokemon('shelmet', (10, 15, 8), cp=351),
-        Pokemon('shelmet', (0, 13, 0), cp=166),
-        Pokemon('shelmet', (15, 10, 12), cp=158),
-    ]
-
-    inventory = [
-        Pokemon('Karrablast', (10, 4, 12), cp=824),
-        Pokemon('Karrablast', (13, 13, 13), cp=655),
-        Pokemon('Karrablast', (13, 14, 15), cp=16),
-    ]
-
-    inventory = [
-        Pokemon('Ralts', (14, 14, 13)),
-        Pokemon('Ralts', (14, 11, 12)),
-        Pokemon('Ralts', (0, 11, 0), shadow=True),
-        Pokemon('Ralts', (1, 14, 2), shadow=True),
-        Pokemon('Ralts', (12, 12, 6), shadow=True),
-        Pokemon('Ralts', (5, 14, 14)),
-        Pokemon('Ralts', (7, 11, 11)),
-    ]
-
-    inventory = [
-        Pokemon('Toxicroak', (11, 13, 14)),
-        Pokemon('Croagunk', (9, 11, 13), cp=794),
-        Pokemon('Croagunk', (8, 6, 8), cp=429),
-    ]
-
-    inventory = [
-        Pokemon('Snorlax', (7, 6, 13), shadow=True),
-        Pokemon('Snorlax', (0, 0, 13), shadow=0),
-        Pokemon('Snorlax', (8, 15, 14), shadow=0, cp=1155),
-        Pokemon('Snorlax', (8, 12, 11), shadow=0, cp=2106),
-        Pokemon('Snorlax', (9, 15, 10), shadow=0, cp=2487),
-        Pokemon('Snorlax', (1, 15, 14), shadow=0, cp=1372),
-        Pokemon('Snorlax', (7, 11, 15), shadow=0, cp=3044),
-        Pokemon('Snorlax', (2, 15, 1), shadow=1),
-        Pokemon('Munchlax', (14, 11, 14), shadow=0, cp=1056),
-    ]
-    candidates = list(ub.flatten(list(pkmn.family(ancestors=False)) for pkmn in inventory)) + inventory
-
-    groups = ub.group_items(candidates, key=lambda p: p.name)
-
-    leages = {
-        'master': {'max_cp': float('inf')},
-        'ultra': {'max_cp': 2500},
-        'great': {'max_cp': 1500},
-        'little': {'max_cp': 500},
-    }
-
-    for name, group in groups.items():
-        print('\n\n------------\n\n')
-        print('name = {!r}'.format(name))
-        for leage_name, leage_filters in leages.items():
-            max_cp = leage_filters['max_cp']
-            print('')
-            print(' ========== ')
-            print(' --- {} in {} --- '.format(name, leage_name))
-            not_eligible = [p for p in group if p.cp is not None and p.cp > max_cp]
-            print('not_eligible = {!r}'.format(not_eligible))
-            have_ivs = [p.ivs for p in group if p.cp is None or p.cp <= max_cp]
-            if len(have_ivs) > 0:
-                first = ub.peek(group)
-                first.leage_rankings_for(have_ivs, max_cp=max_cp)
-            else:
-                print('none eligable')
-
-
 def normalize(n):
     return n.upper().replace(' ', '_')
 
@@ -460,7 +339,8 @@ class Pokemon(ub.NiceRepr):
 
     """
     def __init__(self, name, ivs=None, level=None, moves=None, shadow=False,
-                 form='Normal', cp=None, autobuild=True, shiny=False):
+                 form='Normal', cp=None, autobuild=True, shiny=False,
+                 adjusted=None):
         self.name = name.lower()
         self.level = level
         self.ivs = ivs
@@ -472,7 +352,7 @@ class Pokemon(ub.NiceRepr):
         self.form = form
         self.api = api
         self.cp = cp
-        self.adjusted = None
+        self.adjusted = adjusted
 
         self.populate_stats()
 
@@ -486,8 +366,66 @@ class Pokemon(ub.NiceRepr):
             if level is None and self.ivs is not None:
                 self.populate_level()
 
+    def __json__(self):
+        return {
+            'name': self.name,
+            'ivs': self.ivs,
+            'level': self.level,
+            'form': self.form,
+            'shadow': self.shadow,
+            'shiny': self.shiny,
+            'moves': self.moves,
+            # Depends on other properties
+            'cp': self.cp,
+            'adjusted': self.adjusted,
+        }
+
+    def copy(self, **overwrite):
+        """
+        Create a copy of this pokemon with possibly different attributes
+        """
+        kw = self.__json__()
+        # Invalidate depenencies
+        if 'ivs' in overwrite:
+            if overwrite['ivs'] != kw['ivs']:
+                kw.pop('cp', None)
+                kw.pop('adjusted', None)
+
+        if 'level' in overwrite:
+            if overwrite['level'] != kw['level']:
+                kw.pop('cp', None)
+                kw.pop('adjusted', None)
+
+        if 'cp' in overwrite:
+            if overwrite['cp'] != kw['cp']:
+                kw.pop('level', None)
+
+        kw.update(overwrite)
+        new = Pokemon(**kw)
+        return new
+
+    def display_name(self):
+        parts = [self.name]
+        if self.shadow:
+            shadow_glyph = '😈'
+            parts.append(shadow_glyph)
+
+        elif self.form not in {'Normal', 'Shadow', 'Purified'}:
+            parts.append('({})'.format(self.form))
+
+        if self.form == 'Purified':
+            purified_glyph = '👼'
+            parts.append(purified_glyph)
+
+        if self.shiny:
+            shiny_glpyh = '✨'
+            parts.append(shiny_glpyh)
+        disp_name = ''.join(parts)
+        return disp_name
+
     def __nice__(self):
-        info = '{}, {}, {}, {}, {}'.format(self.name, self.cp, self.level, self.ivs, self.moves)
+        disp_name = self.display_name()
+        info = '{}, {}, {}, {}, {}'.format(disp_name, self.cp, self.level, self.ivs, self.moves)
         return info
         # return str([self.name] + self.moves + [self.level] + self.ivs)
 
@@ -495,7 +433,7 @@ class Pokemon(ub.NiceRepr):
         possible_moves = api.name_to_moves[self.name]
         return possible_moves
 
-    def populate_level(self):
+    def populate_level(self, max_level=45):
         """ Try and find the level given the info """
         import numpy as np
         # hacky, could be more elegant
@@ -506,7 +444,8 @@ class Pokemon(ub.NiceRepr):
         stamina = self.info['base_stamina'] + ivs
 
         found_level = None
-        for cand_level in list(np.arange(1, 46, 0.5)):
+
+        for cand_level in np.arange(1, max_level + 0.5, 0.5):
             # TODO: could binary search
             cp, adjusted = calc_cp(attack, defense, stamina, cand_level)
             if cp == target_cp:
@@ -543,6 +482,28 @@ class Pokemon(ub.NiceRepr):
             possibilities.append(other)
         return possibilities
 
+    def purify(self):
+        """
+        Example:
+            >>> self = Pokemon('ralts', ivs=[6, 13, 15], level=20,
+            >>>                 shadow=True, shiny=True)
+            >>> new = self.purify()
+            >>> print('self = {!r}'.format(self))
+            >>> print('new  = {!r}'.format(new))
+        """
+        if not self.shadow:
+            raise Exception('Only can purify shadow pokemon')
+
+        overwrite = {}
+        if self.ivs is not None:
+            new_ivs = tuple([min(15, s + 2) for s in self.ivs])
+            overwrite['ivs'] = new_ivs
+        overwrite['form'] = 'Purified'
+        overwrite['shadow'] = False
+        # TODO: replace frustration with return
+        new = self.copy(**overwrite)
+        return new
+
     def family(self, ancestors=True, node=False, onlyadj=False):
         """
         Get other members of this pokemon family
@@ -557,13 +518,14 @@ class Pokemon(ub.NiceRepr):
             list(self.family())
 
             self = Pokemon('magikarp', ivs=[6, 13, 15])
-            list(self.gmet_evolutions())
+            list(self.family())
 
             self = Pokemon('eevee', ivs=[6, 13, 15])
             list(self.family(onlyadj=True))
 
-            self = Pokemon('ralts', ivs=[6, 13, 15])
+            self = Pokemon('ralts', ivs=[6, 13, 15], shadow=True)
             list(self.family(onlyadj=True))
+            list(self.family())
         """
         import networkx as nx
         blocklist = set()
@@ -594,6 +556,9 @@ class Pokemon(ub.NiceRepr):
                     other = Pokemon(name, **kw)
                 yield other
 
+                if other.shadow:
+                    yield other.purify()
+
     def populate_cp(self):
         level = self.level
         iva, ivd, ivs = self.ivs
@@ -605,7 +570,7 @@ class Pokemon(ub.NiceRepr):
         self.adjusted = adjusted
         return cp, adjusted
 
-    def check_evolution_cps(self, max_cp=1500):
+    def check_evolution_cps(self, max_cp=1500, max_level=45):
         """
         self = Pokemon('gastly', ivs=[6, 13, 15])
         self.check_evolution_cps()
@@ -626,7 +591,7 @@ class Pokemon(ub.NiceRepr):
             other = evo
 
             best_level = None
-            for level in list(np.arange(1, 40, 0.5)) + list(range(40, 46)):
+            for level in list(np.arange(1, max_level + 0.5, 0.5)):
                 # TODO: could binary search
                 other.level = level
                 other.populate_cp()
@@ -644,9 +609,12 @@ class Pokemon(ub.NiceRepr):
             print('Pokemon CP must be less than this to be used in league')
             print('cp = {!r}'.format(cp))
 
-    def leage_rankings_for(self, have_ivs, max_cp=1500):
-        # ultra_df = self.find_leage_rankings(max_cp=2500).set_index(['iva', 'ivd', 'ivs'])
-        leage_df = self.find_leage_rankings(max_cp=max_cp).set_index(['iva', 'ivd', 'ivs'])
+    def leage_rankings_for(self, have_ivs, max_cp=1500, max_level=45):
+        """
+        Given a set of IVs for this pokemon compute the leage rankings
+        """
+        leage_df = self.find_leage_rankings(max_cp=max_cp, max_level=max_level)
+        leage_df = leage_df.set_index(['iva', 'ivd', 'ivs'])
 
         if abs(min(leage_df['cp'].max() - min(3000, max_cp), 0)) > 200:
             print('Out of this leage {}'.format(max_cp))
@@ -676,7 +644,7 @@ class Pokemon(ub.NiceRepr):
             print('self = {!r}'.format(self))
             print(rankings.sort_values('rank'))
 
-    def find_leage_rankings(self, max_cp=1500):
+    def find_leage_rankings(self, max_cp=1500, max_level=45):
         """
         Calculate the leage rankings for this pokemon's IVs, based on the
         adjusted stat product heuristic.
@@ -775,15 +743,6 @@ class Pokemon(ub.NiceRepr):
             >>> Pokemon('swampert').leage_rankings_for(have_ivs, max_cp=np.inf)
 
             >>> have_ivs = [
-            >>>     (0, 14, 2),
-            >>>     (5, 14, 14),
-            >>>     (7, 15, 15),
-            >>>     (7, 11, 11),
-            >>> ]
-            >>> Pokemon('gardevoir').leage_rankings_for(have_ivs, max_cp=1500)
-            >>> Pokemon('gardevoir').leage_rankings_for(have_ivs, max_cp=np.inf)
-
-            >>> have_ivs = [
             >>>     (1, 2, 15),
             >>>     (12, 15, 14),
             >>>     (14, 15, 14),
@@ -793,8 +752,6 @@ class Pokemon(ub.NiceRepr):
             >>> ]
             >>> Pokemon('sceptile').leage_rankings_for(have_ivs, max_cp=1500)
             >>> Pokemon('sceptile').leage_rankings_for(have_ivs, max_cp=2500)
-
-
 
             >>> have_ivs = [
             >>>     (0, 10, 15),
@@ -910,7 +867,7 @@ class Pokemon(ub.NiceRepr):
             best_level = None
             best_cp = None
             best_adjusted = None
-            for level in list(np.arange(1, 40, 0.5)) + list(range(40, 46)):
+            for level in list(np.arange(1, max_level + 0.5, 0.5)):
                 cand_cp, adjusted = calc_cp(attack, defense, stamina, level)
                 if cand_cp <= max_cp:
                     best_cp = cand_cp
@@ -1064,6 +1021,149 @@ class Pokemon(ub.NiceRepr):
         #     pass
         code = '-'.join(parts)
         return code
+
+
+def pvp_inventory():
+    """
+    The idea is you put info about your candidates here and we find good mons
+    to power up.
+    """
+    inventory = [
+        Pokemon('Magnezone', (14, 14, 14), cp=1815, form='Normal'),
+        Pokemon('Magnemite', (7, 14, 9), cp=792),
+        Pokemon('Magnemite', (10, 14, 13), cp=747),
+        Pokemon('Magnemite', (13, 9, 15), cp=602),
+        Pokemon('Magneton', (13, 14, 13), cp=550, form='Shadow'),
+        Pokemon('Magnemite', (15, 13, 7), cp=293, form='Shadow'),
+        Pokemon('Magnemite', (2, 14, 15), cp=283, form='Shadow'),
+    ]
+
+    inventory = [
+        Pokemon('sirfetch’d', (4, 11, 12), cp=1924, form='Galarian'),
+        Pokemon('farfetch’d', (12, 15, 15), cp=1495, form='Galarian'),
+        Pokemon('farfetch’d', (14, 14, 15), cp=948, form='Galarian'),
+    ]
+
+    inventory = [
+        Pokemon('bulbasaur', (7, 13, 12), cp=382, form='Shadow'),
+        Pokemon('bulbasaur', (4, 8, 13), cp=366, form='Shadow'),
+        Pokemon('bulbasaur', (7, 12, 8), cp=227, form='Shadow'),
+    ]
+
+    inventory = [
+        Pokemon('Clefable', (12, 13, 12), cp=1828),
+        Pokemon('Clefairy', (4, 2, 7), cp=389),
+    ]
+
+    inventory = [
+        Pokemon('Jigglypuff', (10, 14, 15), cp=631),
+        Pokemon('Jigglypuff', (10, 12, 15), cp=286),
+    ]
+
+    inventory = [
+        Pokemon('poliwag', (10, 13, 14), cp=335),
+        Pokemon('poliwag', (10, 14, 13), cp=335),
+    ]
+
+    inventory = [
+        Pokemon('drifloon', (15, 15, 1), cp=695),
+        Pokemon('drifloon', (0, 9, 14), cp=527),
+        Pokemon('drifloon', (15, 15, 12), cp=509),
+        Pokemon('drifloon', (14, 15, 14), cp=508),
+        Pokemon('drifloon', (14, 11, 14), cp=497),
+        Pokemon('drifloon', (11, 13, 12), cp=489, shiny=True),
+        Pokemon('drifloon', (0, 4, 8), cp=336),
+        Pokemon('drifloon', (12, 10, 12), cp=118),
+    ]
+
+    inventory = [
+        Pokemon('shelmet', (10, 15, 8), cp=351),
+        Pokemon('shelmet', (0, 13, 0), cp=166),
+        Pokemon('shelmet', (15, 10, 12), cp=158),
+    ]
+
+    inventory = [
+        Pokemon('Karrablast', (10, 4, 12), cp=824),
+        Pokemon('Karrablast', (13, 13, 13), cp=655),
+        Pokemon('Karrablast', (13, 14, 15), cp=16),
+    ]
+
+    inventory = [
+        Pokemon('Ralts', (14, 14, 13)),
+        Pokemon('Ralts', (14, 11, 12)),
+        Pokemon('Ralts', (0, 11, 0), shadow=True),
+        Pokemon('Ralts', (1, 14, 2), shadow=True),
+        Pokemon('Ralts', (12, 12, 6), shadow=True),
+        Pokemon('Ralts', (5, 14, 14)),
+        Pokemon('Ralts', (7, 11, 11)),
+    ]
+
+    inventory = [
+        Pokemon('Toxicroak', (11, 13, 14)),
+        Pokemon('Croagunk', (9, 11, 13), cp=794),
+        Pokemon('Croagunk', (8, 6, 8), cp=429),
+    ]
+
+    inventory = [
+        Pokemon('Snorlax', (7, 6, 13), shadow=True),
+        Pokemon('Snorlax', (0, 0, 13), shadow=0),
+        Pokemon('Snorlax', (8, 15, 14), shadow=0, cp=1155),
+        Pokemon('Snorlax', (8, 12, 11), shadow=0, cp=2106),
+        Pokemon('Snorlax', (9, 15, 10), shadow=0, cp=2487),
+        Pokemon('Snorlax', (1, 15, 14), shadow=0, cp=1372),
+        Pokemon('Snorlax', (7, 11, 15), shadow=0, cp=3044),
+        Pokemon('Snorlax', (2, 15, 1), shadow=1),
+        Pokemon('Munchlax', (14, 11, 14), shadow=0, cp=1056),
+    ]
+
+    inventory = [
+        Pokemon('Obstagoon', (11, 15, 13), cp=1478, form='Galarian'),
+        Pokemon('zigzagoon', (10, 14, 14), cp=268, form='Galarian'),
+        Pokemon('zigzagoon', (11, 12, 13), cp=268, form='Galarian'),
+        Pokemon('zigzagoon', (11, 12, 15), cp=270, form='Galarian'),
+        Pokemon('zigzagoon', (12, 11, 15), cp=272, form='Galarian'),
+    ]
+
+    inventory = [
+        Pokemon('Meditite', (5, 12, 4), cp=25),
+        Pokemon('Medicham', (14, 12, 12), cp=1116),
+        Pokemon('Medicham', (15, 15, 10), cp=966),
+    ]
+
+    for self in inventory:
+        list(self.family())
+
+    candidates = list(ub.flatten(list(pkmn.family(ancestors=False)) for pkmn in inventory)) + inventory
+
+    groups = ub.group_items(candidates, key=lambda p: p.name)
+
+    leages = {
+        'master': {'max_cp': float('inf')},
+        'ultra': {'max_cp': 2500},
+        'great': {'max_cp': 1500},
+        'little': {'max_cp': 500},
+    }
+
+    max_level = 45  # for XL candy
+    max_level = 40  # normal
+
+    for name, group in groups.items():
+        print('\n\n------------\n\n')
+        print('name = {!r}'.format(name))
+        for leage_name, leage_filters in leages.items():
+            max_cp = leage_filters['max_cp']
+            print('')
+            print(' ========== ')
+            print(' --- {} in {} --- '.format(name, leage_name))
+            not_eligible = [p for p in group if p.cp is not None and p.cp > max_cp]
+            print('not_eligible = {!r}'.format(not_eligible))
+            have_ivs = [p.ivs for p in group if p.cp is None or p.cp <= max_cp]
+            if len(have_ivs) > 0:
+                first = ub.peek(group)
+                first.leage_rankings_for(have_ivs, max_cp=max_cp,
+                                         max_level=max_level)
+            else:
+                print('none eligable')
 
 
 def main():
