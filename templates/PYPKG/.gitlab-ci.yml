@@ -2,7 +2,7 @@
 # yaml merge-expand .gitlab-ci.yml _expandyml && cat _expandyml
 # 
 # GITLAB LINTER
-# https://gitlab.kitware.com/utils/PYPKG/-/ci/lint
+# https://gitlab.org.com/utils/PYPKG/-/ci/lint
 
 
 # This CI file has 4 types of jobs:
@@ -31,8 +31,8 @@
             sed 's|utils|<YOUR-GROUP>|g' | \
             sed 's|PYPKG|<YOUR-REPO>|g' | \
             sed 's|travis-ci-Erotemic|<YOUR-GPG-ID>|g' | \
-            sed 's|CI_KITWARE_SECRET|<YOUR_CI_SECRET>|g' | \
-            sed 's|gitlab.kitware.com|gitlab.your-instance.com|g' | \
+            sed 's|CI_ORG_SECRET|<YOUR_CI_SECRET>|g' | \
+            sed 's|gitlab.org.com|gitlab.your-instance.com|g' | \
         tee /tmp/repl && colordiff .gitlab-ci.yml /tmp/repl
         ```
 
@@ -44,7 +44,7 @@
         * This script will require matainence for new releases of Python
 
         * Make sure you add Runners to your project 
-        https://gitlab.kitware.com/computer-vision/PYPKG/-/settings/ci_cd 
+        https://gitlab.org.com/computer-vision/PYPKG/-/settings/ci_cd 
         in Runners-> Shared Runners
         and Runners-> Available specific runners
         
@@ -62,7 +62,7 @@
 
         * TWINE_PASSWORD - this is your pypi password 
 
-        * CI_KITWARE_SECRET - We will use this as a secret key to encrypt/decrypt gpg secrets 
+        * CI_ORG_SECRET - We will use this as a secret key to encrypt/decrypt gpg secrets 
             This is only needed if you want to automatically sign published
             wheels with a gpg key.
 
@@ -70,9 +70,9 @@
             This is only needed if you want to automatically git-tag release branches.
 
             Create a GIT_PUSH_TOKEN in User->Settings->Tokens, give it api and write permissions
-            see: https://gitlab.kitware.com/profile/personal_access_tokens
+            see: https://gitlab.org.com/profile/personal_access_tokens
             
-            Then add this as a secret variable here: https://gitlab.kitware.com/utils/PYPKG/-/settings/ci_cd
+            Then add this as a secret variable here: https://gitlab.org.com/utils/PYPKG/-/settings/ci_cd
             Note the value of GIT_PUSH_TOKEN will look something like: "{token-name}:{token-password}"
             For instance it may look like this: "git-push-token:62zutpzqga6tvrhklkdjqm"
 
@@ -83,14 +83,14 @@
 
         Before you do this ensure that your master and release branch are marked as protected
         and only editable by people that you trust. 
-        https://gitlab.kitware.com/utils/PYPKG/-/settings/repository#js-protected-branches-settings
+        https://gitlab.org.com/utils/PYPKG/-/settings/repository#js-protected-branches-settings
 
         WARNING: If an untrusted actor gains the ability to write to a
         protected branch, then they will be able to exfiltrate your secrets.
 
         Once you have protected the master and release branch, can add these
         variables as the following url
-        https://gitlab.kitware.com/utils/kwimage/-/settings/ci_cd 
+        https://gitlab.org.com/utils/kwimage/-/settings/ci_cd 
         
         WARNING: These variables contain secret information. Ensure that these
         the protected and masked settings are enabled when you create them.
@@ -114,7 +114,7 @@
 
             export TWINE_USERNAME=<pypi-username>
             export TWINE_PASSWORD=<pypi-password>
-            export CI_KITWARE_SECRET="<a-very-long-secret-string>"
+            export CI_ORG_SECRET="<a-very-long-secret-string>"
             export GIT_PUSH_TOKEN='git-push-token:<token-password>'
         ```
 
@@ -132,16 +132,16 @@
         
         # Load or generate secrets
         source $(secret_loader.sh)
-        echo $CI_KITWARE_SECRET
+        echo $CI_ORG_SECRET
         echo $TWINE_USERNAME
 
         # ADD RELEVANT VARIABLES TO GITLAB SECRET VARIABLES
-        # https://gitlab.kitware.com/utils/PYPKG/-/settings/ci_cd
+        # https://gitlab.org.com/utils/PYPKG/-/settings/ci_cd
         # Note that it is important to make sure that these variables are
         # only decrpyted on protected branches by selecting the protected
         # and masked option. Also make sure you have master and release
         # branches protected.
-        # https://gitlab.kitware.com/utils/PYPKG/-/settings/repository#js-protected-branches-settings
+        # https://gitlab.org.com/utils/PYPKG/-/settings/repository#js-protected-branches-settings
 
         # HOW TO ENCRYPT YOUR SECRET GPG KEY
         IDENTIFIER="travis-ci-Erotemic"
@@ -155,16 +155,16 @@
         gpg --export-ownertrust > dev/gpg_owner_trust
 
         # Encrypt gpg keys and trust with CI secret
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_public_gpg_key.pgp > dev/ci_public_gpg_key.pgp.enc
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_secret_gpg_key.pgp > dev/ci_secret_gpg_key.pgp.enc
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
+        GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_public_gpg_key.pgp > dev/ci_public_gpg_key.pgp.enc
+        GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_secret_gpg_key.pgp > dev/ci_secret_gpg_key.pgp.enc
+        GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
         echo $GPG_KEYID > dev/public_gpg_key
 
         # Test decrpyt
         cat dev/public_gpg_key
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc 
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc 
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc 
+        GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc 
+        GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc 
+        GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc 
 
         source $(secret_unloader.sh)
 
@@ -185,10 +185,10 @@
         ```bash
         docker run -it ubuntu
         apt update -y && apt install git -y
-        git clone https://gitlab.kitware.com/utils/PYPKG.git
+        git clone https://gitlab.org.com/utils/PYPKG.git
         cd PYPKG
         # do sed twice to handle the case of https clone with and without a read token
-        git config user.email "ci@gitlab.kitware.com"
+        git config user.email "ci@gitlab.org.com"
         git config user.name "Gitlab-CI"
         URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
         echo "URL_HOST = $URL_HOST"
@@ -300,10 +300,10 @@ stages:
         - $GPG_EXECUTABLE --list-keys
         - $GPG_EXECUTABLE --list-keys
         # Decrypt and import GPG Keys / trust
-        # note CI_KITWARE_SECRET is a protected variables only available on master and release branch
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+        # note CI_ORG_SECRET is a protected variables only available on master and release branch
+        - GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+        - GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+        - GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
         - $GPG_EXECUTABLE --list-keys  || echo "first one fails for some reason"
         - $GPG_EXECUTABLE --list-keys  
         # The publish script only builds wheels and does gpg signing if TAG_AND_UPLOAD is no
@@ -341,10 +341,10 @@ stages:
         - $GPG_EXECUTABLE --list-keys
         - $GPG_EXECUTABLE --list-keys
         # Decrypt and import GPG Keys / trust
-        # note CI_KITWARE_SECRET is a protected variables only available on master and release branch
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+        # note CI_ORG_SECRET is a protected variables only available on master and release branch
+        - GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+        - GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+        - GLKWS=$CI_ORG_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
         - $GPG_EXECUTABLE --list-keys  || echo "first one fails for some reason"
         - $GPG_EXECUTABLE --list-keys  
         # Install twine
@@ -357,7 +357,7 @@ stages:
         # do sed twice to handle the case of https clone with and without a read token
         - URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
         - echo "URL_HOST = $URL_HOST"
-        - git config user.email "ci@gitlab.kitware.com"
+        - git config user.email "ci@gitlab.org.com"
         - git config user.name "Gitlab-CI"
         - git tag $VERSION -m "tarball tag $VERSION"
         - git push --tags "https://${GIT_PUSH_TOKEN}@${URL_HOST}"
