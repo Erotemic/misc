@@ -277,3 +277,111 @@ def main():
         build[key] = chosen
 
     print('build = {}'.format(ub.repr2(build, nl=2)))
+
+
+def pole_mounts_comparison():
+    """
+    Found 2 good suppliers of pole workstations
+
+    https://www.ergomart.com/monitor-mounts/mcart-heavy-duty-computer-monitor-carts-custom-mounting-system/rolling-monitor-cart-base-and-mounting-pole
+    https://www.ergomart.com/ergonomic-accessories/cpu-holders/cpu-computer-tower-holder
+    https://www.ergomart.com/monitor-mounts/monitor-arms/heavy-duty/saa2718-monitor-arm
+
+    https://www.computerdesksdepot.com/collections/parts-for-exclusively-35-mm-pole-diameters
+
+    https://www.computerdesksdepot.com/products/vc01-mc-cpu-holder-for-vc01-pole-computer-workstation?_pos=1&_sid=c5109caca&_ss=r
+
+    https://www.computerdesksdepot.com/collections/parts-for-exclusively-35-mm-pole-diameters/products/dvc04-cpu-pole-cpu-holder-for-cuzzi-pole-carts-35-mm-poles
+    https://www.computerdesksdepot.com/collections/5-pole-lcd-monitor-mounts/products/df17-arm-lcd-pole-arm-for-35-mm-diameter-poles
+    https://www.computerdesksdepot.com/collections/accessories-parts/products/dvc03-sh-shelf-for-cuzzi-dvc-pole-carts-35-mm-pole-diameters
+    """
+
+    ergomart_options = [
+        {'type': 'mobile_base', 'price': 238.53},
+        {'type': 'pole', 'height': 5, 'price': 118.08},
+        {'type': 'pole', 'height': 6, 'price': 137.53},
+        # {'type': 'pole', 'height': 4, 'price': 99.09},
+        {'type': 'cpu_holder', 'size': 'large', 'price': 71.66},
+        {'type': 'cpu_holder', 'size': 'medium', 'price': 61.95},
+        {'type': 'monitor_arm', 'size': '27hz', 'price': 236.69},
+    ]
+
+    groups = ub.group_items(ergomart_options, lambda x: x['type'])
+    build = []
+    for key, group in groups.items():
+        cheap = sorted(group, key=lambda x: x['price'])[0]
+        build.append(cheap)
+    print('build = {}'.format(ub.repr2(build, nl=1)))
+    total = sum(p['price'] for p in build)
+    print('total = {!r}'.format(total))
+
+    """
+    Whole setup is ~50lb
+
+    Arm itself is 5lb
+
+    Pole is 25lb.
+
+
+    https://www.computerdesksdepot.com/products/cuzzi-dpa-1-pole-clamp-for-pole-diam-1-00-1-25?_pos=1&_sid=1157c7a8e&_ss=r
+    https://www.computerdesksdepot.com/collections/pole-mount-products-monitor-mounts-arms-keyboard-trays-shelves/products/vc01-mc-cpu-holder-for-vc01-pole-computer-workstation
+
+
+    https://studiored.com/tip-point-calculator/
+    https://physics.stackexchange.com/questions/244910/mass-required-to-prevent-sign-falling-over-with-a-set-wind-load-activity-stati
+
+                2'
+
+
+               |-----o 25lb
+               |
+         5'    |   x (center of mass)
+               |
+              === <- pivot
+
+
+               2'
+
+      25 lB
+
+      Box + pole = 20 lb
+
+      parts = [
+          {'xy': (0, 0), 'weight': 6.0, 'name': 'base'},
+          {'xy': (0, 2.5), 'weight': 10, 'name': 'pole'},
+          {'xy': (1.42, 5), 'weight': 25, 'name': 'monitor'},
+          {'xy': (1.42 / 2, 5), 'weight': 5, 'name': 'arm'},
+      ]
+
+      xy_pos = np.array([p['xy'] for p in parts])
+      w = np.array([p['weight'] for p in parts])[:, None]
+
+      # Crude approximation to calculate the center of mass.
+      # The object will tip if the x-coordinate of the COM is
+      # past the edge of the base (the pivot point)
+
+      center_of_mass = (xy_pos * w).sum(axis=0) / w.sum(axis=0)
+      print('center_of_mass = {!r}'.format(center_of_mass))
+
+      # COM = 0.71, 2.72727273
+
+      Base extends 1'
+
+    """
+
+    computerdesksdeop_options = [
+        {'type': 'pole_and_base', 'price': 198.00, 'model': 'DVC04-BYO', 'height': '65"'},
+        {'type': 'cpu_holder', 'size': 'medium', 'price': 65.00, 'model': ''},
+        {'type': 'monitor_arm', 'size': '17', 'model': 'DF17ARM', 'price': 89.00, 'max_weight': '25 lb'},
+        # {'type': 'monitor_arm', 'size': '17.5', 'model': 'DP170', 'price': 148.00, 'max_weight': '25 lb'},
+
+        # DVC03-SH Shelf 40 lb 65.0
+    ]
+    groups = ub.group_items(computerdesksdeop_options, lambda x: x['type'])
+    build = []
+    for key, group in groups.items():
+        cheap = sorted(group, key=lambda x: x['price'])[0]
+        build.append(cheap)
+    print('build = {}'.format(ub.repr2(build, nl=1)))
+    total = sum(p['price'] for p in build)
+    print('total = {!r}'.format(total))
