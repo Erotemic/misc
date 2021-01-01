@@ -1,6 +1,6 @@
 import os
 import re
-from os.path import join, basename, exists
+from os.path import join, basename, exists, dirname
 import ubelt as ub
 
 root_fpath = '/media/joncrall/raid/'
@@ -21,7 +21,6 @@ blocked_fnames = {
 
 class Inventory:
     """
-
     Ignore:
         >>> import sys, ubelt
         >>> sys.path.append(ubelt.expandpath('~/misc'))
@@ -64,13 +63,18 @@ class Inventory:
         self.pfiles = [ProgressiveFile(f) for f in all_fpaths]
         # self.all_fpaths = all_fpaths
 
-    def build_hashes(self, max_workers=6):
+    def build_hashes(self, step_idx=1, mode='thread', max_workers=0,
+                     verbose=1):
         """
+        Note: threading is faster for large number of files. Unfortunately we
+        cant use process mode because we cant pickle hashers.
+
         max_workers = 6
         """
         pfiles = self.pfiles
-        ProgressiveFile.parallel_refine(pfiles, step=2, mode='thread',
-                                        max_workers=max_workers, verbose=1)
+        ProgressiveFile.parallel_refine(pfiles, step_idx=step_idx, mode=mode,
+                                        max_workers=max_workers,
+                                        verbose=verbose)
         # from kwcoco.util.util_futures import JobPool  # NOQA
         # # jobs = JobPool(mode='thread', max_workers=2)
         # jobs = JobPool(mode='process', max_workers=max_workers)
@@ -85,33 +89,17 @@ class Inventory:
         #         jobs.jobs, desc='collect hash jobs', adjust=0, freq=1)
         # ]
 
-    def likely_duplicates(self, thresh=0.5):
-        pfiles = self.pfiles
-        # thresh = 0.5
-
-        def _likely_duplicates(pfiles):
-            new_groups = {}
-            groups = ProgressiveFile.group_pfiles(pfiles)
-            for key, group in groups.items():
-                if len(group) > 1 and key[-1] < thresh:
-                    for pfile in group:
-                        pfile.refine()
-                    regrouped  = _likely_duplicates(pfiles)
-                    new_groups.update(regrouped)
-                else:
-                    new_groups[key] = group
-            return new_groups
-
-        groups = _likely_duplicates(pfiles)
-
-        final = {k: v for k, v in groups.items() if len(v) > 1}
-        return final
+    def likely_duplicates(self, thresh=0.5, verbose=1):
+        return ProgressiveFile.likely_duplicates(self.pfiles, thresh=thresh, verbose=verbose)
 
 
 def progressive_refine_worker(hasher, fpath, parts, pos, curr_blocksize,
                               step_idx, size):
     if len(parts) and parts[-1] == 1:
         return None
+
+    if step_idx == 'next':
+        step_idx = len(parts)
 
     num_steps = max(step_idx - len(parts) + 1, 0)
 
@@ -133,7 +121,7 @@ def progressive_refine_worker(hasher, fpath, parts, pos, curr_blocksize,
             if pos:
                 file.seek(pos)
 
-            for _ in range(num_steps):
+            while num_steps > 0:
                 buf = file.read(curr_blocksize)
                 readsize = len(buf)
                 pos += readsize
@@ -148,6 +136,11 @@ def progressive_refine_worker(hasher, fpath, parts, pos, curr_blocksize,
                     curr_blocksize *= 2
                 else:
                     break
+                num_steps -= 1
+        if pos == size:
+            # We are done hashing, so we can destroy the hasher
+            hasher = None
+
     return hasher, next_parts, pos, curr_blocksize, size
 
 
@@ -182,7 +175,7 @@ class ProgressiveFile(ub.NiceRepr):
         if MODE == 0:
             return pfile.fpath
         else:
-            s = ub.shrinkuser(pfile.fpath)
+            s = repr(pfile.fpath)
             if len(pfile._parts) == 0:
                 s += ', ?'
             else:
@@ -208,7 +201,10 @@ class ProgressiveFile(ub.NiceRepr):
             pfile._size = os.stat(pfile.fpath).st_size
         return pfile._size
 
-    def step_id(pfile, step_idx):
+    def step_id(pfile, step_idx=None):
+        if step_idx is None:
+            step_idx = pfile.curr_step
+
         if step_idx < 0:
             # We know nothing at this point
             return ('', -1, -1, -1)
@@ -267,7 +263,58 @@ class ProgressiveFile(ub.NiceRepr):
         pass
 
     @classmethod
-    def group_pfiles(cls, pfiles):
+    def likely_duplicates(cls, pfiles, thresh=0.5, verbose=1):
+        final_groups = {}
+        active_groups = [pfiles]
+        mode = 'thread'
+        max_workers = 6
+
+        while active_groups:
+            print('Checking {} active groups'.format(len(active_groups)))
+            groups = ub.dict_union(*[
+                ProgressiveFile.group_pfiles(g) for g in active_groups
+            ])
+
+            # Mark all groups that need refinement
+            refine_items = []
+            next_group = []
+            for key, group in groups.items():
+                if len(group) > 1 and key[-1] < thresh:
+                    next_group.append(group)
+                    refine_items.extend([
+                        item for item in group if item.step_id()[-1] < thresh
+                    ])
+                else:
+                    # Any group that doesnt need refinment is added to the
+                    # solution and will not appear in the next active group
+                    final_groups[key] = group
+
+            # Refine any item that needs it
+            if len(refine_items):
+                ProgressiveFile.parallel_refine(
+                    refine_items, mode=mode, step_idx='next',
+                    max_workers=max_workers, verbose=verbose)
+
+            # Continue refinement as long as there are active groups
+            active_groups = next_group
+        return final_groups
+
+    @classmethod
+    def compatible_step_idx(cls, pfiles):
+        """
+        Compute the maximum compatible step idx for comparison
+        """
+        # we have to use the minimum refine step available
+        # for any unfinished pfile to ensure consistency
+        unfinished = [pfile for pfile in pfiles if pfile.can_refine]
+        if len(unfinished) == 0:
+            step_idx = float('inf')
+        else:
+            step_idx = min(pfile.curr_step for pfile in unfinished)
+        return step_idx
+
+    @classmethod
+    def group_pfiles(cls, pfiles, step_idx=None):
         """
         Creates groups of pfiles that *might* be the same.
 
@@ -278,24 +325,27 @@ class ProgressiveFile(ub.NiceRepr):
             >>> for pfile in pfiles:
             >>>     pfile.refine()
             >>> groups2 = ProgressiveFile.group_pfiles(pfiles)
+            >>> for pfile in pfiles[0::2]:
+            >>>     pfile.refine()
+            >>> groups3 = ProgressiveFile.group_pfiles(pfiles)
+            >>> for pfile in pfiles[1::2]:
+            >>>     pfile.refine()
+            >>> groups4 = ProgressiveFile.group_pfiles(pfiles)
         """
-        size_groups = ub.group_items(pfiles, key=lambda x: x.size)
-        final_groups = {}
-
-        for group in size_groups.values():
-            # we have to use the minimum refine step available
-            # for any unfinished pfile to ensure consistency
-            unfinished = [pfile for pfile in group if pfile.can_refine]
-            if len(unfinished) == 0:
-                step_idx = float('inf')
-            else:
-                step_idx = min(pfile.curr_step for pfile in unfinished)
-
-            for pfile in group:
-                pfile.step_id(step_idx)
-
-            step_groups = ub.group_items(group, key=lambda x: x.step_id(step_idx))
-            final_groups.update(step_groups)
+        if step_idx is not None:
+            # We are given the step idx to use, so do that
+            final_groups = ub.group_items(pfiles, key=lambda x: x.step_id(step_idx))
+        else:
+            # Otherwise do something reasonable
+            size_groups = ub.group_items(pfiles, key=lambda x: x.size)
+            final_groups = ub.ddict(list)
+            for group in size_groups.values():
+                # we have to use the minimum refine step available
+                # for any unfinished pfile to ensure consistency
+                step_idx = ProgressiveFile.compatible_step_idx(group)
+                step_groups = ub.group_items(group, key=lambda x: x.step_id(step_idx))
+                for key, val in step_groups.items():
+                    final_groups[key].extend(val)
         return final_groups
 
     @classmethod
@@ -319,18 +369,19 @@ class ProgressiveFile(ub.NiceRepr):
         jobs = JobPool(mode=mode, max_workers=max_workers)
 
         for pfile in ub.ProgIter(pfiles, desc='submit hash jobs', verbose=verbose):
-
-            hasher = pfile._hasher
+            # only submit the job if we need to
             parts = pfile._parts
-            fpath = pfile.fpath
-            pos = pfile._pos
-            size = pfile._size
-            curr_blocksize = pfile._curr_blocksize
+            if pfile.can_refine and (step_idx == 'next' or len(parts) <= step_idx):
+                hasher = pfile._hasher
+                fpath = pfile.fpath
+                pos = pfile._pos
+                size = pfile._size
+                curr_blocksize = pfile._curr_blocksize
 
-            job = jobs.submit(
-                progressive_refine_worker, hasher, fpath, parts, pos,
-                curr_blocksize, step_idx, size)
-            job.pfile = pfile
+                job = jobs.submit(
+                    progressive_refine_worker, hasher, fpath, parts, pos,
+                    curr_blocksize, step_idx, size)
+                job.pfile = pfile
 
         for job in ub.ProgIter(jobs.as_completed(), total=len(jobs),
                                desc='collect hash jobs', verbose=verbose):
@@ -389,16 +440,143 @@ class ProgressiveFile(ub.NiceRepr):
 ####
 
 def main():
-    if 0:
-        # TODO: progressive hashing data structure
+    # TODO: progressive hashing data structure
+    inv1 = Inventory('/media/joncrall/raid/', blocklist)
+    inv2 = Inventory('/media/joncrall/media', blocklist)
 
-        inv1 = Inventory('/media/joncrall/raid/', blocklist)
-        inv2 = Inventory('/media/joncrall/media', blocklist)
+    inv1 = Inventory('/media/joncrall/raid/Applications', blocklist)
+    inv2 = Inventory('/media/joncrall/media/Applications', blocklist)
 
-        self = inv1  # NOQA
+    self = inv1  # NOQA
 
-        inv1.build()
-        inv2.build()
+    inv1.build()
+    inv2.build()
+
+    pfiles = inv1.pfiles + inv2.pfiles
+    thresh = 0.3
+    verbose = 1
+    dups3 = ProgressiveFile.likely_duplicates(pfiles, thresh=thresh, verbose=verbose)
+
+    # Build all hashes up to a reasonable degree
+    inv1.build_hashes(max_workers=0)
+
+    maybe_dups = inv1.likely_duplicates(thresh=0.2)
+    len(maybe_dups)
+
+    maybe_dups = ub.sorted_keys(maybe_dups, key=lambda x: x[2])
+
+    import networkx as nx
+    import itertools as it
+    # Check which directories are most likely to be duplicates
+    graph = nx.Graph()
+
+    for key, group in ub.ProgIter(maybe_dups.items(), total=len(maybe_dups), desc='build dup dir graph'):
+        if key[0] == '':
+            continue
+        dpaths = [dirname(pfile.fpath) for pfile in group]
+        for d1, d2 in it.combinations(dpaths, 2):
+            graph.add_edge(d1, d2)
+            edge = graph.edges[(d1, d2)]
+            if 'dups' not in edge:
+                edge['dups'] = 0
+            edge['dups'] += 1
+
+    edge_data = list(graph.edges(data=True))
+
+    for dpath in ub.ProgIter(graph.nodes, desc='find lens'):
+        num_children = len(os.listdir(dpath))
+        graph.nodes[dpath]['num_children'] = num_children
+
+    for d1, d2, dat in edge_data:
+        nc1 = graph.nodes[d1]['num_children']
+        nc2 = graph.nodes[d2]['num_children']
+        ndups = dat['dups']
+        dup_score = (dat['dups'] / min(nc1, nc2))
+        dat['dup_score'] = dup_score
+        if dup_score > 0.9:
+            print('dup_score = {!r}'.format(dup_score))
+            print('d1 = {!r}'.format(d1))
+            print('d2 = {!r}'.format(d2))
+            print('nc1 = {!r}'.format(nc1))
+            print('nc2 = {!r}'.format(nc2))
+            print('ndups = {!r}'.format(ndups))
+
+    print('edge_data = {}'.format(ub.repr2(edge_data, nl=2)))
+
+    print('maybe_dups = {}'.format(ub.repr2(maybe_dups.keys(), nl=3)))
+    for key, group in maybe_dups.items():
+        if key[0] == '':
+            continue
+        print('key = {!r}'.format(key))
+        print('group = {}'.format(ub.repr2(group, nl=1)))
+        for pfile in group:
+            pfile.refined_to(float('inf'))
+
+        print('key = {!r}'.format(key))
+
+    inv2.build_hashes(max_workers=6, mode='thread')
+
+    inv1.pfiles = [p for p in ub.ProgIter(inv1.pfiles, desc='exist check') if exists(p.fpath)]
+    inv2.pfiles = [p for p in ub.ProgIter(inv2.pfiles, desc='exist check') if exists(p.fpath)]
+
+    pfiles1 = inv1.pfiles
+    pfiles2 = inv2.pfiles
+    def compute_likely_overlaps(pfiles1, pfiles2):
+        step_idx1 = ProgressiveFile.compatible_step_idx(pfiles1)
+        step_idx2 = ProgressiveFile.compatible_step_idx(pfiles2)
+        step_idx = min(step_idx1, step_idx2)
+        grouped1 = ProgressiveFile.group_pfiles(pfiles1, step_idx=step_idx)
+        grouped2 = ProgressiveFile.group_pfiles(pfiles2, step_idx=step_idx)
+
+        thresh = 0.2
+        verbose = 1
+
+        # TODO: it would be nice if we didn't have to care about internal
+        # deduplication when we attempt to find cross-set overlaps
+        dups1 = ProgressiveFile.likely_duplicates(inv1.pfiles, thresh=thresh, verbose=verbose)
+        dups2 = ProgressiveFile.likely_duplicates(inv2.pfiles, thresh=thresh, verbose=verbose)
+
+        pfiles = inv1.pfiles + inv2.pfiles
+        dups3 = ProgressiveFile.likely_duplicates(pfiles, thresh=thresh, verbose=verbose)
+
+        only_on_inv2 = {}
+        for key, group in dups3.items():
+            if not any(item.fpath.startswith(inv1.root_fpath) for item in group):
+                only_on_inv2[key] = group
+
+        for p1 in inv1.pfiles:
+            if 'Chase HQ 2 (JUE) [!].zip' in p1.fpath:
+                break
+
+        for p2 in inv2.pfiles:
+            if 'Chase HQ 2 (JUE) [!].zip' in p2.fpath:
+                break
+
+        look = list(ub.flatten(only_on_inv2.values()))
+        takealook = sorted([p.fpath for p in look])
+        print('takealook = {}'.format(ub.repr2(takealook, nl=1)))
+
+
+        keys1 = set(grouped1)
+        keys2 = set(grouped2)
+
+        missing_keys2 = keys2 - keys1
+        missing_groups2 = ub.dict_subset(grouped2, missing_keys2)
+
+        missing_fpaths2 = []
+        for key, values in missing_groups2.items():
+            print('key = {!r}'.format(key))
+            print('values = {}'.format(ub.repr2(values, nl=1)))
+            missing_fpaths2.extend(values)
+
+        missing_fpaths2 = sorted([p.fpath for p in missing_fpaths2])
+        print('missing_fpaths2 = {}'.format(ub.repr2(missing_fpaths2, nl=1)))
+        # pass
+
+        import xdev
+        set_overlaps = xdev.set_overlaps(keys1, keys2)
+        print('set_overlaps = {}'.format(ub.repr2(set_overlaps, nl=1)))
+        # We want to know what files in set2 do not exist in set1
 
     if 0:
         fpath = inv1.all_fpaths[0]
@@ -418,7 +596,6 @@ def main():
         fpath_demodata = inv1.all_fpaths[::len(inv1.all_fpaths) // 500]
         # fpaths = hash_groups1_dup['ef46db3751d8e999']
         pfiles_demodata = [ProgressiveFile(f) for f in fpath_demodata]
-
 
         def progressive_duplicates(pfiles, idx=1):
             step_ids = [pfile.refined_to(idx) for pfile in ub.ProgIter(pfiles)]
