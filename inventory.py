@@ -1,7 +1,11 @@
+"""
+
+"""
 import os
 import re
 from os.path import join, basename, exists, dirname
 import ubelt as ub
+import itertools as it
 
 root_fpath = '/media/joncrall/raid/'
 blocklist = {'docker', 'data', 'netharn-work', 'code', 'cache',
@@ -36,8 +40,6 @@ class Inventory:
     def __init__(self, root_fpath, blocklist=set()):
         self.root_fpath = root_fpath
         self.blocklist = blocklist
-        # self.all_fpaths = None
-        # self.all_hashes = None
         self.pfiles = None
 
     def build(self):
@@ -61,7 +63,6 @@ class Inventory:
                 all_fpaths.append(fpath)
 
         self.pfiles = [ProgressiveFile(f) for f in all_fpaths]
-        # self.all_fpaths = all_fpaths
 
     def build_hashes(self, step_idx=1, mode='thread', max_workers=0,
                      verbose=1):
@@ -75,77 +76,18 @@ class Inventory:
         ProgressiveFile.parallel_refine(pfiles, step_idx=step_idx, mode=mode,
                                         max_workers=max_workers,
                                         verbose=verbose)
-        # from kwcoco.util.util_futures import JobPool  # NOQA
-        # # jobs = JobPool(mode='thread', max_workers=2)
-        # jobs = JobPool(mode='process', max_workers=max_workers)
-
-        # for fpath in ub.ProgIter(self.all_fpaths, desc='submit hash jobs'):
-        #     # jobs.submit(ub.hash_file, fpath, hasher='xx64', maxbytes=1e3)
-        #     jobs.submit(ub.hash_file, fpath, hasher='xx64', maxbytes=1e3)
-
-        # self.all_hashes = [
-        #     job.result()
-        #     for job in ub.ProgIter(
-        #         jobs.jobs, desc='collect hash jobs', adjust=0, freq=1)
-        # ]
 
     def likely_duplicates(self, thresh=0.5, verbose=1):
         return ProgressiveFile.likely_duplicates(self.pfiles, thresh=thresh, verbose=verbose)
 
 
-def progressive_refine_worker(hasher, fpath, parts, pos, curr_blocksize,
-                              step_idx, size):
-    if len(parts) and parts[-1] == 1:
-        return None
-
-    if step_idx == 'next':
-        step_idx = len(parts)
-
-    num_steps = max(step_idx - len(parts) + 1, 0)
-
-    if num_steps == 0:
-        return None
-
-    next_parts = []
-
-    if len(parts) == 0:
-        # FIrst part is just the size
-        size = os.stat(fpath).st_size
-        frac = 1 if pos == size else 0
-        part = ('', pos, size, frac)
-        num_steps -= 1
-        next_parts.append(part)
-
-    if num_steps > 0:
-        with open(fpath, 'rb') as file:
-            if pos:
-                file.seek(pos)
-
-            while num_steps > 0:
-                buf = file.read(curr_blocksize)
-                readsize = len(buf)
-                pos += readsize
-                if readsize > 0:
-                    hasher.update(buf)
-                    hash_chunk = hasher.hexdigest()
-                    frac = round(pos / size, 4)
-                    part = (hash_chunk, pos, size, frac)
-                    next_parts.append(part)
-                    # Double the amount of data read if the previous wasnt
-                    # enough
-                    curr_blocksize *= 2
-                else:
-                    break
-                num_steps -= 1
-        if pos == size:
-            # We are done hashing, so we can destroy the hasher
-            hasher = None
-
-    return hasher, next_parts, pos, curr_blocksize, size
-
-
 class ProgressiveFile(ub.NiceRepr):
     """
+    Holds onto a file and stores a progressively more precise hash-id.
+
+    This can be used for probabalistically determining if files are the same
+    with much less computation.
+
     Doctest:
         >>> # Create a directory filled with random files
         >>> fpaths = _demodata_files()
@@ -153,10 +95,6 @@ class ProgressiveFile(ub.NiceRepr):
         >>> pfile.size
         >>> pfile.refine()
     """
-
-    # TODO:
-    #     Some object that can take multiple pfiles and refine their
-    #     identifiers to a target specification in parallel
 
     def __init__(pfile, fpath):
         from ubelt.util_hash import _rectify_hasher
@@ -167,7 +105,7 @@ class ProgressiveFile(ub.NiceRepr):
 
         pfile._parts = []
         pfile._hasher = _rectify_hasher('xx64')()
-        pfile._curr_blocksize = 65536
+        pfile._curr_blocks = 1
         pfile._pos = 0
 
     def __nice__(pfile):
@@ -183,8 +121,18 @@ class ProgressiveFile(ub.NiceRepr):
                 s += ', {}'.format(f)
             return s
 
+    def _check_integrity(pfile):
+        for part in pfile._parts[1:]:
+            # Ensure that each partial hash corresponds with the actual partial
+            # hash.
+            target = ub.hash_file(
+                pfile.fpath, blocksize=int(2 ** 20), maxbytes=part[1],
+                hasher='xx64')
+            if target != part[0]:
+                raise AssertionError('The hashes do not match!')
+
     @property
-    def curr_step(pfile):
+    def curr_step_idx(pfile):
         # Return the number of times this has been refined
         return len(pfile._parts) - 1
 
@@ -198,22 +146,24 @@ class ProgressiveFile(ub.NiceRepr):
     @property
     def size(pfile):
         if pfile._size is None:
-            pfile._size = os.stat(pfile.fpath).st_size
+            pfile.refined_to(step_idx=0)
+            # pfile._size = os.stat(pfile.fpath).st_size
         return pfile._size
 
     def step_id(pfile, step_idx=None):
         if step_idx is None:
-            step_idx = pfile.curr_step
+            step_idx = pfile.curr_step_idx
 
         if step_idx < 0:
             # We know nothing at this point
             return ('', -1, -1, -1)
         if step_idx >= len(pfile._parts):
-            # If we are past the step_idx, return the last one if we cant refine
-            if pfile.can_refine:
-                raise ValueError('step_idx not computed')
-            else:
+            # If we are past the step_idx AND we can't refine, then we can
+            # safely return the last one.
+            if not pfile.can_refine:
                 return pfile._parts[-1]
+            else:
+                raise ValueError('step_idx not computed')
         else:
             return pfile._parts[step_idx]
 
@@ -221,13 +171,48 @@ class ProgressiveFile(ub.NiceRepr):
         """
         Refines the calculation of the identity by one step
         """
-        step_idx = pfile.curr_step + 1
+        step_idx = pfile.curr_step_idx + 1
         pfile.refined_to(step_idx)
-        return pfile.curr_step == step_idx
+        return pfile.curr_step_idx == step_idx
 
     def refined_to(pfile, step_idx):
         """
         Ensures we have refined by at least N steps.
+
+        Ignore:
+            >>> import sys, ubelt
+            >>> sys.path.append(ubelt.expandpath('~/misc'))
+            >>> from inventory import *  # NOQA
+            >>> from inventory import _demodata_files
+            >>> fpaths = _demodata_files(num_files=1, size_pool=[1000], pool_size=2)
+
+            >>> pfile = ProgressiveFile(fpaths[0])
+            >>> step_idxs = [-1, 0, 3]
+            >>> print(chr(10) + '----')
+            >>> for step_idx in step_idxs:
+            >>>     print('step_idx = {!r}'.format(step_idx))
+            >>>     step_id = pfile.refined_to(step_idx)
+            >>>     print('step_id = {!r}'.format(step_id))
+            >>>     print('pfile = {}'.format(pfile))
+
+            >>> pfile = ProgressiveFile(fpaths[0])
+            >>> step_idxs = [1, 5, 3, 0, -1, 100]
+            >>> print(chr(10) + '----')
+            >>> for step_idx in step_idxs:
+            >>>     print('step_idx = {!r}'.format(step_idx))
+            >>>     step_id = pfile.refined_to(step_idx)
+            >>>     print('step_id = {!r}'.format(step_id))
+            >>>     print('pfile = {}'.format(pfile))
+
+            >>> pfile = ProgressiveFile(fpaths[0])
+            >>> step_idxs = [1000, -1, 0, 3]
+            >>> print(chr(10) + '----')
+            >>> for step_idx in step_idxs:
+            >>>     print('step_idx = {!r}'.format(step_idx))
+            >>>     step_id = pfile.refined_to(step_idx)
+            >>>     print('step_id = {!r}'.format(step_id))
+            >>>     print('pfile = {}'.format(pfile))
+            >>> pfile._check_integrity()
         """
         pfiles = [pfile]
         mode = 'serial'
@@ -239,13 +224,24 @@ class ProgressiveFile(ub.NiceRepr):
                                         verbose=verbose)
         return pfile.step_id(step_idx)
 
+    def complete_enough(pfile, byte_thresh=None, frac_thresh=None):
+        part = pfile.step_id()
+        byte = part[1]
+        frac = part[3]
+        terms = []
+        if frac_thresh is not None:
+            terms.append(frac >= frac_thresh)
+        if byte_thresh is not None:
+            terms.append(byte >= byte_thresh)
+        good_enough = any(terms) or len(terms) == 0
+        return good_enough
+
     def maybe_equal(pfile, pfile2, thresh=0.2):
         """
         Test to see if at least the first ``thresh`` fractions of the files are
         the same. A False result is always correct. A True result has some
         probability of being incorrect.
         """
-        import itertools as it
         for idx in it.count():
             # Ensure the files can be compared at this level
             part1 = pfile.refined_to(idx)
@@ -259,28 +255,30 @@ class ProgressiveFile(ub.NiceRepr):
                 # At least the first fractions of the file are the same
                 return True
 
-    def __eq__(pfile, pfile2):
-        pass
+    # def __eq__(pfile, pfile2):
+    #     pass
 
     @classmethod
-    def likely_duplicates(cls, pfiles, thresh=0.5, verbose=1):
+    def likely_duplicates(cls, pfiles, thresh=0.2, verbose=1):
         final_groups = {}
         active_groups = [pfiles]
         mode = 'thread'
         max_workers = 6
 
         while active_groups:
-            print('Checking {} active groups'.format(len(active_groups)))
+            group_sizes = list(map(len, active_groups))
+            total_active = sum(group_sizes)
+            print('Checking {} active groups with {} items'.format(len(active_groups), total_active))
             groups = ub.dict_union(*[
                 ProgressiveFile.group_pfiles(g) for g in active_groups
             ])
 
             # Mark all groups that need refinement
             refine_items = []
-            next_group = []
+            next_groups = []
             for key, group in groups.items():
                 if len(group) > 1 and key[-1] < thresh:
-                    next_group.append(group)
+                    next_groups.append(group)
                     refine_items.extend([
                         item for item in group if item.step_id()[-1] < thresh
                     ])
@@ -291,13 +289,124 @@ class ProgressiveFile(ub.NiceRepr):
 
             # Refine any item that needs it
             if len(refine_items):
+                # TODO: if there are few enough items, just refine to the
+                # threshold?
                 ProgressiveFile.parallel_refine(
                     refine_items, mode=mode, step_idx='next',
                     max_workers=max_workers, verbose=verbose)
 
             # Continue refinement as long as there are active groups
-            active_groups = next_group
+            active_groups = next_groups
         return final_groups
+
+    @classmethod
+    def likely_overlaps(cls, pfiles1, pfiles2, thresh=0.2, verbose=1):
+        """
+        This is similar to finding duplicates, but between two sets of files
+
+        Example:
+            >>> fpaths = _demodata_files(num_files=100, rng=0)
+            >>> fpaths1 = fpaths[0::2]
+            >>> fpaths2 = fpaths[1::2]
+            >>> pfiles1 = [ProgressiveFile(f) for f in fpaths1]
+            >>> pfiles2 = [ProgressiveFile(f) for f in fpaths2]
+            >>> overlap, only1, only2 = ProgressiveFile.likely_overlaps(pfiles1, pfiles2)
+            >>> print(len(overlaps))
+            >>> print(len(only1))
+            >>> print(len(only2))
+        """
+        final_groups = {}
+
+        # Mark each set of files, so we only refine if a duplicate group
+        # contains elements from multiple sets
+
+        set1 = {id(p) for p in pfiles1}
+        set2 = {id(p) for p in pfiles2}
+
+        def _membership(p):
+            partof = []
+            pid = id(p)
+            if pid in set1:
+                partof.append(1)
+            if pid in set2:
+                partof.append(2)
+            return partof
+
+        pfiles = pfiles1 + pfiles2
+
+        active_groups = [pfiles]
+        mode = 'thread'
+        max_workers = 6
+
+        if isinstance(thresh, dict):
+            frac_thresh = thresh.get('frac', None)
+            byte_thresh = thresh.get('byte', None)
+        else:
+            frac_thresh = thresh
+            byte_thresh = thresh
+
+        while active_groups:
+            group_sizes = list(map(len, active_groups))
+            total_active = sum(group_sizes)
+            print('Checking {} active groups with {} items'.format(len(active_groups), total_active))
+            groups = ub.dict_union(*[
+                ProgressiveFile.group_pfiles(g) for g in active_groups
+            ])
+
+            # Mark all groups that need refinement
+            refine_items = []
+            next_groups = []
+            for key, group in groups.items():
+                membership = {m for p in group for m in _membership(p)}
+
+                group_frac = key[3]
+                group_byte = key[1]
+                # Check if we have hashed enough of the file by fraction or
+                # number of bytes.
+                terms = []
+                if frac_thresh is not None:
+                    terms.append(group_frac >= frac_thresh)
+                if byte_thresh is not None:
+                    terms.append(group_byte >= byte_thresh)
+                good_enough = any(terms) or len(terms) == 0
+
+                if not good_enough and len(membership) > 1 and len(group) > 1:
+                    next_groups.append(group)
+                    needs_refine = [
+                        item for item in group if not item.complete_enough(
+                            frac_thresh=frac_thresh, byte_thresh=byte_thresh)
+                    ]
+                    refine_items.extend(needs_refine)
+                else:
+                    # Any group that doesnt need refinment is added to the
+                    # solution and will not appear in the next active group
+                    final_groups[key] = group
+
+            # Refine any item that needs it
+            if len(refine_items):
+                # TODO: if there are few enough items, just refine to the
+                # threshold?
+                ProgressiveFile.parallel_refine(
+                    refine_items, mode=mode, step_idx='next',
+                    max_workers=max_workers, verbose=verbose)
+
+            # Continue refinement as long as there are active groups
+            active_groups = next_groups
+
+        only1 = {}
+        only2 = {}
+        overlap = {}
+        for key, group in final_groups.items():
+            membership = {m for p in group for m in _membership(p)}
+            if len(membership) == 1:
+                if ub.peek(membership) == 1:
+                    only1[key] = group
+                else:
+                    only2[key] = group
+            else:
+                overlap[key] = group
+
+        return overlap, only1, only2
 
     @classmethod
     def compatible_step_idx(cls, pfiles):
@@ -310,7 +419,7 @@ class ProgressiveFile(ub.NiceRepr):
         if len(unfinished) == 0:
             step_idx = float('inf')
         else:
-            step_idx = min(pfile.curr_step for pfile in unfinished)
+            step_idx = min(pfile.curr_step_idx for pfile in unfinished)
         return step_idx
 
     @classmethod
@@ -349,12 +458,15 @@ class ProgressiveFile(ub.NiceRepr):
         return final_groups
 
     @classmethod
-    def parallel_refine(cls, pfiles, step_idx, mode='serial', max_workers=6, verbose=0):
+    def parallel_refine(cls, pfiles, step_idx, mode='serial', max_workers=6,
+                        verbose=0):
         """
-            Ignore:
-                fpaths = _demodata_files(
-                        num_files=500, size_pool=[10, 20, 30], pool_size=2)
+        Refines the hashids of multiple files
+
+        Ignore:
             >>> # Create a directory filled with random files
+            >>> #fpaths = _demodata_files(
+            >>> #        num_files=1, size_pool=[30], pool_size=2)
             >>> fpaths = _demodata_files()
             >>> pfiles = [ProgressiveFile(f) for f in fpaths]
             >>> with ub.Timer('step'):
@@ -364,8 +476,6 @@ class ProgressiveFile(ub.NiceRepr):
         from kwcoco.util.util_futures import JobPool  # NOQA
         # jobs = JobPool(mode='thread', max_workers=2)
 
-        # TODO: Can we make xxhash pickleable
-        # https://github.com/ifduyue/python-xxhash/issues/24
         jobs = JobPool(mode=mode, max_workers=max_workers)
 
         for pfile in ub.ProgIter(pfiles, desc='submit hash jobs', verbose=verbose):
@@ -376,11 +486,11 @@ class ProgressiveFile(ub.NiceRepr):
                 fpath = pfile.fpath
                 pos = pfile._pos
                 size = pfile._size
-                curr_blocksize = pfile._curr_blocksize
+                curr_blocks = pfile._curr_blocks
 
                 job = jobs.submit(
                     progressive_refine_worker, hasher, fpath, parts, pos,
-                    curr_blocksize, step_idx, size)
+                    curr_blocks, step_idx, size)
                 job.pfile = pfile
 
         for job in ub.ProgIter(jobs.as_completed(), total=len(jobs),
@@ -388,53 +498,82 @@ class ProgressiveFile(ub.NiceRepr):
             pfile = job.pfile
             result = job.result()
             if result is not None:
-                hasher, next_parts, pos, curr_blocksize, size = result
+                hasher, next_parts, pos, curr_blocks, size = result
                 pfile._hasher = hasher
                 pfile._parts.extend(next_parts)
                 pfile._pos = pos
                 pfile._size = size
-                pfile._curr_blocksize = curr_blocksize
+                pfile._curr_blocks = curr_blocks
 
-    # Old serial code (maybe worth another look?)
-    # def hash_generator(pfile):
-    #     """
-    #     The idea is that we will hash the first few bytes of a file
-    #     This will allow us to group files that *might* overlap. In the case
-    #     where there are conflicts, we can continue hashing until we have
-    #     hashed all data, or we have hashed enough to be confident.
-    #     """
-    #     from ubelt.util_hash import _rectify_hasher
-    #     # pfile._hash =
-    #     # ub.hash_file(pfile.fpath, hasher='xx64')
-    #     start_blocksize = 65536
-    #     hasher = _rectify_hasher('xx64')()
-    #     pfile._parts = []
-    #     pos = 0
-    #     size = pfile.size
-    #     frac = 1 if pos == size else 0
-    #     part = ('', pos, size, frac)
-    #     pfile._parts.append(part)
-    #     yield part
-    #     curr_blocksize = start_blocksize
-    #     while pos < size:
-    #         with open(pfile.fpath, 'rb') as file:
-    #             if pos:
-    #                 file.seek(pos)
-    #             buf = file.read(curr_blocksize)
-    #         readsize = len(buf)
-    #         pos += readsize
-    #         if readsize > 0:
-    #             hasher.update(buf)
-    #             hash_chunk = hasher.hexdigest()
-    #             frac = round(pos / size, 4)
-    #             part = (hash_chunk, pos, size, frac)
-    #             pfile._parts.append(part)
-    #             yield part
-    #             # Double the amount of data read if the previous wasnt
-    #             # enough
-    #             curr_blocksize *= 2
-    #         else:
-    #             break
+
+def progressive_refine_worker(hasher, fpath, parts, pos, curr_blocks,
+                              step_idx, size):
+    """
+    Worker function for progressive file-hash refinement.
+
+    TODO:
+        - [ ] Can we make xxhash pickleable?
+        https://github.com/ifduyue/python-xxhash/issues/24
+    """
+    num_parts = len(parts)
+
+    if num_parts and parts[-1] == 1:
+        return None
+
+    if step_idx == 'next':
+        step_idx = num_parts
+
+    num_steps = max(step_idx - num_parts + 1, 0)
+
+    if num_steps == 0:
+        return None
+
+    next_parts = []
+
+    if num_parts == 0:
+        # First part is just the size
+        size = os.stat(fpath).st_size
+        frac = 1 if pos == size else 0
+        part = ('', pos, size, frac)
+        num_steps -= 1
+        next_parts.append(part)
+
+    blocksize = 1048576  # int(2 ** 20)
+
+    if num_steps > 0:
+        with open(fpath, 'rb') as file:
+            if pos:
+                file.seek(pos)
+
+            # DO NOT CHANGE THE BLOCKSIZE (it is much slower that way)
+            # Instead just loop over some number of blocks
+            while num_steps > 0:
+                startpos = pos
+                # Read some number of blocks
+                for _ in range(curr_blocks):
+                    buf = file.read(blocksize)
+                    hasher.update(buf)
+                    readsize = len(buf)
+                    pos += readsize
+                    if readsize == 0:
+                        break
+
+                if pos > startpos:
+                    hash_chunk = hasher.hexdigest()
+                    frac = round(pos / size, 6)
+                    part = (hash_chunk, pos, size, frac)
+                    next_parts.append(part)
+                    # Double the number of blocks we read each time
+                    curr_blocks *= 2
+                else:
+                    break
+                num_steps -= 1
+
+        if pos == size:
+            # We are done hashing, so we can destroy the hasher
+            hasher = None
+
+    return hasher, next_parts, pos, curr_blocks, size
 
 
 ####
@@ -444,6 +583,8 @@ def main():
     inv1 = Inventory('/media/joncrall/raid/', blocklist)
     inv2 = Inventory('/media/joncrall/media', blocklist)
 
+    # inv1 = Inventory('/media/joncrall/raid/Applications/NotGames', blocklist)
+    # inv2 = Inventory('/media/joncrall/media/Applications/NotGames', blocklist)
     inv1 = Inventory('/media/joncrall/raid/Applications', blocklist)
     inv2 = Inventory('/media/joncrall/media/Applications', blocklist)
 
@@ -452,10 +593,32 @@ def main():
     inv1.build()
     inv2.build()
 
-    pfiles = inv1.pfiles + inv2.pfiles
-    thresh = 0.3
+    thresh = {
+        'frac': 0.3,
+        'byte': 10 * int(2 ** 20)  # only use the first 10mb to determine overlap
+    }
     verbose = 1
-    dups3 = ProgressiveFile.likely_duplicates(pfiles, thresh=thresh, verbose=verbose)
+    pfiles1 = inv1.pfiles
+    pfiles2 = inv2.pfiles
+    overlap, only1, only2 = ProgressiveFile.likely_overlaps(
+        pfiles1, pfiles2, thresh=thresh, verbose=verbose)
+
+    stats = {
+        'overlap': len(overlap),
+        'only1': len(only1),
+        'only2': len(only2),
+    }
+    print('stats = {}'.format(ub.repr2(stats, nl=1)))
+
+    # for pfile in inv1.pfiles:
+    #     pfile._check_integrity()
+
+    import numpy as np
+    mb_read = np.array([
+        pfile._parts[-1][1] / int(2 ** 20) for pfile in ub.ProgIter(inv2.pfiles)
+    ])
+    mb_read.max()
+    mb_read.min()
 
     # Build all hashes up to a reasonable degree
     inv1.build_hashes(max_workers=0)
@@ -555,7 +718,6 @@ def main():
         look = list(ub.flatten(only_on_inv2.values()))
         takealook = sorted([p.fpath for p in look])
         print('takealook = {}'.format(ub.repr2(takealook, nl=1)))
-
 
         keys1 = set(grouped1)
         keys2 = set(grouped2)
@@ -662,7 +824,7 @@ def main():
                 [dirname(v) for v in values]
 
 
-def _demodata_files(dpath=None, num_files=10, pool_size=3, size_pool=None):
+def _demodata_files(dpath=None, num_files=10, pool_size=3, size_pool=None, rng=0):
     import random
     import string
 
@@ -688,9 +850,10 @@ def _demodata_files(dpath=None, num_files=10, pool_size=3, size_pool=None):
 
     if dpath is None:
         dpath = ub.ensure_app_cache_dir('pfile/random')
-    rng = random.Random(0)
+
+    rng = random.Random(rng)
     # Create a pool of random chunks of data
-    chunksize = 65536
+    chunksize = int(2 ** 16)
     part_pool = [_random_data(rng, chunksize) for _ in range(pool_size)]
     # Write 100 random files that have a reasonable collision probability
     fpaths = [_write_random_file(dpath, part_pool, size_pool, rng)
