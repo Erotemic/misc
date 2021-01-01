@@ -585,8 +585,8 @@ def main():
 
     # inv1 = Inventory('/media/joncrall/raid/Applications/NotGames', blocklist)
     # inv2 = Inventory('/media/joncrall/media/Applications/NotGames', blocklist)
-    inv1 = Inventory('/media/joncrall/raid/Applications', blocklist)
-    inv2 = Inventory('/media/joncrall/media/Applications', blocklist)
+    # inv1 = Inventory('/media/joncrall/raid/Applications', blocklist)
+    # inv2 = Inventory('/media/joncrall/media/Applications', blocklist)
 
     self = inv1  # NOQA
 
@@ -594,8 +594,8 @@ def main():
     inv2.build()
 
     thresh = {
-        'frac': 0.3,
-        'byte': 10 * int(2 ** 20)  # only use the first 10mb to determine overlap
+        'frac': 1.0,
+        'byte': 10 * int(2 ** 20)  # only use the first few mb to determine overlap
     }
     verbose = 1
     pfiles1 = inv1.pfiles
@@ -609,6 +609,9 @@ def main():
         'only2': len(only2),
     }
     print('stats = {}'.format(ub.repr2(stats, nl=1)))
+    only2_list = sorted([p.fpath for group in only2.values() for p in group])
+    print('only2_list = {}'.format(ub.repr2(only2_list, nl=1)))
+
 
     # for pfile in inv1.pfiles:
     #     pfile._check_integrity()
