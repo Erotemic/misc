@@ -594,8 +594,8 @@ def main():
     inv2.build()
 
     thresh = {
-        'frac': 1.0,
-        'byte': 10 * int(2 ** 20)  # only use the first few mb to determine overlap
+        'frac': 0.5,
+        'byte': 100 * int(2 ** 20)  # only use the first few mb to determine overlap
     }
     verbose = 1
     pfiles1 = inv1.pfiles
@@ -611,6 +611,7 @@ def main():
     print('stats = {}'.format(ub.repr2(stats, nl=1)))
     only2_list = sorted([p.fpath for group in only2.values() for p in group])
     print('only2_list = {}'.format(ub.repr2(only2_list, nl=1)))
+    print('stats = {}'.format(ub.repr2(stats, nl=1)))
 
 
     # for pfile in inv1.pfiles:
