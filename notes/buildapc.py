@@ -385,3 +385,40 @@ def pole_mounts_comparison():
     print('build = {}'.format(ub.repr2(build, nl=1)))
     total = sum(p['price'] for p in build)
     print('total = {!r}'.format(total))
+
+
+def hdd_cost():
+    # https://www.amazon.com/Seagate-BarraCuda-Computers-ST10000DM0004-Refurbished/dp/B07MWCVMXJ/ref=sr_1_4?dchild=1&keywords=barracuda+hdd&qid=1610773536&sr=8-4
+    # https://www.amazon.com/Seagate-IronWolf-7200RPM-Internal-3-5-Inch/dp/B07H4VBRKW/ref=BDG-DBC__1?pd_rd_w=vg0S7&pf_rd_p=7cbca5e6-eb08-447b-a1bf-60db44887201&pf_rd_r=VN5X2948PZEXNVBD9TBN&pd_rd_r=38e6ddb7-9d78-4508-b17c-f593fbc4f957&pd_rd_wg=S1zOw&pd_rd_i=B07H4VBRKW&psc=1
+    # https://www.newegg.com/seagate-exos-x10-st10000nm0096-10tb/p/1Z4-002P-00DU5?Item=9SIA994C784701&Description=seagate&cm_re=seagate-_-1Z4-002P-00DU5-_-Product
+    candidates = [
+        {'cost': 198.65, 'TB': 10, 'RPM': 7200, 'sale': True, 'condition': 'refurbished', 'line': 'baraccuda compute'},
+
+        {'cost': 154.99, 'TB': 8, 'RPM': 5400, 'sale': True, 'condition': 'new', 'line': 'baraccuda compute'},
+        {'cost': 139.99, 'TB': 6, 'RPM': 5400, 'sale': True, 'condition': 'new', 'line': 'baraccuda compute'},
+
+        {'cost': 340.00, 'TB': 8, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'baraccuda compute pro'},
+
+        {'cost': 435.04, 'TB': 14, 'RPM': None, 'sale': False, 'condition': 'new', 'line': 'ironwolf'},
+        {'cost': 248.99, 'TB': 10, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'iron wolf'},
+        {'cost': 249.99, 'TB': 10, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'ironwolf'},
+        {'cost': 199.99, 'TB': 8, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'ironwolf'},
+        {'cost': 162.99, 'TB': 6, 'RPM': 7200, 'sale': False, 'condition': 'new', 'line': 'ironwolf'},
+        {'cost': 252.99, 'TB': 12, 'RPM': 7200, 'sale': False, 'condition': 'refurbished', 'line': 'ironwolf'},
+        # {'cost': 101.50, 'TB': 2, 'RPM': 7200, 'sale': True},
+
+        {'cost': 198.99, 'TB': 10, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'exos'},
+        {'cost': 299.99, 'TB': 12, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'exos'},
+        {'cost': 209.99, 'TB': 10, 'RPM': 7200, 'sale': False, 'condition': 'refurbished', 'line': 'exos'},
+    ]
+
+    for cand in candidates:
+        cand['cost_per_TB'] = cand['cost'] / cand['TB']
+
+    import pandas as pd
+    df = pd.DataFrame(candidates)
+    df = df.sort_values('cost_per_TB')
+    print(df)
+
+
+    print('candidates = {}'.format(ub.repr2(candidates, nl=1, precision=2, align=':')))
