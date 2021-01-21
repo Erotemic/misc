@@ -1,3 +1,8 @@
+# Notes: Rolling Builds AKA Autocancel redundant builds
+# https://www.appveyor.com/docs/build-configuration/#rolling-builds
+# https://ci.appveyor.com/project/GITHUB_USERNAME/PYPKG/settings
+
+
 environment:
 
   matrix:

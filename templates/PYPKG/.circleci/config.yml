@@ -8,6 +8,10 @@
 #
 #     # Multiple files for a checksum
 #     https://discuss.circleci.com/t/cant-checksum-multiple-files-with-slashes-in-the-file-path/20667/2
+#     
+#     # Auto Cancel Redundant Builds
+#     https://circleci.com/docs/2.0/skip-build/#steps-to-enable-auto-cancel-for-pipelines-triggered-by-pushes-to-github-or-the-api
+#     https://app.circleci.com/settings/project/github/GITHUB_USER/PYPKG/advanced?return-to=https%3A%2F%2Fapp.circleci.com%2Fpipelines%2Fgithub%2FGITHUB_USER%2FPYPKG
 
 
 # Abuse YAML notation to make a heredoc. This will be ignored by the CI.
