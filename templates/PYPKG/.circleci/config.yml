@@ -35,6 +35,8 @@ __doc__: &__doc__
             sed 's|GPG_ID|<YOUR-GPG-ID>|g' | \
             sed 's|CIRCLE_CI_SECRET|<YOUR_CI_SECRET>|g' | \
         tee /tmp/repl && colordiff .circleci/config.yml /tmp/repl
+        # overwrite if you like the diff
+        cp /tmp/repl .circleci/config.yml
         ```
 
         To use this script you need the following configurations on your
@@ -44,17 +46,10 @@ __doc__: &__doc__
         -----
 
         * This script will require matainence for new releases of Python
-
-        * Make sure you add Runners to your project 
-        https://gitlab.kitware.com/computer-vision/PYPKG/-/settings/ci_cd 
-        in Runners-> Shared Runners
-        and Runners-> Available specific runners
         
 
         CIRCLECI SECRETS  # NOQA
         --------------
-
-        https://app.circleci.com/settings/project/github/GITHUB_USER/PYPKG/environment-variables
 
         Almost all of the stages in this pipeline can be performed on a local
         machine (making it much easier to debug) as well as the circleci-ci
@@ -76,13 +71,29 @@ __doc__: &__doc__
             To make a API token go to:
                 https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token
 
-        Register these secret variables in your projects secret environment variables
-            https://app.circleci.com/settings/project/github/GITHUB_USER/PYPKG/environment-variables
+        Instructions:
+
+            Browse to: 
+                https://app.circleci.com/settings/project/github/GITHUB_USER/PYPKG/environment-variables
+
+            Do whatever you need to locally access the values of these variables
+
+            echo $TWINE_USERNAME
+            echo $GITHUB_PUSH_TOKEN
+            echo $CIRCLE_CI_SECRET
+            echo $TWINE_PASSWORD
+
+            For each one, click "Add Environment Variable" and enter the name
+            and value. Unfortunately this is a manual process.
 
         WARNING: Ensure that your CircleCI project settings do not allow Forks
             to view environment variables.
 
         TODO: Can you protect branches on CircleCI, is that the default?
+
+            - ANS: CircleCI provides contexts: https://circleci.com/docs/2.0/contexts/
+
+        TODO: Look into secrethub
 
         WARNING: If an untrusted actor gains the ability to write to a
         protected branch, then they will be able to exfiltrate your secrets.
@@ -199,27 +210,34 @@ workflows:
   version: 2
   test:
     jobs:
+      - test_full/cp39-39-linux
       - test_full/cp38-38-linux
       - test_full/cp37-37m-linux
       - test_full/cp36-36m-linux
-      - test_full/cp35-35m-linux
+      #- test_full/cp35-35m-linux
+      #- test_full/cp34-34m-linux
       #- test_full/cp27-27mu-linux
 
+      - test_minimal/cp39-39-linux
       - test_minimal/cp38-38-linux
       - test_minimal/cp37-37m-linux
       - test_minimal/cp36-36m-linux
-      - test_minimal/cp35-35m-linux
+      #- test_minimal/cp35-35m-linux
+      #- test_minimal/cp34-34m-linux
       #- test_minimal/cp27-27mu-linux
 
       - test_minimal/pypy3
       - test_full/pypy3
 
-      - gpgsign/cp38-cp38-linux:
-          filters:
-            branches:
-              only: 
-                 - master
-                 - release
+      - test_full/pypy3
+      - gpgsign/cp38-38-linux
+
+      #- gpgsign/cp38-38-linux:
+      #    filters:
+      #      branches:
+      #        only: 
+      #           - master
+      #           - release
 
       - deploy/cp38-cp38-linux:
           filters:
@@ -242,6 +260,7 @@ jobs:
       - image: circleci/python
     steps:
       - checkout
+    working_directory: ~/{{ .Environment.CIRCLE_JOB }}
 
   .test_minimal_template: &test_minimal_template  
     <<: 
@@ -372,17 +391,23 @@ jobs:
             pip install six pyopenssl ndg-httpsclient pyasn1 -U 
             pip install requests[security] twine wheel
             # Execute the publish script for real this time
-            MB_PYTHON_TAG=$MB_PYTHON_TAG DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE CURRENT_BRANCH=release DEPLOY_BRANCH=release DO_UPLOAD=yes ./publish.sh 
+            MB_PYTHON_TAG=$MB_PYTHON_TAG DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE CURRENT_BRANCH=release DEPLOY_BRANCH=release DO_UPLOAD=True DO_TAG=False ./publish.sh 
             # Have the server git-tag the release and push the tags
             VERSION=$(python -c "import setup; print(setup.VERSION)")
             # do sed twice to handle the case of https clone with and without a read token
             URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
             echo "URL_HOST = $URL_HOST"
-            git config user.email "ci@circleci.com"
-            git config user.name "CircleCI"
-            git tag $VERSION -m "tarball tag $VERSION"
-            git push --tags "https://${GIT_PUSH_TOKEN}@${URL_HOST}"
-
+            # A git config user name and email is required. Set if needed.
+            if [[ "$(git config user.email)" == "" ]; then
+                git config user.email "ci@circleci.com"
+                git config user.name "CircleCI"
+            fi
+            if [ $(git tag -l "$VERSION") ]; then
+                git tag $VERSION -m "tarball tag $VERSION"
+                git push --tags "https://${GIT_PUSH_TOKEN}@${URL_HOST}"
+            else
+                echo "Tag already exists"
+            fi
 
   ###################################
   ### INHERIT FROM BASE TEMPLATES ###
@@ -394,79 +419,77 @@ jobs:
   # All we need to do is change the base docker image so python is the
   # version we want we can reuse everything else from the template
   
-  test_full/cp39-cp39-linux:
+  test_full/cp39-39-linux:
     <<: *test_full_template
     docker:
       - image: circleci/python:3.9
-    working_directory: ~/repo-full-39
   
   test_full/cp38-38-linux:
     <<: *test_full_template
     docker:
       - image: circleci/python:3.8
-    working_directory: ~/repo-full-38
   
   test_full/cp37-37m-linux:
     <<: *test_full_template
     docker:
       - image: circleci/python:3.7
-    working_directory: ~/repo-full-37
 
   test_full/cp36-36m-linux:
     <<: *test_full_template
     docker:
       - image: circleci/python:3.5
-    working_directory: ~/repo-full-36
 
   test_full/cp35-35m-linux:
     <<: *test_full_template
     docker:
       - image: circleci/python:3.5
-    working_directory: ~/repo-full-35
+
+  #test_full/cp34-34m-linux:
+  #  <<: *test_full_template
+  #  docker:
+  #    - image: circleci/python:3.4
 
   #test_full/cp27-27mu-linux:
   #  <<: *test_full_template
   #  docker:
   #    - image: circleci/python:2.7
-  #  working_directory: ~/repo-full-27
 
   # ------------
   
-  test_minimal/cp39-cp39-linux:
+  test_minimal/cp39-39-linux:
     <<: *test_full_template
     docker:
       - image: circleci/python:3.9
-    working_directory: ~/{{ .Environment.CIRCLE_JOB }}
   
   test_minimal/cp38-38-linux:
     <<: *test_minimal_template
     docker:
       - image: circleci/python:3.8
-    working_directory: ~/repo-minimal-38
 
   test_minimal/cp37-37m-linux:
     <<: *test_minimal_template
     docker:
       - image: circleci/python:3.7
-    working_directory: ~/test_minimal/cp37-37m-linux
 
   test_minimal/cp36-36m-linux:
     <<: *test_minimal_template
     docker:
       - image: circleci/python:3.6
-    working_directory: ~/repo-minimal-36
 
   test_minimal/cp35-35m-linux:
     <<: *test_minimal_template
     docker:
       - image: circleci/python:3.5
-    working_directory: ~/repo-minimal-35
+
+  #test_minimal/cp34-34m-linux:
+  #  <<: *test_minimal_template
+  #  docker:
+  #    - image: circleci/python:3.4
 
   #test_minimal/cp27-27mu-linux:
   #  <<: *test_minimal_template
   #  docker:
   #    - image: circleci/python:2.7
-  #  working_directory: ~/repo-minimal-27
 
   # --- pypy ----
 
@@ -476,7 +499,6 @@ jobs:
       - image: pypy:3
     environment:
       - PYTHON_EXE: pypy3
-    working_directory: ~/repo-minimal-pypy3
 
   test_full/pypy3:
     <<: *test_full_template
@@ -484,23 +506,20 @@ jobs:
       - image: pypy:3
     environment:
       - PYTHON_EXE: pypy3
-    working_directory: ~/repo-full-pypy3
 
  
   # -- gpgsign + deploy
   
-  gpgsign/cp38-cp38-linux:
+  gpgsign/cp38-38-linux:
     <<: *gpgsign_template
     docker:
       - image: circleci/python:3.8
-    working_directory: ~/gpgsign/cp38-cp38-linux
 
 
-  deploy/cp38-cp38-linux:
+  deploy/cp38-38-linux:
     <<: *deploy_template
     docker:
-      - image: circleci/python:3.9
-    working_directory: ~/deploy/cp38-cp38-linux
+      - image: circleci/python:3.8
         
 
 __scratch_work__:
@@ -522,6 +541,19 @@ __scratch_work__:
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml --job test_full/cp38-38-linux
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml 
 
+        # Test GPG sign works
+        load_secrets
+        circleci local execute \
+            -e CIRCLE_CI_SECRET=$CIRCLE_CI_SECRET \
+            --job gpgsign/cp38-cp38-linux
+
+        # Test deploy (THIS WILL CAUSE A LIVE RUN)
+        circleci local execute \
+            -e CIRCLE_CI_SECRET=$CIRCLE_CI_SECRET \
+            -e TWINE_USERNAME=$TWINE_USERNAME
+            -e TWINE_PASSWORD=$TWINE_PASSWORD
+            -e GITHUB_PUSH_TOKEN=$GITHUB_PUSH_TOKEN \
+            --job deploy/cp38-cp38-linux
 
         # Manual testing scratch work
         docker run -v $(pwd):/io -it pypy:3 bash
@@ -537,4 +569,6 @@ __scratch_work__:
 
         ./run_doctests.sh || echo "pypy failed, but this is allowed"
         ./run_tests.sh || echo "pypy failed, but this is allowed"
+
+
         "
