@@ -239,7 +239,7 @@ workflows:
       #           - master
       #           - release
 
-      - deploy/cp38-cp38-linux:
+      - deploy/cp38-38-linux:
           filters:
             branches:
               only: 
@@ -398,15 +398,15 @@ jobs:
             URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
             echo "URL_HOST = $URL_HOST"
             # A git config user name and email is required. Set if needed.
-            if [[ "$(git config user.email)" == "" ]; then
+            if [[ "$(git config user.email)" == "" ]]; then
                 git config user.email "ci@circleci.com"
                 git config user.name "CircleCI"
             fi
             if [ $(git tag -l "$VERSION") ]; then
+                echo "Tag already exists"
+            else
                 git tag $VERSION -m "tarball tag $VERSION"
                 git push --tags "https://${GIT_PUSH_TOKEN}@${URL_HOST}"
-            else
-                echo "Tag already exists"
             fi
 
   ###################################
@@ -545,15 +545,15 @@ __scratch_work__:
         load_secrets
         circleci local execute \
             -e CIRCLE_CI_SECRET=$CIRCLE_CI_SECRET \
-            --job gpgsign/cp38-cp38-linux
+            --job gpgsign/cp38-38-linux
 
         # Test deploy (THIS WILL CAUSE A LIVE RUN)
         circleci local execute \
             -e CIRCLE_CI_SECRET=$CIRCLE_CI_SECRET \
-            -e TWINE_USERNAME=$TWINE_USERNAME
-            -e TWINE_PASSWORD=$TWINE_PASSWORD
+            -e TWINE_USERNAME=$TWINE_USERNAME \
+            -e TWINE_PASSWORD=$TWINE_PASSWORD \
             -e GITHUB_PUSH_TOKEN=$GITHUB_PUSH_TOKEN \
-            --job deploy/cp38-cp38-linux
+            --job deploy/cp38-38-linux
 
         # Manual testing scratch work
         docker run -v $(pwd):/io -it pypy:3 bash

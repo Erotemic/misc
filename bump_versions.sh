@@ -448,6 +448,11 @@ mypkgs(){
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
 
+    ### GITHUB PROJECTS
+
+    # Currently need to manually merge PRs
+
+
     source ~/misc/bump_versions.sh
     MODNAME=ubelt
     DEPLOY_REMOTE=origin
