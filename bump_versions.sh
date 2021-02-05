@@ -221,7 +221,7 @@ create_new_gitlab_dev_mr(){
         "$HOST/api/v4/projects/$PROJ_ID/merge_requests" > $TMP_DIR/new_mr
     cat $TMP_DIR/new_mr | jq .
 
-    if [ "false" -eq "true" ]; then
+    if [[ "false" == "true" ]]; then
         # Assign myself
         # shouldnt need to do this if we created the MR correctly
         curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/?state=opened" > $TMP_DIR/open_mr_info
