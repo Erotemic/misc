@@ -454,6 +454,7 @@ mypkgs(){
 
 
     source ~/misc/bump_versions.sh
+    load_secrets
     MODNAME=ubelt
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
