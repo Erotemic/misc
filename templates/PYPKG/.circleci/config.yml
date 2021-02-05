@@ -542,14 +542,22 @@ __scratch_work__:
       - | 
         __doc__=" 
         # Run circleci scripts on a local machine
-        mkdir -p $HOME/Downloads
-        curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/master/install.sh | DESTDIR=$HOME/Downloads bash
+        #
+        # Download the CircleCLI command line tool
+        mkdir -p $HOME/.local/bin
+        curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/master/install.sh | DESTDIR=$HOME/.local/bin bash
 
+        # Update it
         $HOME/.local/bin/circleci update
         $HOME/.local/bin/circleci switch
 
+        # Change to your repo directory
+        # Test to see if your config file is valid
         $HOME/.local/bin/circleci config validate
+
+        # Execute a specific test
         $HOME/.local/bin/circleci local execute --job test_minimal_3.9
+
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml --job test_full/cp38-38-linux
         $HOME/.local/bin/circleci local execute --config .circleci/config.yml 
 
