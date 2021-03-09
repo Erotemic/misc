@@ -1,23 +1,20 @@
-# Note: expand yaml
-# yaml merge-expand .gitlab-ci.yml _expandyml && cat _expandyml
-# 
-# GITLAB LINTER
-# https://gitlab.org.com/utils/PYPKG/-/ci/lint
-
-
-# This CI file has 4 types of jobs:
-# (1) in the build stage we we build the wheels on a manylinux docker image
-# (2) then in the test stage we install the wheels, run unit tests, and measure coverage
-# (3) after testing we sign the wheels with the CI's GPG key
-# (4) finally if we are on the release branch we will push the signed wheels to pypi
-
-
 # Abuse YAML notation to make a heredoc. This will be ignored by the CI.
 .__heredoc__: &__heredoc__
     - | 
 
         __doc__="""
+        # Note: expand yaml
+        yaml merge-expand .gitlab-ci.yml _expandyml && cat _expandyml
+         
+        # GITLAB LINTER
+        https://gitlab.org.com/utils/PYPKG/-/ci/lint
 
+        # This CI file has 4 types of jobs:
+        # (1) in the build stage we we build the wheels on a manylinux docker image
+        # (2) then in the test stage we install the wheels, run unit tests, and measure coverage
+        # (3) after testing we sign the wheels with the CI's GPG key
+        # (4) finally if we are on the release branch we will push the signed wheels to pypi
+       
         ============
         GITLAB-CI INSTRUCTIONS
         ============
@@ -45,9 +42,14 @@
         * This script will require matainence for new releases of Python
 
         * Make sure you add Runners to your project 
-        https://gitlab.org.com/computer-vision/PYPKG/-/settings/ci_cd 
+        https://gitlab.org.com/utils/PYPKG/-/settings/ci_cd 
         in Runners-> Shared Runners
         and Runners-> Available specific runners
+
+        * Ensure that you are auto-cancel redundant pipelines.
+        Navigate to https://gitlab.kitware.com/utils/PYPKGS/-/settings/ci_cd and ensure "Auto-cancel redundant pipelines" is checked.
+
+        More details are here https://docs.gitlab.com/ee/ci/pipelines/settings.html#auto-cancel-redundant-pipelines
         
 
         GITLAB SECRETS
@@ -196,7 +198,7 @@
 
         ```bash
         docker run -it python:3.8 bash
-        git clone https://gitlab.org.com/computer-vision/kwcoco.git
+        git clone https://gitlab.org.com/utils/PYPKG.git
         cd kwcoco
         # do sed twice to handle the case of https clone with and without a read token
         git config user.email "ci@gitlab.org.com"
