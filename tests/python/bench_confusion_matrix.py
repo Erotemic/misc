@@ -12,6 +12,9 @@ else:
                                                  coo_matrix)
 
 
+from sklearn.utils.validation import _check_sample_weight
+
+
 @xdev.profile
 def confusion_matrix_2017(y_true, y_pred, labels=None, sample_weight=None):
     y_type, y_true, y_pred = _check_targets(y_true, y_pred)
@@ -195,10 +198,7 @@ def confusion_matrix_2021_new(y_true, y_pred, *, labels=None,
         elif len(np.intersect1d(y_true, labels)) == 0:
             raise ValueError("At least one label specified must be in y_true")
 
-    if sample_weight is None:
-        sample_weight = np.ones(y_true.shape[0], dtype=np.int64)
-    else:
-        sample_weight = np.asarray(sample_weight)
+    sample_weight = _check_sample_weight(sample_weight, y_true, dtype=np.uint8)
 
     check_consistent_length(y_true, y_pred, sample_weight)
 
@@ -320,6 +320,7 @@ def mwe_check_before_select():
             'time': ti.mean(),
         })
 
+    import pandas as pd
     df = pd.DataFrame(results)
 
     import kwplot
@@ -331,6 +332,124 @@ def mwe_check_before_select():
     ax.set_xscale('log')
 
     pass
+
+
+def mwe_check_sample_weight():
+    import ubelt as ub
+
+    from sklearn.utils.validation import _check_sample_weight
+    import numpy as np
+    results = []
+    ns = np.logspace(1, 6, 100).astype(np.int)
+    for n in ub.ProgIter(ns, desc='time-tradeoff', verbose=3):
+        print('n = {!r}'.format(n))
+
+        y_true = np.random.randint(0, 100, n).astype(np.int64)
+        y_pred = np.random.randint(0, 100, n).astype(np.int64)
+        sample_weight = np.random.rand(n)
+
+        import timerit
+        ti = timerit.Timerit(9, bestof=3, verbose=2)
+        for timer in ti.reset('old-sample-weight-given'):
+            with timer:
+                np.asarray(sample_weight)
+        results.append({
+            'n': n,
+            'label': ti.label,
+            'time': ti.mean(),
+        })
+
+        for timer in ti.reset('new-sample-weight-given'):
+            with timer:
+                _check_sample_weight(sample_weight, y_true, dtype=np.int64)
+        results.append({
+            'n': n,
+            'label': ti.label,
+            'time': ti.mean(),
+        })
+
+        for timer in ti.reset('old-sample-weight-default'):
+            with timer:
+                np.ones(y_true.shape[0], dtype=np.int64)
+        results.append({
+            'n': n,
+            'label': ti.label,
+            'time': ti.mean(),
+        })
+
+        for timer in ti.reset('new-sample-weight-default'):
+            with timer:
+                _check_sample_weight(None, y_true, dtype=np.int64)
+        results.append({
+            'n': n,
+            'label': ti.label,
+            'time': ti.mean(),
+        })
+
+    import pandas as pd
+    df = pd.DataFrame(results)
+
+    import kwplot
+    import seaborn as sns
+    kwplot.autoplt()
+    sns.set()
+    ax = sns.lineplot(data=df, x='n', y='time', hue='label')
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+
+    from sklearn.utils.validation import _check_sample_weight
+    import numpy as np
+    results = []
+    ns = np.logspace(1, 6, 100).astype(np.int)
+    for n in ub.ProgIter(ns, desc='time-tradeoff', verbose=3):
+        print('n = {!r}'.format(n))
+
+        n_labels = 100
+        y_true = np.random.randint(0, n_labels, n).astype(np.int64)
+        y_pred = np.random.randint(0, n_labels, n).astype(np.int64)
+
+        sample_weight = np.ones(y_true.shape[0], dtype=np.int64)
+
+        for timer in ti.reset('use-old-uint8-sample-weight-default'):
+            with timer:
+                if sample_weight.dtype.kind in {'i', 'u', 'b'}:
+                    dtype = np.int64
+                else:
+                    dtype = np.float64
+                cm = coo_matrix((sample_weight, (y_true, y_pred)),
+                                shape=(n_labels, n_labels), dtype=dtype,
+                                ).toarray()
+        results.append({
+            'n': n,
+            'label': ti.label,
+            'time': ti.mean(),
+        })
+
+        sample_weight = _check_sample_weight(None, y_true, dtype=np.int64)
+        for timer in ti.reset('use-new-float64-sample-weight-default'):
+            with timer:
+                if sample_weight.dtype.kind in {'i', 'u', 'b'}:
+                    dtype = np.int64
+                else:
+                    dtype = np.float64
+                cm = coo_matrix((sample_weight, (y_true, y_pred)),
+                                shape=(n_labels, n_labels), dtype=dtype,
+                                ).toarray()
+        results.append({
+            'n': n,
+            'label': ti.label,
+            'time': ti.mean(),
+        })
+    import pandas as pd
+    df = pd.DataFrame(results)
+
+    import kwplot
+    import seaborn as sns
+    kwplot.autoplt()
+    sns.set()
+    ax = sns.lineplot(data=df, x='n', y='time', hue='label')
+    ax.set_yscale('log')
+    ax.set_xscale('log')
 
 
 def main():
@@ -353,7 +472,7 @@ def main():
 
     if True:
         basis1 = {
-            'n_input': [10, 1000, 10000],
+            'n_input': [10, 1000, 5000, 10000],
             # 'n_input': [10000, 100000],
             'n_classes': [2, 10, 100],
             'dtype': ['uint8', 'int64'],
