@@ -1,0 +1,71 @@
+\documentclass[20pt]{article}
+
+%\usepackage[margin=2cm]{geometry}
+
+%\usepackage[hang]{caption} 
+%\usepackage[T1]{fontenc}
+
+%\usepackage{times}
+%\usepackage{verbatim} 
+%\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{mathrsfs} % Fancy script mathscr
+\usepackage{amsthm}
+\usepackage{amssymb}
+%\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+
+%\usepackage{mathpazo}
+
+%\usepackage{xstring}
+\usepackage{xcolor}
+\usepackage{mathtools}
+%\usepackage{algorithm}
+%\usepackage{bbm}
+
+
+%\usepackage[margin=2cm]{geometry}
+%\usepackage{amsmath}
+
+
+\begin{document}
+
+%\colorbox{blue!30}{blue}
+
+%\color{white}
+
+
+\newcommand{\mat}[1]{\ensuremath{\mathbf{#1}}} %Should always be capital
+\newcommand{\ttime}{\scalebox{.5}{\times}} %Should always be capital
+\newcommand{\scale}[1]{\scalebox{.8}{#1}} %Should always be capital
+
+
+
+\Huge
+
+
+%\begin{equation*}
+%    \underset{\scale{m\times{}n}}{\mat{M}}=
+%    \underset{\scale{m\times{}m}}{\mat{U}}\cdot
+%    \underset{\scale{m\times{}n}}{\mat{\Sigma}}\cdot
+%    \underset{\scale{n\ttime{}n}}{\mat{V}}^{\mkern-4mu\mathbf{*}}
+%\end{equation*}
+\begin{equation*}
+    \mathbf{M}=
+    \mathbf{U}\cdot
+    \mathbf{\Sigma}\cdot
+    \mathbf{V}^{*}
+\end{equation*}
+
+%= 
+%\left(
+% \begin{array}{ccccc}
+%   \sigma_1\\
+%    & . & & \text{\huge0}\\
+%    & & .\\
+%    & \text{\huge0} & & \sigma_r\\
+%    & & & & 0
+% \end{array}
+%\right)
+
+\end{document}
+
