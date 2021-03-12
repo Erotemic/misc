@@ -8,15 +8,14 @@ from os.path import sys
 
 
 def main():
-    import tempfile
     import ubelt as ub
-    from os.path import join
-    dpath = tempfile.mkdtemp()
-    # This should probably be the real log file. But it must live on disk!
 
-    fpath = join(dpath, 'stream_queue')
-    writer = open(fpath, mode='wb+')
-    reader = open(fpath, mode='rb+')
+    # This should probably be the real log file. But it must live on disk!
+    # from os.path import join
+    # dpath = tempfile.mkdtemp()
+    # fpath = join(dpath, 'stream_queue')
+    # writer = open(fpath, mode='wb+')
+    # reader = open(fpath, mode='rb+')
 
     fpath = 'a-test-log-file.txt'
     writer = open(fpath, mode='wb+')
@@ -30,23 +29,30 @@ def main():
 
     from threading import Thread
 
+    logged_lines = []
+
     _kill = threading.Event()
     def background_reader(reader, echo_writer, redirector, _kill):
         while True:
             is_killed = _kill.wait(.1)
-            if is_killed:
-                break
+            # echo_writer.write('check\n')
             redirector.flush()
             line = reader.readline()
             while line:
+                logged_lines.append(line)
                 echo_writer.write('thread write: {}\n'.format(line))
+                echo_writer.flush()
                 line = reader.readline()
+
+            # echo_writer.write('check is_killed={}\n'.format(is_killed))
+            if is_killed:
+                break
 
     cmake_exe = ub.find_exe('cmake')
     with redirector:
 
         _thread = Thread(target=background_reader, args=(reader, echo_writer, redirector, _kill))
-        _thread.daemon = True  # thread dies with the program
+        # _thread.daemon = True  # thread dies with the program
         _thread.start()
 
         print('hello world')
@@ -55,7 +61,15 @@ def main():
 
         subprocess.run([cmake_exe, '--version'])
         print('hello world')
-    _kill.set()
+
+        redirector.flush()
+        # import time
+        # time.sleep(0.1)
+        _kill.set()
+        _thread.join()
+
+    echo_writer.flush()
+    print('logged_lines = {!r}'.format(logged_lines))
 
     print('finished redirection')
     print('finished redirection')
@@ -103,11 +117,11 @@ class RedirectSystemStream:
             # c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
             kernel32 = ctypes.WinDLL('kernel32')
 
+            # https://docs.microsoft.com/en-us/windows/console/getstdhandle
             if self.sys_attr == 'stdout':
                 STD_HANDLE = -11
             elif self.sys_attr == 'stderr':
-                raise NotImplementedError('what is the stderr win32 handle?')
-                STD_HANDLE = -11
+                STD_HANDLE = -12
             else:
                 raise KeyError(self.sys_attr)
 
