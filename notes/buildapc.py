@@ -193,6 +193,8 @@ def parse_cpu_info(percore=False):
         pip install python-slugify
 
     Ignore:
+        cpu_info = parse_cpu_info()
+        print(cpu_info['varied']['cpu_mhz'])
         print('cpu_info = {}'.format(ub.repr2(cpu_info, nl=3)))
     """
     import re
