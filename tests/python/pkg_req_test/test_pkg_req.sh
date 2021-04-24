@@ -1,20 +1,32 @@
 cd ~/misc/tests/python/pkg_req_test/
 
-pip install -e ~/misc/tests/python/pkg_req_test/dummy_pkg2
-pip install -e ~/misc/tests/python/pkg_req_test/dummy_pkg1
+pip list | grep opencv
+pip list | grep dummy_pkg
 
+pip uninstall dummy_pkg2
+pip uninstall dummy_pkg1
+
+# dummy_pkg1 depends on dummy_pkg2
+#pip install -e ~/misc/tests/python/pkg_req_test/dummy_pkg2-repo
+#pip install -e ~/misc/tests/python/pkg_req_test/dummy_pkg1-repo
+pip install ~/misc/tests/python/pkg_req_test/dummy_pkg2-repo
+pip install ~/misc/tests/python/pkg_req_test/dummy_pkg1-repo
 
 dummy_pkg1
 
 python -c "import dummy_pkg2"
 python -c "import dummy_pkg1"
 
+pip uninstall dummy_pkg2 -y
 
+python -c "import dummy_pkg1"
+
+pip list | grep dummy
 
 __doc__="
-#### opencv-requirements problem 
+#### opencv-python requirements problem 
 
-I'm having an issue with my requirements.txt
+I'm having an issue with my requirements.txt / the requirements section of my setup.py file.
 
 My library depends on the `cv2` module, and there are two main ways of
 obtaining this with pip. Either `opencv-python` or `opencv-python-headless`.
@@ -23,10 +35,33 @@ The issue is that `opencv-python` contains libraries that can conflict with
 `pyqt5`, which I often see when I'm using `matplotlib`.  Using
 `opencv-python-headless` works around this issue.
 
-
 The problem is that pip has gotten too smart for its own good. 
 It throws some requirements not satisfied error, but I can't figure out how
-to reproduce that reliably.
+to reproduce that reliably. When it does happen it looks like this:
+
+```
+ERROR ex = DistributionNotFound(Requirement.parse('opencv-python'), {'kwimage'})
+...
+  File '/home/joncrall/.pyenv/versions/3.8.5/envs/py385/lib/python3.8/site-packages/pkg_resources/__init__.py', line 787, in resolve
+    raise DistributionNotFound(req, requirers)
+pkg_resources.DistributionNotFound: The 'opencv-python' distribution was not found and is required by kwimage
+```
+
+I wish there was a way to specify that either `opencv-python` or
+`opencv-python-headless` would satisfy the dependency, but there doesn't seem
+to be any mechanism for this.
+
+One solution would be to make the requirements optional, but then it gets into
+the case where the module wont work after it is pip installed unless the user
+is aware of this quirk.
+
+
+Has anyone dealt with this sort of problem before, or can anyone construct a
+minimal working example that causes it inside of a virtualenv. I tried creating
+a simple package that specified a requirement, uninstalling that requirment,
+and then importing the module, but that didn't cause the
+`pkg_resources.DistributionNotFound` error, so I'd like to understand this
+mechanism a bit more before I try one of the above hacky solutions.
 
 
 
