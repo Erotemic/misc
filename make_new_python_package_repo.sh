@@ -5,7 +5,7 @@ Requirements:
 Usage:
     source ~/misc/make_new_python_package_repo.sh
 
-    REPO_NAME=git_sync
+    REPO_NAME=pypogo
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 " > /dev/null

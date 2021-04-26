@@ -1,0 +1,20 @@
+# https://www.stadiumgaming.gg/rank-checker
+# Cresselia
+# RANK        IV       NAME   SHINEY  MAX-CP  LEVEL       ATT    DEF STA  Stat Product  %Max Stat
+      
+  1878  12-13-15  Cresselia       NO    2481     32    121.98 202.31 204      5081.053     96.15%
+  2124  12-14-10  Cresselia       NO    2498     33    122.96 203.94 202 
+  2270  13-14-11  Cresselia       NO    2498     32.5  123.22 203.12 202
+  2551  14-11-15  Cresselia       NO    2497     32    123.47 200.08 204
+  2790  15-10-13  Cresselia      YES    2498     32    124.21 199.34 203      5284.287     95.12%
+  2809  15-11-11  Cresselia      YES    2494     32    124.21 200.08 201
+  2821  14-12-10  Cresselia       NO    2499     32.5  123.97 201.63 201      5024.058     95.07%
+  3294  15-11-11  Cresselia      YES    2494     32    124.21 200.08 201 
+
+
+
+Ultra Team
+
+articuno,ICE_SHARD,ICY_WIND,none,29,13,15,14
+cresselia,PSYCHO_CUT,MOONBLAST,none,32,15,10,13
+swampert,MUD_SHOT,EARTHQUAKE,MUDDY_WATER,29.5,13,14,13

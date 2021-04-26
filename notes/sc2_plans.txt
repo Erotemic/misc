@@ -1,0 +1,63 @@
+SC2 Custom Map: Plans
+
+* Precode several "plans", there is a UI that lets you select and transition
+  between plans. AI handles the macro.
+
+
+Example: 
+
+Opener Plan:
+
+* 2 Gate 
+* 1 Gate Cyber Nexus
+* 1 Gate Nexus Cyber
+* Expand into Stargate
+* Forge Fast Expand
+* Forge Cannon
+* Custom
+
+
+Mid Game:
+* 3 Gate - Robo
+* 3 Gate - Stargate
+* Essentially allow a toggle on unit producing structures
+
+* AI handles probe transfers and probe saturation.
+
+* Can toggle a pylon/prism for constant warpins or do it manually (there should
+  be a red indicator when warp ins are ready in the UI)
+
+* Can place buildings in defined locations without having the requirements met
+  (pylon, gas, etc..) buildings are started once requirements are met. Allows
+  you to plan the layout of your base without having to do it in real time.
+
+* All available upgrade panel, don't need to look at specific building.
+
+
+Late Game:
+
+* Late games are ill-defined because buildings can be destroyed and weird
+  things can happen. 
+
+* Plans should attempt to maintain constant production of units. User should be
+  able to disble this by toggle.
+
+* User should have a target unit composition that the AI builds towards. If an
+  archon dies it replaces the archon.
+
+* User should have target maximum worker count in UI that the AI builds towards
+  and tries to maintain good saturation.
+
+* User will likely have to choose when/where to expand, can't automate that.
+
+
+Micro Plans:
+
+* It might be fun to have the AI do no micro, but maybe we can automate it a
+  bit so the game feels more like high-level strategy and less like low level
+  execution and reaction, although that will still come into play.
+
+* Automatic unit splitting versus splash
+* Automatic blink backwards micro (togglable)
+* Automatic stutter step run away
+

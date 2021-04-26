@@ -333,19 +333,19 @@ after_success:
         echo "KEYID = '$KEYID'"
         if [[ "$TRAVIS_BRANCH" == "release" ]]; then
             export CURRENT_BRANCH=$TRAVIS_BRANCH
-            TAG_AND_UPLOAD=yes
+            DO_UPLOAD=yes
         else
-            TAG_AND_UPLOAD=no
+            DO_UPLOAD=no
         fi
         MB_PYTHON_TAG=$MB_PYTHON_TAG \
-            USE_GPG=True \
+            DO_GPG=True \
             GPG_KEYID=$KEYID \
             CURRENT_BRANCH=$TRAVIS_BRANCH \
             TWINE_PASSWORD=$TWINE_PASSWORD \
             TWINE_USERNAME=$TWINE_USERNAME \
             GPG_EXECUTABLE=$GPG_EXECUTABLE \
             DEPLOY_BRANCH=release \
-            TAG_AND_UPLOAD=$TAG_AND_UPLOAD \
+            DO_UPLOAD=$DO_UPLOAD \
             ./publish.sh
 
         # TODO: incorporate git tagging into release script 

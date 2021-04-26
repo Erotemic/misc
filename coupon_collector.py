@@ -41,6 +41,22 @@ class CouponCollector(object):
 
         https://math.stackexchange.com/questions/1176813/coupon-collector-problem-for-non-uniform-coupons-on-the-number-of-missed-coupon
         https://mathoverflow.net/questions/198857/coupon-collector-problem-for-non-uniform-coupons-bound-on-the-number-of-missed/198988#198988
+
+
+    Example:
+        >>> # https://www.reddit.com/r/TheSilphRoad/comments/lr5opy/mew_and_the_coupon_collectors_problem/
+        >>> num_fast_moves = 14
+        >>> num_charge_moves = 25
+
+        >>> self = CouponCollector(np.ones(num_charge_moves) / num_charge_moves)
+        >>> self.expected_samples(1.0, method='exact')
+
+        >>> n = num_fast_moves - 1
+        >>> self = CouponCollector(np.ones(n) / n)
+        >>> p1 = self.expected_samples(1.0, method='exact')
+        >>> # Special case for uniform probabilities
+        >>> p2 = nth_harmonic(13) * 13
+        >>> assert np.isclose(p1, p2)
     """
 
     def __init__(self, probs):

@@ -19,6 +19,6 @@ def test_startup_time():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/misc/python_tests/startup_time.py
+        python ~/misc/tests/python/startup_time.py
     """
     test_startup_time()
