@@ -1,3 +1,9 @@
+"""
+https://www.reddit.com/r/linux/comments/n1501j/linux_performance_tools/
+
+SeeAlso:
+    ~/code/erotemic/pub/owned_hardware.py
+"""
 import ubelt as ub
 import slugify
 
@@ -109,6 +115,9 @@ def parse_cpu_info(percore=False):
         cpu_info = parse_cpu_info()
         print(cpu_info['varied']['cpu_mhz'])
         print('cpu_info = {}'.format(ub.repr2(cpu_info, nl=3)))
+
+    Notes:
+        * lscpu
     """
     import re
     info = ub.cmd('cat /proc/cpuinfo')
@@ -139,6 +148,55 @@ def parse_cpu_info(percore=False):
     if percore:
         cpu_info['cores'] = cores
     return cpu_info
+
+
+def lspci():
+    """
+    list all PCI devices
+
+    lspci is a utility for displaying information about PCI buses in the system
+    and devices connected to them.
+
+    References:
+        https://diego.assencio.com/?index=649b7a71b35fc7ad41e03b6d0e825f07
+
+    Returns:
+        List[Dict]: each dict is an item that contains keys:
+            'Slot', 'Class', 'Vendor', 'Device', 'SVendor', 'SDevice', 'Rev'
+
+    Example:
+        items = lspci()
+        [item['Class'] for item in items]
+    """
+    import re
+    info = ub.cmd('lspci -vmm')
+    parts = re.split('\n *\n', info['out'])
+    items = []
+    for part in parts:
+        part = part.strip()
+        if part:
+            item = dict([line.split(':\t') for line in part.split('\n')])
+            items.append(item)
+    return items
+
+
+def parse_gpu_info():
+    """
+    https://www.cyberciti.biz/faq/linux-tell-which-graphicsovga-card-installed/
+    """
+    gpus = []
+    for item in lspci():
+        if item['Class'] == 'VGA compatible controller':
+            gpus.append(item)
+    return gpus
+
+
+def printer_info():
+    """
+    Notes:
+        lpstat -p
+    """
+    return ub.cmd('lpstat -p')['out']
 
 
 # def current_specs():
