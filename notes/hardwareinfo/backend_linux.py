@@ -199,6 +199,12 @@ def printer_info():
     return ub.cmd('lpstat -p')['out']
 
 
+def diskinfo():
+    """
+    sudo lshw -class disk
+    """
+
+
 # def current_specs():
 #     cpu_info = parse_cpu_info()
 #     cpu_info['unvaried']['model_name']

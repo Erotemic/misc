@@ -450,6 +450,7 @@ mypkgs(){
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
     update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE 
 
 
     ### GITHUB PROJECTS
