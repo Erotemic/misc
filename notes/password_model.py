@@ -220,11 +220,11 @@ def build_threat_models():
                 #     'attempts_per_second': 24549.4 * 1e9,
                 # },
 
-                # {
-                #      A "Strong" modern (2021) scheme
-                #     'hashmode': 'VeraCrypt SHA512 + XTS 512 bit',
-                #     'attempts_per_second': 2837,
-                # },
+                {
+                     # A "Strong" modern (2021) scheme
+                    'hashmode': 'VeraCrypt SHA512 + XTS 512 bit',
+                    'attempts_per_second': 2837,
+                },
                 # {
                 #      A "Stronger" modern (2021) scheme
                 #     'hashmode': 'VeraCrypt Streebog-512',
@@ -263,10 +263,10 @@ def build_threat_models():
 
         {'name': 'Randos100',      'num_devices': 100e0},  # 100.
         {'name': 'Randos1000',     'num_devices': 1e3},    # 1,000.
-        # {'name': 'SmallCity',      'num_devices': 100e3},  # 100,000
+        {'name': 'SmallCity',      'num_devices': 100e3},  # 100,000
         # {'name': 'LargeCity',      'num_devices': 1e6},    # 1 million
         # {'name': 'Metropolis',     'num_devices': 10e6},   # 10 million
-        # {'name': 'SmallNation',    'num_devices': 100e6},  # 100 million
+        {'name': 'SmallNation',    'num_devices': 100e6},  # 100 million
         # {'name': 'LargeNation',    'num_devices': 1e9},    # 1 billion
         {'name': 'Type0.73-World', 'num_devices': 10e9},   # 10 billion
         {'name': 'Type1-World',    'num_devices': 10e14},  # Distant Future (maybe, it's up to us)
@@ -349,7 +349,6 @@ def main():
                         'hours': hours,
                         'dollars_per_kwh': estimates['dollars_per_kwh'],
                     }
-                    print('row = {}'.format(ub.repr2(row, sort=0, nl=1)))
                     rows.append(row)
 
     import pandas as pd
@@ -365,15 +364,19 @@ def main():
     df['hcost'] = df['cost'].apply(humanize_dollars)
     df['num_devices'] = df['num_devices'].apply(int)
 
+
     hashmodes = sorted([d['hashmode'] for d in device['benchmarks']])
 
+    # https://github.com/pandas-dev/pandas/issues/18066
     for hashmode in hashmodes:
         print('\n---')
         print('hashmode = {!r}'.format(hashmode))
         subdf = df
         subdf = subdf[subdf['hashmode'] == hashmode]
         subdf = subdf.sort_values(['entropy', 'num_devices'])
-        print(subdf.pivot(['entropy', 'hcost', 'scheme'], ['num_devices', 'scale'], 'htime'))
+        p = subdf.pivot(['entropy', 'hcost', 'scheme'], ['num_devices', 'scale'], 'htime')
+        # p.style.applymap(color_cases)
+        print(p)
 
 
 def humanize_seconds(seconds):
@@ -395,6 +398,19 @@ def humanize_seconds(seconds):
     count, unit = raw
     count_ = round(count, 4)
     ret = '{:.4g} {}'.format(count_, unit)
+
+    if 1:
+        if years > 1e5:
+            # Blue is VERY safe
+            ret = ub.color_text(ret, 'blue')
+        elif years > 80:
+            # Green is VERY safe
+            ret = ub.color_text(ret, 'green')
+        elif years > 10:
+            ret = ub.color_text(ret, 'yellow')
+        else:
+            ret = ub.color_text(ret, 'red')
+
     return ret
 
 
