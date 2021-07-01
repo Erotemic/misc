@@ -204,7 +204,7 @@ def build_threat_models():
     devices = [
         {
             'name': 'RTX_3090',
-            'watts': 370,
+            'watts': 370.0,
             'benchmarks': [
 
                 # {
@@ -213,12 +213,6 @@ def build_threat_models():
                 #     'hashmode': 'ETH-PBKDF2-HMAC-SHA256',
                 #     'attempts_per_second': 3934 * 1e3,
                 # },
-
-                {
-                    # This is a reasonable worst-case password hashmode
-                    'hashmode': 'Plaintext',
-                    'attempts_per_second': 121 * 1e9,
-                },
 
                 # {
                 #     # This is actually the worst case (how fast to print to stdout)
@@ -237,12 +231,19 @@ def build_threat_models():
                 #     'attempts_per_second': 46,
                 # },
 
+                {
+                    # This is a reasonable worst-case password hashmode
+                    'hashmode': 'Plaintext',
+                    'attempts_per_second': 121 * 1e9,
+                },
+
 
                 {
                     # A "Good" modern (2021) scheme
                     'hashmode': 'bcrypt $2*$, Blowfish',
                     'attempts_per_second': 96662,
                 },
+
                 {
                     # A "Weak" but still used scheme
                     'hashmode': 'md5',
@@ -259,6 +260,7 @@ def build_threat_models():
     # might have
     scales = [
         {'name': 'Randos',         'num_devices': 1e0},    # exactly 1.
+
         {'name': 'Randos100',      'num_devices': 100e0},  # 100.
         {'name': 'Randos1000',     'num_devices': 1e3},    # 1,000.
         # {'name': 'SmallCity',      'num_devices': 100e3},  # 100,000
@@ -268,6 +270,7 @@ def build_threat_models():
         # {'name': 'LargeNation',    'num_devices': 1e9},    # 1 billion
         {'name': 'Type0.73-World', 'num_devices': 10e9},   # 10 billion
         {'name': 'Type1-World',    'num_devices': 10e14},  # Distant Future (maybe, it's up to us)
+
         # 'Austin_2020': 1e6,  # about 1 million.
         # 'NYC_2019': 8.419e6,  # 8 million
         # 'GPU_Shipments_2020': 41e6,  # 46 million
@@ -302,7 +305,8 @@ def main():
     estimates = {
         # estimated cost of using a kilowatt for an hour
         # http://www.wrecc.com/what-uses-watts-in-your-home/
-        'dollars_per_kwh': (6.10 / 30) / 2,
+        # https://www.coinwarz.com/mining/ethereum/calculator?h=100.00&p=1.00&pc=0.10&pf=0.00&d=6504945223037478.00000000&r=2.00000000&er=0.06440741&btcer=34726.37000000&ha=MH&hc=19999.00&hs=-1&hq=1
+        'dollars_per_kwh': 0.10,
     }
 
     # import itertools as it
@@ -320,15 +324,13 @@ def main():
                     states = scheme['states']
                     seconds = states / attempts_per_second
 
-                    hours = seconds / 360.
+                    hours = seconds / 3600.
                     device_kilowatts = device['watts'] / 1000.
                     device_dollars_per_hour = device_kilowatts * estimates['dollars_per_kwh']
                     cost_per_device = device_dollars_per_hour * hours
                     cost = cost_per_device * scale['num_devices']
 
                     total_kilowatts = device_kilowatts * scale['num_devices'] * hours
-
-                    htime = humanize_seconds(seconds)
 
                     row = {
                         'scheme': scheme['name'],
@@ -342,9 +344,12 @@ def main():
 
                         'seconds': seconds,
                         'cost': cost,
+
                         'kilowatts': total_kilowatts,
+                        'hours': hours,
+                        'dollars_per_kwh': estimates['dollars_per_kwh'],
                     }
-                    print('row = {!r}'.format(row))
+                    print('row = {}'.format(ub.repr2(row, sort=0, nl=1)))
                     rows.append(row)
 
     import pandas as pd
@@ -356,30 +361,18 @@ def main():
 
 
     df = df[df['device'] == 'RTX_3090']
-    df['htime'] = df['seconds'].apply(humanize_seconds).apply(lambda x: '{:.4g} {}'.format(*x))
-    # df['htime'] = df['seconds'].apply(humanize_seconds).apply(
-    #     lambda x: ub.color_text('{:.4g} {}'.format(*x), 'red') if x.split()
+    df['htime'] = df['seconds'].apply(humanize_seconds)
     df['hcost'] = df['cost'].apply(humanize_dollars)
     df['num_devices'] = df['num_devices'].apply(int)
 
     hashmodes = sorted([d['hashmode'] for d in device['benchmarks']])
-    # for scheme in password_schemes:
-    # print('scheme = {}'.format(ub.repr2(scheme, nl=2, precision=4, sort=0, align=':')))
 
     for hashmode in hashmodes:
         print('\n---')
         print('hashmode = {!r}'.format(hashmode))
         subdf = df
         subdf = subdf[subdf['hashmode'] == hashmode]
-        # subdf = subdf[subdf['scheme'] == scheme['name']]
-        # print(subdf)
-        # mat = subdf.pivot(['entropy', 'scheme'], 'scale', 'htime')
-        # print(mat)
-        # mat = subdf.pivot(['entropy', 'scheme', 'hcost'], 'scale', 'htime')
-        # print(subdf.pivot('scheme', 'scale', 'htime'))
         subdf = subdf.sort_values(['entropy', 'num_devices'])
-        # subdf = subdf.sort_values('num_devices')
-        # print(subdf)
         print(subdf.pivot(['entropy', 'hcost', 'scheme'], ['num_devices', 'scale'], 'htime'))
 
 
@@ -390,9 +383,9 @@ def humanize_seconds(seconds):
     years = days / 365.
     if minutes < 1:
         raw = (seconds, 'seconds')
-    if hours < 1:
+    elif hours < 1:
         raw = (minutes, 'minutes')
-    if days < 1:
+    elif days < 1:
         raw = (hours, 'hours')
     elif years < 1:
         raw = (days, 'days')
@@ -400,8 +393,9 @@ def humanize_seconds(seconds):
         raw = (years, 'years')
 
     count, unit = raw
-    count = round(count, 4)
-    return count, unit
+    count_ = round(count, 4)
+    ret = '{:.4g} {}'.format(count_, unit)
+    return ret
 
 
 if __name__ == '__main__':
