@@ -62,7 +62,7 @@ adversary will have access to.
     * A large-nation-state scale actor, N=1,000,000,000
     * A world-scale actor, N=10,000,000,000
 
-At the largest and most ridiculous scale we imagine the world as a Type-1
+At the largest and most ridiculous scale we imagine the world as a Type-0.73
 civilization [7] where each of the 10 billion people on the planet have an
 RTX-3090 GPU and one goal: crack your password.
 
@@ -99,6 +99,15 @@ a large city worth of compute based on my educated guess, and that's only if
 they throw everything they've got at you.
 
 
+AWS has roughly 1.4 million servers [9]_.
+
+Rough cost per gpu per hour $1.045 [10]_.
+
+RTX 3090 runs at 370W
+
+1 kWh cost $0.12
+
+
 References:
     [1] https://xkcd.com/936/
     [2] https://twitter.com/erotemic/status/1408852635093016582
@@ -108,18 +117,25 @@ References:
     [6] https://stackoverflow.com/questions/54733868/how-many-attempts-per-second-can-a-password-cracker-actually-make
     [7] https://en.wikipedia.org/wiki/Kardashev_scale
     [8] https://www.reddit.com/r/aws/comments/6qkhfb/how_many_gpus_does_aws_have_in_total/
+
+    [9] https://www.quora.com/How-many-servers-does-AWS-have#:~:text=Cloud%20hardware%20is%20very%20interesting,more%20than%201%2C000%2C000%20physical%20servers.
+    [10] https://aws.amazon.com/ec2/instance-types/p3/
+
+Requirements:
+    ubelt
+
 """
+import ubelt as ub
+import math
+import string
 
 
-def main():
+def build_password_strategy():
     """
-    Requirements:
-        ubelt
+    Returns information - specifically the entropy - about possible schemes,
+    patterns, or strategry we might use to construct a password. We will
+    analyize the security of each against.
     """
-    import ubelt as ub
-    import math
-    import string
-
     # List different candidate patterns for remembering passwords
     password_schemes = []
 
@@ -160,88 +176,211 @@ def main():
                 }
             )
 
+    password_schemes.append(
+        {
+            'name': 'chbs-{}-{}'.format(4, 2048),
+            'base': 2048,
+            'num': 4,
+        }
+    )
+
     # Postprocess password schemes
     for scheme in password_schemes:
         scheme['states'] = scheme['base'] ** scheme['num']
         scheme['entropy'] = math.log(scheme['states']) / math.log(2)
         scheme['security_against'] = {}
 
+    return password_schemes
+
+
+def build_threat_models():
+    """
+    Returns the devices our adversaries might have, and the scales they might
+    operate at.
+    """
     # Enumerate how fast certain devices can make attempts on particular
     # password schemes
     # https://gist.github.com/Chick3nman/e4fcee00cb6d82874dace72106d73fef#file-rtx_3090_v6-1-1-benchmark-L1006
-    device_hashmodes = {
-        'rtx3090': [
-            {
-                # Based on rtx3090 attacking eth wallet
-                # This is a standin for a reasonably secure password hashmode
-                'name': 'ETH-PBKDF2-HMAC-SHA256',
-                'attempts_per_second': 3934 * 1e3,
-            },
-            {
-                # This is a reasonable worst-case password hashmode
-                'name': 'Plaintext',
-                'attempts_per_second': 121 * 1e9,
-            },
-            {
-                # This is actually the worst case (how fast to print to stdout)
-                'name': 'STDOUT',
-                'attempts_per_second': 24549.4 * 1e9,
-            },
-            {
-                'name': 'VeraCrypt SHA512 + XTS 512 bit',
-                'attempts_per_second': 2837,
-            },
-            {
-                'name': 'VeraCrypt Streebog-512',
-                'attempts_per_second': 46,
-            },
-            {
-                # Weak scheme
-                'name': 'md5',
-                'attempts_per_second': 65079.1 * 1e6,
-            }
-        ]
-    }
+    devices = [
+        {
+            'name': 'RTX_3090',
+            'watts': 370,
+            'benchmarks': [
+
+                # {
+                #     # Based on rtx3090 attacking eth wallet
+                #     # This is a standin for a reasonably secure password hashmode
+                #     'hashmode': 'ETH-PBKDF2-HMAC-SHA256',
+                #     'attempts_per_second': 3934 * 1e3,
+                # },
+
+                {
+                    # This is a reasonable worst-case password hashmode
+                    'hashmode': 'Plaintext',
+                    'attempts_per_second': 121 * 1e9,
+                },
+
+                # {
+                #     # This is actually the worst case (how fast to print to stdout)
+                #     'hashmode': 'STDOUT',
+                #     'attempts_per_second': 24549.4 * 1e9,
+                # },
+
+                # {
+                #      A "Strong" modern (2021) scheme
+                #     'hashmode': 'VeraCrypt SHA512 + XTS 512 bit',
+                #     'attempts_per_second': 2837,
+                # },
+                # {
+                #      A "Stronger" modern (2021) scheme
+                #     'hashmode': 'VeraCrypt Streebog-512',
+                #     'attempts_per_second': 46,
+                # },
+
+
+                {
+                    # A "Good" modern (2021) scheme
+                    'hashmode': 'bcrypt $2*$, Blowfish',
+                    'attempts_per_second': 96662,
+                },
+                {
+                    # A "Weak" but still used scheme
+                    'hashmode': 'md5',
+                    'attempts_per_second': 65079.1 * 1e6,
+                }
+            ]
+        }
+    ]
+
+    type_1_watts = 1.74e17
+    type_1_watts / 350
 
     # Enumerate theoretical scales to bound how many devices a threat actor
     # might have
-    scales = {
-        'RandoHacker': 1,  # exactly 1.
-        'SmallCity': 1e5,  # 100,000
-        'LargeCity': 1e6,  # 1 million
-        'Metropolis': 1e7,  # 10 million
-        'SmallNation': 1e8,  # 100 million
-        'LargeNation': 1e9,  # 1 billion
-        'Type1-World': 10e9,  # 10 billion
-
+    scales = [
+        {'name': 'Randos',         'num_devices': 1e0},    # exactly 1.
+        {'name': 'Randos100',      'num_devices': 100e0},  # 100.
+        {'name': 'Randos1000',     'num_devices': 1e3},    # 1,000.
+        # {'name': 'SmallCity',      'num_devices': 100e3},  # 100,000
+        # {'name': 'LargeCity',      'num_devices': 1e6},    # 1 million
+        # {'name': 'Metropolis',     'num_devices': 10e6},   # 10 million
+        # {'name': 'SmallNation',    'num_devices': 100e6},  # 100 million
+        # {'name': 'LargeNation',    'num_devices': 1e9},    # 1 billion
+        {'name': 'Type0.73-World', 'num_devices': 10e9},   # 10 billion
+        {'name': 'Type1-World',    'num_devices': 10e14},  # Distant Future (maybe, it's up to us)
         # 'Austin_2020': 1e6,  # about 1 million.
         # 'NYC_2019': 8.419e6,  # 8 million
         # 'GPU_Shipments_2020': 41e6,  # 46 million
         # 'USA_2019': 328.2e6,     # 300 million
         # 'China_2021': 1_397_897_720,  # 1 billion
         # 'Earth_2019': 7.674e9,  # 7 billion
+    ]
+
+    # For our idealized purpose we will ignore the "zipties and baseball bat"
+    # hacker device... because somebody is going to bring it up otherwise
+    return devices, scales
+
+
+
+def main():
+    """
+    Run password security analysis
+
+    Example:
+        >>> import sys, ubelt
+        >>> sys.path.append(ubelt.expandpath('~/misc/notes'))
+        >>> from password_model import *  # NOQA
+        >>> main()
+    """
+
+    # Build our adversary and our strategies
+    devices, scales = build_threat_models()
+
+    password_schemes = build_password_strategy()
+
+    # Other estimates or assumptions
+    estimates = {
+        # estimated cost of using a kilowatt for an hour
+        # http://www.wrecc.com/what-uses-watts-in-your-home/
+        'dollars_per_kwh': (6.10 / 30) / 2,
     }
 
-    device = 'rtx3090'
-    hashmodes = device_hashmodes[device]
+    # import itertools as it
+    # for device, scheme, (scale_name, num_devices), benchmark = it.product(
+    #     devices, password_schemes.items(), device['benchmarks'])
 
-    def time_to_crack(states, attempts_per_second):
-        seconds = states / attempts_per_second
-        return humanize_seconds(seconds)
+    rows = []
+    for device in devices:
+        for scheme in password_schemes:
+            for scale in scales:
+                for benchmark in device['benchmarks']:
 
-    for scheme in password_schemes:
+                    attempts_per_second = scale['num_devices'] * benchmark['attempts_per_second']
 
-        for hashmode in hashmodes:
-            for scale_name, scale in scales.items():
-                threat_name = '{}@{}'.format(hashmode['name'], scale_name)
-                attempts_per_second = scale * hashmode['attempts_per_second']
-                states = scheme['states']
-                scheme['security_against'][threat_name] = {
-                    'time': time_to_crack(states, attempts_per_second),
-                }
+                    states = scheme['states']
+                    seconds = states / attempts_per_second
 
-    for scheme in password_schemes:
-        print('scheme = {}'.format(ub.repr2(scheme, nl=2, precision=4, sort=0, align=':')))
+                    hours = seconds / 360.
+                    device_kilowatts = device['watts'] / 1000.
+                    device_dollars_per_hour = device_kilowatts * estimates['dollars_per_kwh']
+                    cost_per_device = device_dollars_per_hour * hours
+                    cost = cost_per_device * scale['num_devices']
+
+                    total_kilowatts = device_kilowatts * scale['num_devices'] * hours
+
+                    htime = humanize_seconds(seconds)
+
+                    row = {
+                        'scheme': scheme['name'],
+                        'entropy': scheme['entropy'],
+
+                        'hashmode': benchmark['hashmode'],
+
+                        'device': device['name'],
+                        'scale': scale['name'],
+                        'num_devices': scale['num_devices'],
+
+                        'seconds': seconds,
+                        'cost': cost,
+                        'kilowatts': total_kilowatts,
+                    }
+                    print('row = {!r}'.format(row))
+                    rows.append(row)
+
+    import pandas as pd
+    df = pd.DataFrame(rows)
+    df = df.sort_values('entropy')
+
+    def humanize_dollars(d):
+        return '${:4.02g}'.format(d)
+
+
+    df = df[df['device'] == 'RTX_3090']
+    df['htime'] = df['seconds'].apply(humanize_seconds).apply(lambda x: '{:.4g} {}'.format(*x))
+    # df['htime'] = df['seconds'].apply(humanize_seconds).apply(
+    #     lambda x: ub.color_text('{:.4g} {}'.format(*x), 'red') if x.split()
+    df['hcost'] = df['cost'].apply(humanize_dollars)
+    df['num_devices'] = df['num_devices'].apply(int)
+
+    hashmodes = sorted([d['hashmode'] for d in device['benchmarks']])
+    # for scheme in password_schemes:
+    # print('scheme = {}'.format(ub.repr2(scheme, nl=2, precision=4, sort=0, align=':')))
+
+    for hashmode in hashmodes:
+        print('\n---')
+        print('hashmode = {!r}'.format(hashmode))
+        subdf = df
+        subdf = subdf[subdf['hashmode'] == hashmode]
+        # subdf = subdf[subdf['scheme'] == scheme['name']]
+        # print(subdf)
+        # mat = subdf.pivot(['entropy', 'scheme'], 'scale', 'htime')
+        # print(mat)
+        # mat = subdf.pivot(['entropy', 'scheme', 'hcost'], 'scale', 'htime')
+        # print(subdf.pivot('scheme', 'scale', 'htime'))
+        subdf = subdf.sort_values(['entropy', 'num_devices'])
+        # subdf = subdf.sort_values('num_devices')
+        # print(subdf)
+        print(subdf.pivot(['entropy', 'hcost', 'scheme'], ['num_devices', 'scale'], 'htime'))
 
 
 def humanize_seconds(seconds):
@@ -250,15 +389,19 @@ def humanize_seconds(seconds):
     days = hours / 24.
     years = days / 365.
     if minutes < 1:
-        return (seconds, 'seconds')
+        raw = (seconds, 'seconds')
     if hours < 1:
-        return (minutes, 'minutes')
+        raw = (minutes, 'minutes')
     if days < 1:
-        return (hours, 'hours')
+        raw = (hours, 'hours')
     elif years < 1:
-        return (days, 'days')
+        raw = (days, 'days')
     else:
-        return (years, 'years')
+        raw = (years, 'years')
+
+    count, unit = raw
+    count = round(count, 4)
+    return count, unit
 
 
 if __name__ == '__main__':
