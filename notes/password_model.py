@@ -253,6 +253,13 @@ def build_threat_models():
         }
     ]
 
+    # Notes on watts.
+    # https://en.wikipedia.org/wiki/Watt
+    # A Watt is a unit of power, radiant flux, i.e. the rate of work or rate of
+    # energy transfer.
+    # 1 Watt = 1 kg * (meter ** 2) * (seconds ** -3) = 1 Joule / second
+
+    # A Type1 Civilization could use energy at a rate of 1.74e18 watts
     type_1_watts = 1.74e17
     type_1_watts / 350
 
@@ -282,7 +289,6 @@ def build_threat_models():
     # For our idealized purpose we will ignore the "zipties and baseball bat"
     # hacker device... because somebody is going to bring it up otherwise
     return devices, scales
-
 
 
 def main():
@@ -358,12 +364,10 @@ def main():
     def humanize_dollars(d):
         return '${:4.02g}'.format(d)
 
-
     df = df[df['device'] == 'RTX_3090']
     df['htime'] = df['seconds'].apply(humanize_seconds)
     df['hcost'] = df['cost'].apply(humanize_dollars)
     df['num_devices'] = df['num_devices'].apply(int)
-
 
     hashmodes = sorted([d['hashmode'] for d in device['benchmarks']])
 
