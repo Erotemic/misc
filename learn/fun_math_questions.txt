@@ -1,0 +1,79 @@
+
+What is bigger, 2 ^ 300 or 3 ^ 200.
+
+Prove or disprove:
+
+2 ** 300 > 3 ** 200
+
+log(2 ** 300) / log(2) > log(3 ** 200) / log(2)
+
+log_2 = lambda x: np.log(x) / np.log(2)
+log_3 = lambda x: np.log(x) / np.log(3)
+
+
+log_2(2 ** 300) > log_2(3 ** 200)
+
+300             > log_2(3 ** 200)
+
+300 / log_2(3)  > log_2(3 ** 200) / log_2(3)
+
+300 / log_2(3)  > log_3(3 ** 200)
+
+300 / log_2(3)  > 200
+
+300 * log_3(2)  > 200
+
+
+### Side Solve log_3(2)
+### 3 ** ~0.6 = 2
+
+300 * ~0.6 > 200
+
+180ish > 200
+
+The left hand side is less than the right hand side
+
+
+import sympy as sym
+from functools import partial
+
+# Given these symbols and assumptions
+b1, b2, e1, e2 = sym.symbols('b1, b2, e1, e2', real=True, positive=True)
+
+# Recall the specific instance of the program is
+params = {b1:2, e1:300, b2:3, e2:200}
+
+
+# Define helpers
+log_b1 = lambda x: sym.log(x, b1)
+log_b2 = lambda x: sym.log(x, b2)
+
+
+# This is the general statement
+(b1 ** e1) > (b2 ** e2)
+
+# Manipulate the statement
+log_b1((b1 ** e1)) > log_b1((b2 ** e2)) 
+
+if 0:
+    sym.simplify(log_b1(b1 ** e1))
+    assert log_b1(b1 ** e1).equals(e1)
+
+e1              > log_b1((b2 ** e2)) 
+e1 / log_b1(b2) > log_b1((b2 ** e2))  / log_b1(b2)
+e1 / log_b1(b2) > log_b2((b2 ** e2))
+
+# We find this general equation
+e1 / log_b1(b2) > e2
+expr = e1 / log_b1(b2) > e2
+print('expr = {!r}'.format(expr))
+
+# 
+lhs = (e1 / log_b1(b2)).subs(params)
+rhs = (e2).subs(params)
+print(f'lhs = {lhs} = {lhs.evalf()}')
+print(f'rhs = {rhs} = {rhs.evalf()}')
+
+rhs.evalf() # 300*log(2)/log(3) = 189.2789
+
+lhs.evalf() # 200

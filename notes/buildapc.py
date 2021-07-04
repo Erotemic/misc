@@ -57,7 +57,6 @@ MOBO:
     One reviewer mentioned good customer service from: EVGA, Corsair, Logitech, NZXT and to a lesser extent MSI.
     One reviewer mentioned bad customer service from: Asus, Gigabyte, Powercolor, Asrock
 
-
     Asus ROG Strix X299-E Gaming II
     MSI X299 PRO
 
@@ -424,3 +423,22 @@ def hdd_cost():
 
 
     print('candidates = {}'.format(ub.repr2(candidates, nl=1, precision=2, align=':')))
+
+
+considering = ub.codeblock(
+    '''
+    https://www.lg.com/us/monitors/lg-27UK650-W-4k-uhd-led-monitor#
+
+    https://www.lg.com/us/monitors/lg-27GL850-B-gaming-monitor
+
+    https://www.amazon.com/Dell-U2720QM-UltraSharp-Ultra-Thin-DisplayPort/dp/B08F5J8S6Y?ref_=ast_sto_dp
+
+
+    https://www.amazon.com/Dell-U2720QM-UltraSharp-Ultra-Thin-DisplayPort/dp/B08F5J8S6Y?ref_=ast_sto_dp
+
+    # Has 2560x1440 resolution, which is what I like anyway
+    #
+    https://www.amazon.com/LG-27GL83A-B-Ultragear-Compatible-Monitor/dp/B07YGZL8XF/ref=sr_1_2_sspa?dchild=1&keywords=4k+monitor&qid=1619557709&sr=8-2-spons&psc=1&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUEzNjBXRVNRRkNMWU5QJmVuY3J5cHRlZElkPUEwMDgxNzQ4MUQ3RE9SM0dTTkkyTCZlbmNyeXB0ZWRBZElkPUEwNTM2NTc0MTE5SVJJVzQySjJGQyZ3aWRnZXROYW1lPXNwX2F0ZiZhY3Rpb249Y2xpY2tSZWRpcmVjdCZkb05vdExvZ0NsaWNrPXRydWU=
+
+    WQHD
+    ''')

@@ -1,14 +1,14 @@
-echo "
+__doc__='
 Requirements:
     pip install sphinx sphinx_rtd_theme
 
 Usage:
     source ~/misc/make_new_python_package_repo.sh
 
-    REPO_NAME=pypogo
+    REPO_NAME=supersetup
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
-" > /dev/null
+'
 
 
 update_pypkg(){
