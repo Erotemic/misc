@@ -101,7 +101,7 @@ they throw everything they've got at you.
 
 AWS has roughly 1.4 million servers [9]_.
 
-Rough cost per gpu per hour $1.045 [10]_.
+Rough dollars per gpu per hour $1.045 [10]_.
 
 RTX 3090 runs at 370W
 
@@ -291,6 +291,103 @@ def build_threat_models():
     return devices, scales
 
 
+def humanize_seconds(seconds, colored=True):
+    minutes = seconds / 60.
+    hours = minutes / 60.
+    days = hours / 24.
+    years = days / 365.
+    if minutes < 1:
+        raw = (seconds, 'seconds')
+    elif hours < 1:
+        raw = (minutes, 'minutes')
+    elif days < 1:
+        raw = (hours, 'hours')
+    elif years < 1:
+        raw = (days, 'days')
+    else:
+        raw = (years, 'years')
+
+    count, unit = raw
+    count_ = round(float(count), 4)
+    ret = '{:.4g} {}'.format(count_, unit)
+
+    if colored:
+        if years > 1e5:
+            # Blue is VERY safe
+            ret = ub.color_text(ret, 'blue')
+        elif years > 80:
+            # Green is safe
+            ret = ub.color_text(ret, 'green')
+        elif years > 10:
+            # Yellow is short-term safe
+            ret = ub.color_text(ret, 'yellow')
+        else:
+            # Red is not safe
+            ret = ub.color_text(ret, 'red')
+
+    return ret
+
+
+def monkeypatch_pandas_colored_stdout():
+    """
+    References:
+        https://github.com/pandas-dev/pandas/issues/18066
+    """
+    import pandas.io.formats.format as format_
+    from six import text_type
+
+    # Made wrt pd.__version__ == '1.2.4'
+
+    class TextAdjustmentMonkey(object):
+        def __init__(self):
+            import re
+            self.ansi_regx = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
+            self.encoding  = format_.get_option("display.encoding")
+
+        def len(self, text):
+            return len(self.ansi_regx.sub('', text))
+
+        def justify(self, texts, max_len, mode='right'):
+            jfunc = str.ljust if (mode == 'left')  else \
+                    str.rjust if (mode == 'right') else str.center
+            out = []
+            for s in texts:
+                escapes = self.ansi_regx.findall(s)
+                if len(escapes) == 2:
+                    out.append(escapes[0].strip() +
+                               jfunc(self.ansi_regx.sub('', s), max_len) +
+                               escapes[1].strip())
+                else:
+                    out.append(jfunc(s, max_len))
+            return out
+
+        def _join_unicode(self, lines, sep=''):
+            try:
+                return sep.join(lines)
+            except UnicodeDecodeError:
+                sep = text_type(sep)
+                return sep.join([x.decode('utf-8') if isinstance(x, str) else x
+                                                                for x in lines])
+
+        def adjoin(self, space, *lists, **kwargs):
+            # Add space for all but the last column:
+            pads = ([space] * (len(lists) - 1)) + [0]
+            max_col_len = max([len(col) for col in lists])
+            new_cols = []
+            for col, pad in zip(lists, pads):
+                width = max([self.len(s) for s in col]) + pad
+                c     = self.justify(col, width, mode='left')
+                # Add blank cells to end of col if needed for different col lens:
+                if len(col) < max_col_len:
+                    c.extend([' ' * width] * (max_col_len - len(col)))
+                new_cols.append(c)
+
+            rows = [self._join_unicode(row_tup) for row_tup in zip(*new_cols)]
+            return self._join_unicode(rows, sep='\n')
+
+    format_.TextAdjustment = TextAdjustmentMonkey
+
+
 def main():
     """
     Run password security analysis
@@ -315,107 +412,103 @@ def main():
         'dollars_per_kwh': 0.10,
     }
 
-    # import itertools as it
-    # for device, scheme, (scale_name, num_devices), benchmark = it.product(
-    #     devices, password_schemes.items(), device['benchmarks'])
-
+    import itertools as it
+    from fractions import Fraction
     rows = []
-    for device in devices:
-        for scheme in password_schemes:
-            for scale in scales:
-                for benchmark in device['benchmarks']:
+    for device, scheme, scale in it.product(devices, password_schemes, scales):
+        for benchmark in device['benchmarks']:
 
-                    attempts_per_second = scale['num_devices'] * benchmark['attempts_per_second']
+            states = Fraction(scheme['states'])
+            num_devices = Fraction(scale['num_devices'])
+            dollars_per_kwh = Fraction(estimates['dollars_per_kwh'])
 
-                    states = scheme['states']
-                    seconds = states / attempts_per_second
+            attempts_per_second = num_devices * Fraction(int(benchmark['attempts_per_second']))
 
-                    hours = seconds / 3600.
-                    device_kilowatts = device['watts'] / 1000.
-                    device_dollars_per_hour = device_kilowatts * estimates['dollars_per_kwh']
-                    cost_per_device = device_dollars_per_hour * hours
-                    cost = cost_per_device * scale['num_devices']
+            seconds = states / Fraction(attempts_per_second)
 
-                    total_kilowatts = device_kilowatts * scale['num_devices'] * hours
+            hours = seconds / Fraction(3600)
+            device_kilowatts = Fraction(device['watts']) / Fraction(1000)
+            device_dollars_per_hour = device_kilowatts * dollars_per_kwh
+            dollars_per_device = device_dollars_per_hour * hours
+            dollars = dollars_per_device * num_devices
 
-                    row = {
-                        'scheme': scheme['name'],
-                        'entropy': scheme['entropy'],
+            total_kilowatts = device_kilowatts * num_devices * hours
 
-                        'hashmode': benchmark['hashmode'],
+            row = {
+                'scheme': scheme['name'],
+                'entropy': scheme['entropy'],
 
-                        'device': device['name'],
-                        'scale': scale['name'],
-                        'num_devices': scale['num_devices'],
+                'hashmode': benchmark['hashmode'],
 
-                        'seconds': seconds,
-                        'cost': cost,
+                'device': device['name'],
+                'scale': scale['name'],
+                'num_devices': scale['num_devices'],
 
-                        'kilowatts': total_kilowatts,
-                        'hours': hours,
-                        'dollars_per_kwh': estimates['dollars_per_kwh'],
-                    }
-                    rows.append(row)
+                'seconds': seconds,
+                'dollars': dollars,
+
+                'kilowatts': total_kilowatts,
+                'hours': hours,
+                'dollars_per_kwh': estimates['dollars_per_kwh'],
+            }
+            rows.append(row)
+
+    for row in rows:
+        pass
 
     import pandas as pd
     df = pd.DataFrame(rows)
     df = df.sort_values('entropy')
 
     def humanize_dollars(d):
-        return '${:4.02g}'.format(d)
+        return '${:5.02g}'.format(float(d))
 
     df = df[df['device'] == 'RTX_3090']
-    df['htime'] = df['seconds'].apply(humanize_seconds)
-    df['hcost'] = df['cost'].apply(humanize_dollars)
+    df['time'] = df['seconds'].apply(humanize_seconds)
+    df['cost'] = df['dollars'].apply(humanize_dollars)
+    df['entropy'] = df['entropy'].round(2)
     df['num_devices'] = df['num_devices'].apply(int)
 
     hashmodes = sorted([d['hashmode'] for d in device['benchmarks']])
 
     # https://github.com/pandas-dev/pandas/issues/18066
+    monkeypatch_pandas_colored_stdout()
+
+    hashmode_to_pivots = {}
     for hashmode in hashmodes:
-        print('\n---')
-        print('hashmode = {!r}'.format(hashmode))
         subdf = df
         subdf = subdf[subdf['hashmode'] == hashmode]
         subdf = subdf.sort_values(['entropy', 'num_devices'])
-        p = subdf.pivot(['entropy', 'hcost', 'scheme'], ['num_devices', 'scale'], 'htime')
+        p = subdf.pivot(['entropy', 'cost', 'scheme'], ['num_devices', 'scale'], 'time')
         # p.style.applymap(color_cases)
+        hashmode_to_pivots[hashmode] = p
+
+    for hashmode in hashmodes:
+        print('\n---')
+        print('hashmode = {!r}'.format(hashmode))
+        p = hashmode_to_pivots[hashmode]
         print(p)
 
-
-def humanize_seconds(seconds):
-    minutes = seconds / 60.
-    hours = minutes / 60.
-    days = hours / 24.
-    years = days / 365.
-    if minutes < 1:
-        raw = (seconds, 'seconds')
-    elif hours < 1:
-        raw = (minutes, 'minutes')
-    elif days < 1:
-        raw = (hours, 'hours')
-    elif years < 1:
-        raw = (days, 'days')
-    else:
-        raw = (years, 'years')
-
-    count, unit = raw
-    count_ = round(count, 4)
-    ret = '{:.4g} {}'.format(count_, unit)
-
     if 1:
-        if years > 1e5:
-            # Blue is VERY safe
-            ret = ub.color_text(ret, 'blue')
-        elif years > 80:
-            # Green is VERY safe
-            ret = ub.color_text(ret, 'green')
-        elif years > 10:
-            ret = ub.color_text(ret, 'yellow')
-        else:
-            ret = ub.color_text(ret, 'red')
+        import kwplot
+        plt = kwplot.autoplt()
+        sns = kwplot.autosns()
 
-    return ret
+        hashmode = 'md5'
+        subdf = subdf[subdf['hashmode'] == hashmode]
+        subdf = subdf.sort_values(['entropy', 'num_devices'])
+        p = subdf.pivot(['entropy', 'cost', 'scheme'], ['num_devices', 'scale'], 'seconds')
+        p = p.applymap(float)
+
+        # https://stackoverflow.com/questions/64234474/how-to-customize-y-labels-in-seaborn-heatmap-when-i-use-a-multi-index-dataframe
+
+        f, ax = plt.subplots(figsize=(9, 6))
+        annot = p.applymap(lambda x: humanize_seconds(x, colored=False))
+        from matplotlib.colors import LogNorm
+        sns.heatmap(p, annot=annot, ax=ax, fmt='s',
+                    norm=LogNorm(vmin=1, vmax=8640000000),
+                    cbar_kws={'label': 'seconds'})
+        plt.show()
 
 
 if __name__ == '__main__':
