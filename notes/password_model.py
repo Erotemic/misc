@@ -489,25 +489,34 @@ def main():
         p = hashmode_to_pivots[hashmode]
         print(p)
 
-    if 1:
+    if ub.argflag('--draw'):
         import kwplot
+        from matplotlib.colors import LogNorm
         plt = kwplot.autoplt()
         sns = kwplot.autosns()
 
-        hashmode = 'md5'
-        subdf = subdf[subdf['hashmode'] == hashmode]
-        subdf = subdf.sort_values(['entropy', 'num_devices'])
-        p = subdf.pivot(['entropy', 'cost', 'scheme'], ['num_devices', 'scale'], 'seconds')
-        p = p.applymap(float)
+        for hashmode in hashmodes:
+            subdf = subdf[subdf['hashmode'] == hashmode]
+            subdf = subdf.sort_values(['entropy', 'num_devices'])
+            p = subdf.pivot(['entropy', 'cost', 'scheme'], ['num_devices', 'scale'], 'seconds')
+            p = p.applymap(float)
 
-        # https://stackoverflow.com/questions/64234474/how-to-customize-y-labels-in-seaborn-heatmap-when-i-use-a-multi-index-dataframe
+            # https://stackoverflow.com/questions/64234474/how-to-customize-y-labels-in-seaborn-heatmap-when-i-use-a-multi-index-dataframe
 
-        f, ax = plt.subplots(figsize=(9, 6))
-        annot = p.applymap(lambda x: humanize_seconds(x, colored=False))
-        from matplotlib.colors import LogNorm
-        sns.heatmap(p, annot=annot, ax=ax, fmt='s',
-                    norm=LogNorm(vmin=1, vmax=8640000000),
-                    cbar_kws={'label': 'seconds'})
+            f, ax = plt.subplots(figsize=(9, 6))
+            annot = p.applymap(lambda x: humanize_seconds(x, colored=False))
+            sns.heatmap(p, annot=annot, ax=ax, fmt='s',
+                        norm=LogNorm(vmin=1, vmax=8640000000),
+                        cbar_kws={'label': 'seconds'})
+
+            ax.figure.subplots_adjust(bottom=0.1, left=0.18)
+            # new_ytick_labels = [scheme for ent, cost, scheme in p.index.to_list()]
+            new_ytick_labels = ['{scheme}\n({ent}bits {cost})'.format(scheme=scheme, cost=cost, ent=ent) for ent, cost, scheme in p.index.to_list()]
+            new_xtick_labels = ['{}\n({:4.02g})'.format(name, n) for n, name in p.columns.to_list()]
+
+            ax.set_xticklabels(new_xtick_labels, rotation=0)
+            ax.set_yticklabels(new_ytick_labels)
+            ax.set_title('Password robustness: {}'.format(hashmode))
         plt.show()
 
 
