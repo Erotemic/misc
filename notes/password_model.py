@@ -291,7 +291,7 @@ def build_threat_models():
     return devices, scales
 
 
-def humanize_seconds(seconds, colored=True):
+def humanize_seconds(seconds, colored=True, precision=4):
     minutes = seconds / 60.
     hours = minutes / 60.
     days = hours / 24.
@@ -309,7 +309,7 @@ def humanize_seconds(seconds, colored=True):
 
     count, unit = raw
     count_ = round(float(count), 4)
-    ret = '{:.4g} {}'.format(count_, unit)
+    ret = ('{:.' + str(precision) + 'g} {}').format(count_, unit)
 
     if colored:
         if years > 1e5:
@@ -398,7 +398,9 @@ def main():
         >>> from password_model import *  # NOQA
         >>> main()
     """
-
+    import itertools as it
+    from fractions import Fraction
+    import pandas as pd
     # Build our adversary and our strategies
     devices, scales = build_threat_models()
 
@@ -408,12 +410,10 @@ def main():
     estimates = {
         # estimated cost of using a kilowatt for an hour
         # http://www.wrecc.com/what-uses-watts-in-your-home/
-        # https://www.coinwarz.com/mining/ethereum/calculator?h=100.00&p=1.00&pc=0.10&pf=0.00&d=6504945223037478.00000000&r=2.00000000&er=0.06440741&btcer=34726.37000000&ha=MH&hc=19999.00&hs=-1&hq=1
+        # https://www.coinwarz.com/mining/ethereum/calculator?h=100.00&piv=1.00&pc=0.10&pf=0.00&d=6504945223037478.00000000&r=2.00000000&er=0.06440741&btcer=34726.37000000&ha=MH&hc=19999.00&hs=-1&hq=1
         'dollars_per_kwh': 0.10,
     }
 
-    import itertools as it
-    from fractions import Fraction
     rows = []
     for device, scheme, scale in it.product(devices, password_schemes, scales):
         for benchmark in device['benchmarks']:
@@ -456,7 +456,6 @@ def main():
     for row in rows:
         pass
 
-    import pandas as pd
     df = pd.DataFrame(rows)
     df = df.sort_values('entropy')
 
@@ -479,15 +478,15 @@ def main():
         subdf = df
         subdf = subdf[subdf['hashmode'] == hashmode]
         subdf = subdf.sort_values(['entropy', 'num_devices'])
-        p = subdf.pivot(['entropy', 'cost', 'scheme'], ['num_devices', 'scale'], 'time')
-        # p.style.applymap(color_cases)
-        hashmode_to_pivots[hashmode] = p
+        piv = subdf.pivot(['entropy', 'cost', 'scheme'], ['num_devices', 'scale'], 'time')
+        # piv.style.applymap(color_cases)
+        hashmode_to_pivots[hashmode] = piv
 
     for hashmode in hashmodes:
         print('\n---')
         print('hashmode = {!r}'.format(hashmode))
-        p = hashmode_to_pivots[hashmode]
-        print(p)
+        piv = hashmode_to_pivots[hashmode]
+        print(piv)
 
     if ub.argflag('--draw'):
         import kwplot
@@ -495,28 +494,38 @@ def main():
         plt = kwplot.autoplt()
         sns = kwplot.autosns()
 
-        for hashmode in hashmodes:
+        for hashmode in ub.ProgIter(hashmodes, desc='plotting'):
+            subdf = df
             subdf = subdf[subdf['hashmode'] == hashmode]
             subdf = subdf.sort_values(['entropy', 'num_devices'])
-            p = subdf.pivot(['entropy', 'cost', 'scheme'], ['num_devices', 'scale'], 'seconds')
-            p = p.applymap(float)
+            piv = subdf.pivot(['entropy', 'cost', 'scheme'], ['num_devices', 'scale'], 'seconds')
+            piv = piv.applymap(float)
 
-            # https://stackoverflow.com/questions/64234474/how-to-customize-y-labels-in-seaborn-heatmap-when-i-use-a-multi-index-dataframe
-
-            f, ax = plt.subplots(figsize=(9, 6))
-            annot = p.applymap(lambda x: humanize_seconds(x, colored=False))
-            sns.heatmap(p, annot=annot, ax=ax, fmt='s',
+            # https://stackoverflow.com/questions/64234474/cust-y-lbls-seaborn
+            f, ax = plt.subplots(figsize=(15, 10))
+            annot = piv.applymap(lambda x: humanize_seconds(x, colored=False,
+                                                            precision=2))
+            sns.heatmap(piv, annot=annot, ax=ax, fmt='s',
                         norm=LogNorm(vmin=1, vmax=8640000000),
                         cbar_kws={'label': 'seconds'})
 
-            ax.figure.subplots_adjust(bottom=0.1, left=0.18)
-            # new_ytick_labels = [scheme for ent, cost, scheme in p.index.to_list()]
-            new_ytick_labels = ['{scheme}\n({ent}bits {cost})'.format(scheme=scheme, cost=cost, ent=ent) for ent, cost, scheme in p.index.to_list()]
-            new_xtick_labels = ['{}\n({:4.02g})'.format(name, n) for n, name in p.columns.to_list()]
-
+            ax.figure.subplots_adjust(
+                bottom=0.1, left=0.17, right=1.0, top=0.95)
+            new_ytick_labels = [
+                '{scheme}\n({ent}bits {cost})'.format(scheme=scheme, cost=cost, ent=ent)
+                for ent, cost, scheme in piv.index.to_list()
+            ]
+            new_xtick_labels = [
+                '{}\n({:4.02g})'.format(name, n)
+                for n, name in piv.columns.to_list()
+            ]
             ax.set_xticklabels(new_xtick_labels, rotation=0)
             ax.set_yticklabels(new_ytick_labels)
-            ax.set_title('Password robustness: {}'.format(hashmode))
+            ax.set_ylabel('Password Scheme,\n(Entropy, Cost to Crack)')
+            ax.set_xlabel('Adversary Resources\n(Number of GPUs)')
+            ax.set_title('Password robustness\n(hashmode={})'.format(hashmode))
+            fname = 'passwd_robustness_{}.png'.format(hashmode)
+            ax.figure.savefig(fname)
         plt.show()
 
 
@@ -524,5 +533,6 @@ if __name__ == '__main__':
     """
     CommandLine:
         python ~/misc/notes/password_model.py
+        python ~/misc/notes/password_model.py --draw
     """
     main()
