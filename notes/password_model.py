@@ -120,6 +120,7 @@ References:
 
     [9] https://www.quora.com/How-many-servers-does-AWS-have#:~:text=Cloud%20hardware%20is%20very%20interesting,more%20than%201%2C000%2C000%20physical%20servers.
     [10] https://aws.amazon.com/ec2/instance-types/p3/
+    [11] https://xkcd.com/538/
 
 Requirements:
     ubelt

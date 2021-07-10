@@ -394,25 +394,63 @@ def hdd_cost():
     # https://www.newegg.com/seagate-exos-x10-st10000nm0096-10tb/p/1Z4-002P-00DU5?Item=9SIA994C784701&Description=seagate&cm_re=seagate-_-1Z4-002P-00DU5-_-Product
     candidates = [
         {'cost': 198.65, 'TB': 10, 'RPM': 7200, 'sale': True, 'condition': 'refurbished', 'line': 'baraccuda compute'},
-
-        {'cost': 154.99, 'TB': 8, 'RPM': 5400, 'sale': True, 'condition': 'new', 'line': 'baraccuda compute'},
-        {'cost': 139.99, 'TB': 6, 'RPM': 5400, 'sale': True, 'condition': 'new', 'line': 'baraccuda compute'},
-
-        {'cost': 340.00, 'TB': 8, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'baraccuda compute pro'},
-
-        {'cost': 435.04, 'TB': 14, 'RPM': None, 'sale': False, 'condition': 'new', 'line': 'ironwolf'},
         {'cost': 248.99, 'TB': 10, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'iron wolf'},
         {'cost': 249.99, 'TB': 10, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'ironwolf'},
-        {'cost': 199.99, 'TB': 8, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'ironwolf'},
+
         {'cost': 162.99, 'TB': 6, 'RPM': 7200, 'sale': False, 'condition': 'new', 'line': 'ironwolf'},
+        {'cost': 139.99, 'TB': 6, 'RPM': 5400, 'sale': True, 'condition': 'new', 'line': 'baraccuda compute'},
+        {'cost': 154.99, 'TB': 8, 'RPM': 5400, 'sale': True, 'condition': 'new', 'line': 'baraccuda compute'},
+        {'cost': 340.00, 'TB': 8, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'baraccuda compute pro'},
+        {'cost': 199.99, 'TB': 8, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'ironwolf'},
         {'cost': 252.99, 'TB': 12, 'RPM': 7200, 'sale': False, 'condition': 'refurbished', 'line': 'ironwolf'},
+        {'cost': 435.04, 'TB': 14, 'RPM': None, 'sale': False, 'condition': 'new', 'line': 'ironwolf'},
         # {'cost': 101.50, 'TB': 2, 'RPM': 7200, 'sale': True},
 
         {'cost': 198.99, 'TB': 10, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'exos'},
         {'cost': 299.99, 'TB': 12, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'exos'},
         {'cost': 209.99, 'TB': 10, 'RPM': 7200, 'sale': False, 'condition': 'refurbished', 'line': 'exos'},
+
+
+        {'cost': 421.99, 'TB': 16, 'RPM': 7200, 'sale': True, 'condition': 'new', 'line': 'skyhawk-ai', 'date': '2021-07-10'},
+        {'cost': 356.99, 'TB': 12, 'RPM': 7200, 'sale': False, 'condition': 'new', 'line': 'skyhawk-ai', 'date': '2021-07-10'},
+
+        {'cost': 399.06, 'TB': 12, 'RPM': 7200, 'sale': False, 'condition': 'new', 'line': 'ironwolf-pro', 'date': '2021-07-10'},
+        {'cost': 359.06, 'TB': 12, 'RPM': 7200, 'sale': False, 'condition': 'new', 'line': 'ironwolf', 'date': '2021-07-10'},
+
+        {'cost': 299.99, 'TB': 10, 'RPM': 7200, 'sale': False, 'condition': 'new', 'line': 'ironwolf', 'date': '2021-07-10'},
+        {'cost': 390.00, 'TB': 10, 'RPM': 7200, 'sale': False, 'condition': 'new', 'line': 'baracuda-compute-pro', 'date': '2021-07-10'},
+
+        {'cost': 1120, 'TB': 40, 'RPM': 7200, 'sale': False, 'condition': 'new', 'line': 'ironwolf-pro-x4', 'date': '2021-07-10', 'seller': 'B&H'},
+        {'cost': 260, 'TB': 10, 'RPM': 7200, 'sale': False, 'condition': 'new', 'line': 'skyhawk', 'date': '2021-07-10', 'seller': 'B&H'},
     ]
 
+
+    # https://www.seagate.com/products/nas-drives/ironwolf-hard-drive/
+    # https://www.adorama.com/l/Computers/Drives-comma-SSD-and-Storage/Seagate~Hard-Disk-Drives?sel=Capacity_10TB
+    seagate_msrps = [
+        {'cost': 146, 'TB': 4, 'RPM': 7200, 'line': 'ironwolf-pro', 'design': None, 'date': '2021-07-10'},
+        {'cost': 209, 'TB': 6, 'RPM': 7200, 'line': 'ironwolf-pro', 'design': None, 'date': '2021-07-10'},
+        {'cost': 289, 'TB': 8, 'RPM': 7200, 'line': 'ironwolf-pro', 'design': None, 'date': '2021-07-10'},
+        {'cost': 356, 'TB': 10, 'RPM': 7200, 'line': 'ironwolf-pro', 'design': 'air', 'date': '2021-07-10'},
+        {'cost': 356, 'TB': 10, 'RPM': 7200, 'line': 'ironwolf-pro', 'design': 'helium', 'date': '2021-07-10'},
+        {'cost': 430, 'TB': 12, 'RPM': 7200, 'line': 'ironwolf-pro', 'design': None, 'date': '2021-07-10'},
+        {'cost': 503, 'TB': 14, 'RPM': 7200, 'line': 'ironwolf-pro', 'design': None, 'date': '2021-07-10'},
+        {'cost': 577, 'TB': 16, 'RPM': 7200, 'line': 'ironwolf-pro', 'design': None, 'date': '2021-07-10'},
+        {'cost': 656, 'TB': 18, 'RPM': 7200, 'line': 'ironwolf-pro', 'design': None, 'date': '2021-07-10'},
+
+        {'cost': 241, 'TB':  8, 'RPM': 7200, 'line': 'ironwolf', 'design': None, 'date': '2021-07-10'},
+        {'cost': 314, 'TB': 10, 'RPM': 7200, 'line': 'ironwolf', 'design': None, 'date': '2021-07-10'},
+        {'cost': 377, 'TB': 12, 'RPM': 7200, 'line': 'ironwolf', 'design': None, 'date': '2021-07-10'},
+
+        {'cost': 293, 'TB': 10, 'RPM': 7200, 'line': 'skyhawk-ai', 'design': None, 'date': '2021-07-10'},
+        {'cost': 356, 'TB': 12, 'RPM': 7200, 'line': 'skyhawk-ai', 'design': None, 'date': '2021-07-10'},
+        {'cost': 472, 'TB': 16, 'RPM': 7200, 'line': 'skyhawk-ai', 'design': None, 'date': '2021-07-10'},
+        {'cost': 524, 'TB': 18, 'RPM': 7200, 'line': 'skyhawk-ai', 'design': None, 'date': '2021-07-10'},
+
+        {'cost': 230, 'TB': 10, 'RPM': 7200, 'line': 'skyhawk', 'design': None, 'date': '2021-07-10'},
+    ]
+
+    candidates = seagate_msrps
     for cand in candidates:
         cand['cost_per_TB'] = cand['cost'] / cand['TB']
 
