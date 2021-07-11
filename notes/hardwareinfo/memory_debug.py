@@ -91,57 +91,6 @@ def checker():
     # Subtract 1 because to make the stop range inclusive instead of exclusive
     stop  = dtype(0x7DDF4000) - dtype(1)
 
-    def xnor(a, b):
-        return ~(a ^ b)
-
-    def find_pos_of_leftmost_sig_zero(a, nbytes=64):
-        """
-        Given a bit string like, we find the position of the first zero bit we
-        see coming from the left, such that we can right-bitshift to it to the
-
-            11111110110110
-                   ^
-
-        Example:
-            >>> nbytes = 32
-            >>> vals = [0b0, 0b1, 0b1011, 0b1001]
-            >>> for a in vals:
-            >>>     print('-----')
-            >>>     pos = find_pos_of_leftmost_sig_zero(a, nbytes)
-            >>>     print(f'a = {a:032b}')
-            >>>     print('    ' + ' ' * (nbytes - pos - 1) + '^')
-            >>>     print(f'pos = {pos}')
-            -----
-            a = 00000000000000000000000000000000
-                                               ^
-            pos = 0
-            -----
-            a = 00000000000000000000000000000001
-                                               ^
-            pos = 0
-            -----
-            a = 00000000000000000000000000001011
-                                             ^
-            pos = 2
-            -----
-            a = 00000000000000000000000000001001
-                                             ^
-            pos = 2
-        """
-        # not really a fast op, but it works well enough There is a semi-corner
-        # case at 1 and 0, but it doesnt change how we use it
-        binstr = ('{:0' + str(nbytes) + 'b}').format(a)
-        try:
-            leftmost_one = binstr.index('1')
-        except ValueError:
-            return 0
-        try:
-            leftmost_sig_zero = binstr[leftmost_one:].index('0') + leftmost_one + 1
-        except Exception:
-            return 0
-        # Flip string indexes to bit indexes
-        return nbytes - leftmost_sig_zero
-
     # Find all the bits in common
     common = xnor(start, stop)
 
@@ -209,13 +158,21 @@ def checker():
 
 
 def find_grub_badram_format(start, stop):
+    """
+    References:
+        https://askubuntu.com/questions/908925/how-do-i-tell-ubuntu-not-to-use-certain-memory-addresses
+
+    Example:
+        start = 0x7DDF0000
+        stop  = 0x7DDF4000 - 1
+    """
     import numpy as np
     nbytes = 64
     dtype = np.uint64
     # Starting bad mem address range
     start = dtype(start)
     # Subtract 1 because to make the stop range inclusive instead of exclusive
-    stop  = dtype(stop) - dtype(1)
+    stop  = dtype(stop)
 
     def xnor(a, b):
         return ~(a ^ b)
@@ -225,34 +182,29 @@ def find_grub_badram_format(start, stop):
         Given a bit string like, we find the position of the first zero bit we
         see coming from the left, such that we can right-bitshift to it to the
 
-            11111110110110
-                   ^
+            011111110110110
+             ^      ^
 
         Example:
             >>> nbytes = 32
-            >>> vals = [0b0, 0b1, 0b1011, 0b1001]
+            >>> vals = [0b0, 0b1, 0b1111011, 0b1001]
             >>> for a in vals:
             >>>     print('-----')
-            >>>     pos = find_pos_of_leftmost_sig_zero(a, nbytes)
+            >>>     pos0 = find_pos_of_leftmost_sig_one_and_zero(a, nbytes)
             >>>     print(f'a = {a:032b}')
-            >>>     print('    ' + ' ' * (nbytes - pos - 1) + '^')
-            >>>     print(f'pos = {pos}')
+            >>>     print('    ' + ' ' * (nbytes - pos0 - 1) + '^')
             -----
             a = 00000000000000000000000000000000
                                                ^
-            pos = 0
             -----
             a = 00000000000000000000000000000001
                                                ^
-            pos = 0
             -----
-            a = 00000000000000000000000000001011
+            a = 00000000000000000000000001111011
                                              ^
-            pos = 2
             -----
             a = 00000000000000000000000000001001
                                              ^
-            pos = 2
         """
         # not really a fast op, but it works well enough There is a semi-corner
         # case at 1 and 0, but it doesnt change how we use it
@@ -262,28 +214,39 @@ def find_grub_badram_format(start, stop):
         except ValueError:
             return 0
         try:
-            leftmost_sig_zero = binstr[leftmost_one:].index('0') + leftmost_one + 1
+            leftmost_sig_zero = binstr[leftmost_one:].index('0') + leftmost_one
         except Exception:
             return 0
         # Flip string indexes to bit indexes
-        return nbytes - leftmost_sig_zero
+        sig_zero = nbytes - (leftmost_sig_zero + 1)
+        return sig_zero
 
     # Find all the bits in common
     common = xnor(start, stop)
 
     # Find the position of the first zero (non-common bit) we see from the left
-    shift = dtype(find_pos_of_leftmost_sig_zero(common, nbytes))
+    shift0 = find_pos_of_leftmost_sig_one_and_zero(common, nbytes)
 
-    # Right then left shift to zero out the tail, which constructs the mask
-    mask = (common >> shift) << (shift)
+    shift0 = dtype(shift0)
+    shift1 = dtype(shift1)
+    print(shift0)
+    print(shift1)
 
-    print(f'start  = 0b{start:64b} = 0x{start:16x}')
-    print(f'stop   = 0b{stop:64b} = 0x{stop:16x}')
-    print(f'common = 0b{common:64b} = 0x{common:16x}')
-    print(f'mask   = 0b{mask:64b} = 0x{mask:16x}')
+    mask = common
+
+    # Do right, then left shift to zero out the tail
+    mask = (mask >> shift0) << (shift0)
+
+    # Do left, then right shift to zero out the head
+    mask = (mask << shift1) >> (shift1)
+
+    print(f'start  = 0b{start:064b} = 0x{start:016x}')
+    print(f'stop   = 0b{stop:064b} = 0x{stop:016x}')
+    print(f'common = 0b{common:064b} = 0x{common:016x}')
+    print(f'mask   = 0b{mask:064b} = 0x{mask:016x}')
 
     print('--')
     print(f'mask = ' + hex(mask))
 
-    badram_format = f'0x{start:0{16}x},0x{mask:#0{16}x}'
+    badram_format = f'{start:#0{18}x},{mask:#0{18}x}'
     print(badram_format)
