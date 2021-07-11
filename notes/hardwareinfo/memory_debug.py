@@ -136,7 +136,17 @@ def checker():
     ((0x700000000 - 0x600000000) * reg.byte).to('megabyte')
     ((0xE24000000 - 0xE00000000) * reg.byte).to('megabyte')
 
-    find_grub_badram_format(0x700000000, 0x600000000)
+    # Edit /etc/default/grub
+
+    parts = [
+        find_grub_badram_format(0x700000000, 0x600000000),
+        find_grub_badram_format(0xE24000000, 0xE00000000)
+    ]
+    line = 'GRUB_BADRAM="{}"'.format(','.join(parts))
+    # Add the following line to the  /etc/default/grub
+    print(line)
+    # Run sudo update-grub
+    # Reboot, and retest
 
     0b11000000000000000000000000000000000
     0b11100000000000000000000000000000000
@@ -221,32 +231,41 @@ def find_grub_badram_format(start, stop):
         sig_zero = nbytes - (leftmost_sig_zero + 1)
         return sig_zero
 
+    def find_first_sig_one(a, nbytes=64):
+        binstr = ('{:0' + str(nbytes) + 'b}').format(a)
+        leftmost_one = binstr.index('1')
+        sig_one = nbytes - (leftmost_one + 1)
+        return sig_one
+
+
     # Find all the bits in common
     common = xnor(start, stop)
 
     # Find the position of the first zero (non-common bit) we see from the left
-    shift0 = find_pos_of_leftmost_sig_one_and_zero(common, nbytes)
+    shift0 = find_pos_of_leftmost_sig_zero(common, nbytes) + 1
+
+    # Find the number of significant bits in the stop position
+    shift1 = find_first_sig_one(stop, nbytes) + 1
+
 
     shift0 = dtype(shift0)
     shift1 = dtype(shift1)
-    print(shift0)
-    print(shift1)
 
-    mask = common
+    head_mask = (dtype(1) << shift1) - dtype(1)
+    tail_mask = ~((dtype(1) << shift0) - dtype(1))
+    mask = head_mask & tail_mask
 
-    # Do right, then left shift to zero out the tail
-    mask = (mask >> shift0) << (shift0)
+    if 0:
+        print(f'start  = 0b{start:064b} = 0x{start:016x}')
+        print(f'stop   = 0b{stop:064b} = 0x{stop:016x}')
+        print(f'common = 0b{common:064b} = 0x{common:016x}')
+        print(f'mask   = 0b{mask:064b} = 0x{mask:016x}')
 
-    # Do left, then right shift to zero out the head
-    mask = (mask << shift1) >> (shift1)
+        print('--')
+        print(f'mask = ' + hex(mask))
 
-    print(f'start  = 0b{start:064b} = 0x{start:016x}')
-    print(f'stop   = 0b{stop:064b} = 0x{stop:016x}')
-    print(f'common = 0b{common:064b} = 0x{common:016x}')
-    print(f'mask   = 0b{mask:064b} = 0x{mask:016x}')
-
-    print('--')
-    print(f'mask = ' + hex(mask))
-
-    badram_format = f'{start:#0{18}x},{mask:#0{18}x}'
-    print(badram_format)
+        badram_format = f'{start:#0{18}x},{mask:#0{18}x}'
+        print(badram_format)
+    badram_format = f'{start:#x},{mask:#x}'
+    return badram_format
+    # print(badram_format)
