@@ -555,7 +555,6 @@ def notes_on_md5():
 
     References:
         [1] : https://cryptography.hyperlink.cz/MD5_collisions.html
-
     """
     from kwcoco.data.grab_spacenet import Archive
     workdir = ub.ensure_app_cache_dir('pwdemo/md5_collision')
