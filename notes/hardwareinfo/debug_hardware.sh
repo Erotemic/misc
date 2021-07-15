@@ -49,6 +49,12 @@ setup_temperature_logging(){
     #https://stackoverflow.com/questions/473620/how-do-you-create-a-daemon-in-python
 
    https://www.robustperception.io/temperature-and-hardware-monitoring-metrics-from-the-node-exporter 
+
+    # simple log script
+    while true; do
+        printf "\n--$( date '+%H:%M:%S' )\n$( sensors -j)\n" >> sensor.log
+        sleep 2; 
+    done
 }
 
 
