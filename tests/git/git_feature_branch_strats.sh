@@ -4,12 +4,18 @@ A script that demonstrates pros and cons of rebase versus merge
 
 
 setup_repo_with_features(){
+    __doc__='
+    source ~/misc/tests/git/git_feature_branch_strats.sh
+    setup_repo_with_features
+    gitk --all
+    '
     mkdir -p $HOME/tmp/tmprepo
     rm -rf   $HOME/tmp/tmprepo
     mkdir -p $HOME/tmp/tmprepo
 
     cd $HOME/tmp/tmprepo
-    git init
+    git init 
+    git checkout -b main
 
     echo "
     download dependency 1
@@ -26,9 +32,21 @@ setup_repo_with_features(){
     git add mainfile.py
     git commit -m "initial commit"
 
+    echo "
+    main branch boilerplate1
+    " >> setupfile.py
+    git add setupfile.py
+    git commit -m "main branch boilerplate1"
+
+    echo "
+    main branch boilerplate2
+    " >> setupfile.py
+    git add setupfile.py
+    git commit -m "main branch boilerplate2"
+
 
     ### Feature 2
-    git checkout master
+    git checkout main
     git checkout -b dev/feature2
 
     echo "
@@ -50,7 +68,7 @@ setup_repo_with_features(){
     git commit -am "integrate feature2"
 
     ### Feature 3
-    git checkout master
+    git checkout main
     git checkout -b dev/feature3
 
     echo "
@@ -72,7 +90,7 @@ setup_repo_with_features(){
     git commit -am "integrate feature3"
 
     ### Feature 4
-    git checkout master
+    git checkout main
     git checkout -b dev/feature4
 
     echo "
@@ -101,45 +119,131 @@ union_conflict_resolve(){
     __doc__="
     both changes are important, take both
     "
-    fpath=$1
+    local fpath=$1
     grep -v -e'^<<<<<<<' -e '^>>>>>>>' -e'=======' $fpath > $fpath.next 
     mv $fpath.next $fpath
 }
 
 
+test_partial_dependant_feature_mergers(){
+    __doc__='
+    In this test development of feature 4 will depend on the first part of feature 3.
+
+    We will merge an initial version of feature3 into feature4, continue
+    development on feature4 and feature3, and then try to get them both into
+    main nicely.
+
+    Unfortunately, there seems to be a lot of conflict resolution that is still
+    required.
+    '
+    # Restart with a fresh base repo + feature branches
+    setup_repo_with_features
+
+    git co main
+    
+    # Add some main branch development
+    echo "
+    main branch boilerplate3
+    " >> setupfile.py
+    git add setupfile.py
+    git commit -m "main branch boilerplate3"
+
+    echo "
+    main branch boilerplate4
+    " >> setupfile.py
+    git add setupfile.py
+    git commit -m "main branch boilerplate4"
+    
+
+    # Let's pretend feature 4 depends on  feature 4
+    git checkout dev/feature4
+
+    git merge dev/feature3
+
+    # Resolve conflicts (take both)
+    union_conflict_resolve mainfile.py 
+    union_conflict_resolve setupfile.py
+    git add mainfile.py setupfile.py
+    git commit -m "merge start of feature3 into feature4"
+
+    echo "
+    continue feature4 development
+    " >> feature4.py
+    git add feature4.py 
+    git commit -am "continue feature4 development"
+
+    git checkout dev/feature3
+    echo "
+    continue feature3 development
+    " >> feature3.py
+    git add feature3.py 
+    git commit -am "continue feature3 development"
+
+    # Merge feature 3 into main
+    git checkout main
+    git merge dev/feature3
+    union_conflict_resolve setupfile.py
+    git add setupfile.py
+    git commit -m "resolved conflicts between main and feature3"
+
+    # Rebase feature 4 onto main
+    git checkout dev/feature4
+    git rebase main
+
+    # Have to resolve conflict again :(
+    union_conflict_resolve setupfile.py
+    git add setupfile.py
+    git rebase --continue
+
+    union_conflict_resolve mainfile.py
+    git add mainfile.py
+    git rebase --continue
+
+    # Merge the rebased feature4 into main
+    git checkout main
+    git merge dev/feature4
+
+}
+
+
 ### Merging
 merge_strategy_via_merging(){
+    __doc__='
+    source ~/misc/tests/git/git_feature_branch_strats.sh
+    '
+    # Restart with a fresh base repo + feature branches
+    setup_repo_with_features
 
     # Merge feature 4
     git checkout dev/feature4
-    git merge master
-    git checkout master
+    git merge main
+    git checkout main
     git merge dev/feature4
 
     ##### Merge feature 3
     git checkout dev/feature3
-    git merge master
+    git merge main
 
     # Resolve conflicts on the feature branch
     union_conflict_resolve mainfile.py 
     union_conflict_resolve setupfile.py
     git add mainfile.py setupfile.py
-    git commit -m "merged master into feature3"
+    git commit -m "merged main into feature3"
 
-    git checkout master
+    git checkout main
     git merge dev/feature3
 
     ##### Merge feature 2
     git checkout dev/feature2
-    git merge master
+    git merge main
 
     # Resolve conflicts on the feature branch
     union_conflict_resolve mainfile.py 
     union_conflict_resolve setupfile.py
     git add mainfile.py setupfile.py
-    git commit -m "merged master into feature2"
+    git commit -m "merged main into feature2"
 
-    git checkout master
+    git checkout main
     git merge dev/feature2
 
 }
@@ -147,15 +251,18 @@ merge_strategy_via_merging(){
 ### Merging
 merge_strategy_via_rebase(){
 
+    # Restart with a fresh base repo + feature branches
+    setup_repo_with_features
+
     # Merge feature 4
     git checkout dev/feature4
-    git rebase master
-    git checkout master
+    git rebase main
+    git checkout main
     git merge dev/feature4
 
     ##### Merge feature 3
     git checkout dev/feature3
-    git rebase master
+    git rebase main
 
     # Resolve conflicts in the rebase
     union_conflict_resolve setupfile.py
@@ -166,12 +273,12 @@ merge_strategy_via_rebase(){
     git add mainfile.py
     git rebase --continue
 
-    git checkout master
+    git checkout main
     git merge dev/feature3
 
     ##### Merge feature 2
     git checkout dev/feature2
-    git rebase master
+    git rebase main
 
     # Resolve conflicts in the rebase
     union_conflict_resolve setupfile.py
@@ -182,7 +289,7 @@ merge_strategy_via_rebase(){
     git add mainfile.py
     git rebase --continue
 
-    git checkout master
+    git checkout main
     git merge dev/feature2
 
 
