@@ -144,13 +144,13 @@ def main():
     all_df['device'] = all_df['device'].apply(lambda x: mapper.get(x, None))
     all_df = all_df[all_df['device'].apply(lambda x: x is not None)]
 
-    delta = datetime.timedelta(hours=48)
+    delta = datetime.timedelta(hours=72)
     min_time = datetime.datetime.now() - delta
     is_recent = all_df.datetime > min_time
     recent_df = all_df[is_recent]
 
     chosen = recent_df
-    chosen = all_df
+    # chosen = all_df
 
     if 0:
 
