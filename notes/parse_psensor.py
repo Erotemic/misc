@@ -104,43 +104,24 @@ def main():
     plt = kwplot.autoplt()
     sns = kwplot.autosns()
 
-    cpus = [
-        'lmsensor coretemp-isa-0000 Core 0',
-        'lmsensor coretemp-isa-0000 Core 1',
-        'lmsensor coretemp-isa-0000 Core 2',
-        'lmsensor coretemp-isa-0000 Core 3',
-        'lmsensor coretemp-isa-0000 Core 4',
-        'lmsensor coretemp-isa-0000 Core 5',
-        'lmsensor coretemp-isa-0000 Core 6',
-        'lmsensor coretemp-isa-0000 Core 7',
-    ]
-
     alias = {
         '3090': 'nvctrl GeForce GTX 1080 Ti 1 temp',
-        'cpu': 'lmsensor coretemp-isa-0000 Package id 0',
         '1080ti': 'nvctrl GeForce RTX 3090 0 temp',
+        # 'cpu': 'lmsensor coretemp-isa-0000 Package id 0',
     }
 
-    drop = [
-        'lmsensor acpitz-acpi-0 temp1',
-        'lmsensor nvme-pci-0200 Composite',
-        'nvctrl GeForce RTX 3090 0 graphics', 'nvctrl GeForce RTX 3090 0 video',
-        'nvctrl GeForce RTX 3090 0 memory', 'nvctrl GeForce RTX 3090 0 PCIe',
-        'nvctrl GeForce GTX 1080 Ti 1 graphics',
-        'nvctrl GeForce GTX 1080 Ti 1 video',
-        'nvctrl GeForce GTX 1080 Ti 1 memory',
-        'nvctrl GeForce GTX 1080 Ti 1 PCIe', 'nvctrl NVIDIA 0 fan rpm',
-        'nvctrl NVIDIA 0 fan level', 'nvctrl NVIDIA 1 fan rpm',
-        'nvctrl NVIDIA 1 fan level', 'nvctrl NVIDIA 2 fan rpm',
-        'nvctrl NVIDIA 2 fan level', 'gtop2 cpu usage', 'gtop2 mem free',
-        'udisks2 ST10000DM0004-1ZC101-ZA29QHSG',
-        'udisks2 ST10000DM0004-1ZC101-ZA2215HL',
-        'udisks2 ST10000DM0004-1ZC101-ZA22W366',
-        'udisks2 ST10000DM0004-1ZC101-ZA22SPLG'
-    ]
-    mapper = ub.dict_union(ub.invert_dict(alias), {c: ''.join(c.split(' ')[-2:]) for c in cpus})
-
     all_df = read_psensor_log()
+    unique_rawdevs = all_df.device.unique()
+    for rawdev in unique_rawdevs:
+        cpu_prefix = 'lmsensor coretemp-isa'
+        if rawdev.startswith(cpu_prefix):
+            suffix = rawdev[len(cpu_prefix):].split(' ', 1)[1].strip()
+            alias['CPU ' + suffix] = rawdev
+        if 'nvctrl' in rawdev and 'temp' in rawdev:
+            alias['GPU ' + rawdev[7:-5]] = rawdev
+
+    mapper = ub.invert_dict(alias)
+
     all_df['device'] = all_df['device'].apply(lambda x: mapper.get(x, None))
     all_df = all_df[all_df['device'].apply(lambda x: x is not None)]
 
@@ -174,7 +155,7 @@ def main():
         df['device'] = df['device'].apply(lambda x: 'Core' if x.startswith('Core') else x)
         df['time'] = df['unix_timestamp'].apply(datetime.datetime.fromtimestamp)
 
-    # ax = plt.gca()
+    plt.gcf().clf()
     # sns.lineplot(data=chosen, x='unix_timestamp', y='temp', hue='device')
 
     for xx, (sess, group) in enumerate(chosen.groupby('session_x')):
@@ -190,7 +171,6 @@ def main():
     # ci_df = pd.concat([max_extra, recent_df])
     # ci_df['device'] = ci_df['device'].apply(lambda x: 'Core' if x.startswith('Core') else x)
     # sns.lineplot(data=ci_df, x='unix_timestamp', y='temp', hue='device')
-
 
     # from matplotlib.dates import date2num
     # all_df['date_ord'] = all_df['datetime'].map(lambda a: date2num(a))
