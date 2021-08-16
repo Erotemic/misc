@@ -178,3 +178,12 @@ def main():
     # sns.lineplot(data=pt)
     # sns.lineplot(data=recent_df, x='unix_timestamp', y='temp', hue='device')
     # sns.regplot(data=recent_df, x='unix_timestamp', y='temp', hue='device')
+    plt.show()
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/misc/notes/parse_psensor.py
+    """
+    main()
