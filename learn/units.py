@@ -18,13 +18,19 @@ def simplify(quantity):
     print(rlut[quantity.units])
 
 
+# https://en.wikipedia.org/wiki/Joule
 (1 * reg.joule / (reg.volt * reg.seconds)).to_base_units()
 (1 * reg.watt / reg.volt).to_base_units()
 (1 * reg.amp).to_base_units()
 
+(1 * reg.watt).to_base_units()
 
-simplify(quantity)
+# Tripp Lite Isobar 10
+val = 3840 * reg.joule
 
+(val / reg.amp).to_base_units()
+
+(val / (1800 * reg.watt)).to_base_units()
 
 units = [
     reg.watt,
