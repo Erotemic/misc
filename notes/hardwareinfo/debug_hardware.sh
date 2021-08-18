@@ -1,6 +1,15 @@
+__doc__="
 
+My Question:
+    https://serverfault.com/questions/1074946/debugging-unexpected-system-shutdown
+
+"
 
 debug_sudden_crash(){
+    __doc__="
+    References: 
+        https://unix.stackexchange.com/questions/502226/how-do-you-find-out-if-a-linux-machine-overheated-before-the-previous-boot-and-w
+    "
     journalctl -g 'temperature|critical'
     journalctl -g 'temperature|critical' -b -2
     grep -i error /var/log/syslog
@@ -16,6 +25,14 @@ debug_sudden_crash(){
     last reboot | less
     last -x | head | tac
 
+}
+
+hdd_smart_info(){
+    sudo smartctl --all /dev/sda 
+    sudo smartctl --all /dev/sdb
+    sudo smartctl --all /dev/sdc 
+    sudo smartctl --all /dev/sdd
+    
 }
 
 setup_temperature_logging(){
