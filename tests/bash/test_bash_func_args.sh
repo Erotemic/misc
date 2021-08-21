@@ -193,3 +193,43 @@ func_stack1(){
 }
 
 func_stack1 1 2 "3 4 5"
+
+
+positional_arg_test(){
+    # How to define default arguments
+    # Positional only
+    ARG1=$1
+    # Defaulted positional only
+    ARG2=${2:-"Arg2-Default"}
+    ARG3=${2:-"Arg3-Default"}
+    # Defaulted positional+keyword
+    ARG4=${ARG4:-${4:-"Arg4-Default"}}
+    ARG5=${ARG5:-${5:-"Arg5-Default"}}
+    # Keywords only
+    KWARG_1=${KWARG_1:-"KEYWORD_ARG1-DEFAULT"}
+    KWARG_2=${KWARG_2:-"KEYWORD_ARG2-DEFAULT"}
+    echo "
+    ARG1 = $ARG1
+    ARG2 = $ARG2
+    ARG3 = $ARG3
+    ARG4 = $ARG4
+    KWARG_1 = $KWARG_1
+    KWARG_2 = $KWARG_2
+    "
+}
+
+
+positional_arg_test
+ARG4="arg4-specified" KWARG_2="kwarg2-specified" positional_arg_test "arg1-specified" "arg2-specified" "arg3-specified" 
+ARG4="arg4-specified" KWARG_2="kwarg2-specified" positional_arg_test 
+ARG5="arg2-specified" KWARG_2="kwarg2-specified" positional_arg_test 
+
+ARG4="arg4-specified" positional_arg_test a b c d e f g
+
+all_keyword_func(){
+    KEY1=${1:-${KEY1:-"None"}}
+    KEY2=${2:-${KEY2:-"None"}}
+    KEY3=${3:-${KEY3:-"None"}}
+}
+
+
