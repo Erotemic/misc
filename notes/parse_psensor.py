@@ -19,6 +19,8 @@ def read_psensor_log():
     session_lines = []
     for line in text.split('\n'):
         if line:
+            line = line.strip()
+            line = line.strip('\x00')  # broken bytes may appear on crashes
             if line.startswith('I'):
                 if session_lines:
                     all_sessions_lines.append(session_lines)
@@ -37,9 +39,14 @@ def read_psensor_log():
         init_line = None
         # init_info = None
         base_timestamp = 0
+
+        current_mode = None
+
         for line in session_lines:
             if line:
                 if line.startswith('I'):
+                    current_mode = 'I'
+
                     init_line = line
                     parts = init_line.split(',')
                     base_timestamp = int(parts[1])
@@ -50,8 +57,13 @@ def read_psensor_log():
                         'version': parts[2],
                     }
                     session_init_infos.append(init_info)
-
+                    print('init_info = {}'.format(ub.repr2(init_info, nl=1)))
                 elif line.startswith('S'):
+                    if current_mode == 'I':
+                        current_mode = 'S'
+                    elif current_mode != 'S':
+                        raise Exception('Unable to switch to mode S from {}'.format(current_mode))
+
                     parts = line.split(',')
                     info = {
                         'type': parts[0],
@@ -60,11 +72,21 @@ def read_psensor_log():
                     }
                     columns.append(info['name'])
                 else:
+                    if current_mode == 'S':
+                        print('Finalized columns = {!r}'.format(columns))
+                        current_mode = 'M'
+                    elif current_mode != 'M':
+                        raise Exception('Unable to switch to mode M from {}'.format(current_mode))
+
                     parts = line.split(',')
-                    time, *measures = parts
-                    measures = [float(m) if m.strip() else float('nan')
-                                for m in measures]
-                    raw = ub.dzip(columns, measures)
+                    try:
+                        time, *measures = parts
+                        measures = [float(m) if m.strip() else float('nan')
+                                    for m in measures]
+                        raw = ub.dzip(columns, measures)
+                    except Exception:
+                        print('Error handling: line = {!r}'.format(line))
+                        continue
 
                     # nice = ub.dict_diff(raw, drop)
                     # nice = ub.map_keys(mapper, nice)
