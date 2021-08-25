@@ -147,7 +147,9 @@ def main():
     all_df['device'] = all_df['device'].apply(lambda x: mapper.get(x, None))
     all_df = all_df[all_df['device'].apply(lambda x: x is not None)]
 
-    delta = datetime.timedelta(hours=72)
+    hours = int(ub.argval('--hours', default=48))
+
+    delta = datetime.timedelta(hours=hours)
     min_time = datetime.datetime.now() - delta
     is_recent = all_df.datetime > min_time
     recent_df = all_df[is_recent]
@@ -189,6 +191,16 @@ def main():
     ax.figure.subplots_adjust(bottom=0.2)
     ax.set_ylim(0, 100)
     plt.locator_params(axis='y', nbins=10)
+
+    # import matplotlib as mpl
+    # Draw shutdown time as black lines
+    end_times = []
+    for sx, group in chosen.groupby('session_x'):
+        shutdown_time = group['unix_timestamp'].max()
+        end_times.append(shutdown_time)
+
+    for shutdown_time in sorted(end_times)[:-1]:
+        ax.plot((shutdown_time, shutdown_time), [0, 100], color='k')
 
     # ci_df = pd.concat([max_extra, recent_df])
     # ci_df['device'] = ci_df['device'].apply(lambda x: 'Core' if x.startswith('Core') else x)
