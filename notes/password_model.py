@@ -489,7 +489,7 @@ def main():
         piv = hashmode_to_pivots[hashmode]
         print(piv)
 
-    if ub.argflag('--draw'):
+    if ub.argflag('--show'):
         import kwplot
         from matplotlib.colors import LogNorm
         plt = kwplot.autoplt()
@@ -592,6 +592,6 @@ if __name__ == '__main__':
     """
     CommandLine:
         python ~/misc/notes/password_model.py
-        python ~/misc/notes/password_model.py --draw
+        python ~/misc/notes/password_model.py --show
     """
     main()
