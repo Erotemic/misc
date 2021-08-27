@@ -11,8 +11,8 @@ _NOT_FOUND = object()
 attrname = 'attr'
 
 
-ANY_SAFTY = 1
-WITH_FIX = 1
+WITH_FIX = 1   # set to zero to cause deadlocks
+
 DEBUG_PRINTS = 0
 
 
@@ -86,25 +86,24 @@ def worker(this_id, arg):
     reentrant = 0
     wait = 0
 
-    if ANY_SAFTY:
-        with updater_lock:
-            reentrant = updater.get(key) == this_thread
-            wait = updater.setdefault(key, this_thread) != this_thread
+    with updater_lock:
+        reentrant = updater.get(key) == this_thread
+        wait = updater.setdefault(key, this_thread) != this_thread
 
-        if WITH_FIX:
-            while wait:
-                with cv:
-                    while this_thread != updater.get(key, this_thread):
-                        cv.wait()
-                    with updater_lock:
-                        reentrant = updater.get(key) == this_thread
-                        wait = updater.setdefault(key, this_thread) != this_thread
-        else:
-            if wait:
-                with cv:
-                    with updater_lock:
-                        reentrant = updater.get(key) == this_thread
-                        wait = updater.setdefault(key, this_thread) != this_thread
+    if WITH_FIX:
+        while wait:
+            with cv:
+                while this_thread != updater.get(key, this_thread):
+                    cv.wait()
+                with updater_lock:
+                    reentrant = updater.get(key) == this_thread
+                    wait = updater.setdefault(key, this_thread) != this_thread
+    else:
+        if wait:
+            with cv:
+                with updater_lock:
+                    reentrant = updater.get(key) == this_thread
+                    wait = updater.setdefault(key, this_thread) != this_thread
 
     ####
 
