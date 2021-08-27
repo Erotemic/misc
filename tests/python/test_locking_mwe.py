@@ -11,8 +11,7 @@ _NOT_FOUND = object()
 attrname = 'attr'
 
 
-WITH_FIX = 1   # set to zero to cause deadlocks
-
+WITH_FIX = 0   # set to zero to cause deadlocks
 DEBUG_PRINTS = 0
 
 
@@ -70,16 +69,11 @@ unsafe_instances = {
 }
 
 
-def func(this_id, arg):
+def func(this_id):
     unsafe_instances[this_id]()
-    if arg > 0:
-        return worker(this_id, arg - 1)
-    else:
-        unsafe_instances[this_id]()
-        return this_id
 
 
-def worker(this_id, arg):
+def worker(this_id):
     key = this_id
     this_thread = threading.get_ident()
 
@@ -117,8 +111,7 @@ def worker(this_id, arg):
     else:
         # Call the underlying function to compute the value.
         try:
-            print('this_id = {!r}'.format(this_id))
-            val = func(this_id, arg)
+            val = func(this_id)
         except Exception:
             with updater_lock:
                 updater.pop(key, None)
@@ -156,13 +149,10 @@ def main():
         random_ids = [random.randint(0, 1) for _ in range(1000)]
 
         for this_id in random_ids:
-            pool.submit(worker, this_id, 3)
+            pool.submit(worker, this_id)
 
         finished_jobs = [job for job in ub.ProgIter(pool.as_completed(), total=len(pool))]
         for job in finished_jobs:
-            # Mess with the cache
-            if random.random() > 0.5:
-                cache.clear()
             try:
                 job.result()
             except Exception as ex:
