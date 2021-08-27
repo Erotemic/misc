@@ -151,7 +151,6 @@ def worker(this_id, arg):
 
 def main():
     pool = ub.JobPool('thread', max_workers=4)
-    print('pool = {!r}'.format(pool))
 
     for i in range(20):
         random_ids = [random.randint(0, 1) for _ in range(1000)]
