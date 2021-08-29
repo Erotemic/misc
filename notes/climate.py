@@ -40,7 +40,8 @@ us_person_anual_footprint = us_person_anual_footprint_candidates['terrapass']
 
 
 offsets = {
-    'terrapass': (100.75 * reg.dollars) / (20_191 * CO2_pound).to(CO2_ton)
+    'terrapass': (100.75 * reg.dollars) / (20_191 * CO2_pound).to(CO2_ton),
+    'cotap': (75 * reg.dollars) / (5 * CO2_ton),
 }
 dollar_per_co2ton = offsets['terrapass']
 

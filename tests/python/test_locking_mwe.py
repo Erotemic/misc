@@ -15,6 +15,17 @@ WITH_FIX = 0   # set to zero to cause deadlocks
 DEBUG_PRINTS = 0
 
 
+def solve_halting_problem():
+    lock1 = threading.Lock()
+    lock2 = threading.Lock()
+    with lock1:
+        with lock2:
+            with lock1:
+                with lock2:
+                    print('HALT!')
+
+
+
 class ThreadUnsafe():
 
     def __init__(self):
