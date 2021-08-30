@@ -384,23 +384,22 @@ def named_large_number(num, prefix='auto', precision=2):
     https://en.wikipedia.org/wiki/Names_of_large_numbers
 
     Example:
-        import sys, ubelt
-        sys.path.append(ubelt.expandpath('~/misc/notes'))
-        from password_model import *  # NOQA
-        import random
-        rng = random.Random(0)
-        lines = []
-        test_mags = (list(range(-10, 3 * 22)) + [3 * 100, 3 * 101, 3 * 102])
-        # test_mags = list(range(-1, 3 * 5))
-        for mag in test_mags:
-            coef = rng.random()
-            coef = 1.0
-            num = coef * (10 ** mag)
-            text = named_large_number(num)
-            line = 'text@{:3d}: {!r}'.format(mag, text)
-            lines.append(line)
-        print('lines = {}'.format(ub.repr2(lines, nl=1), align=':'))
-
+        >>> import sys, ubelt
+        >>> sys.path.append(ubelt.expandpath('~/misc/notes'))
+        >>> from password_model import *  # NOQA
+        >>> import random
+        >>> rng = random.Random(0)
+        >>> lines = []
+        >>> test_mags = (list(range(-10, 3 * 22)) + [3 * 100, 3 * 101, 3 * 102])
+        >>> # test_mags = list(range(-1, 3 * 5))
+        >>> for mag in test_mags:
+        >>>     coef = rng.random()
+        >>>     for coef in [1.0, 1.1]:
+        >>>         num = coef * (10 ** mag)
+        >>>         text = named_large_number(num)
+        >>>         line = 'text@{:3d}: {}'.format(mag, text)
+        >>>         lines.append(line)
+        >>> print('lines = {}'.format(ub.repr2(lines, nl=1), align=' '))
     """
     import math
     magnitude_to_prefix = {
@@ -413,8 +412,8 @@ def named_large_number(num, prefix='auto', precision=2):
         3 *  6: 'quintillion',
         3 *  7: 'sextillion',
         3 *  8: 'septillion',
-        3 *  9: 'nonillion',
-        3 * 10: 'octillion',
+        3 *  9: 'octillion',
+        3 * 10: 'nonillion',
         3 * 11: 'decillion',
         3 * 12: 'undecillion',
         3 * 13: 'duodectillion',
@@ -440,7 +439,8 @@ def named_large_number(num, prefix='auto', precision=2):
     mag = prefix_to_magintude[prefix]
 
     coeff = num / (10 ** mag)
-    text = ub.repr2(float(coeff), precision=precision) + ' ' + prefix
+    coef_repr = ub.repr2(float(coeff), precision=precision)
+    text = coef_repr + ' ' + prefix
     return text
 
 
