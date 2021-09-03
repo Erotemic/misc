@@ -1,4 +1,11 @@
 """
+Benchmark asyncio versus concurrent.futures versus serial image loading
+
+Results:
+    Timed best=11.373 ms, mean=14.254 ± 1.2 ms for concurrent
+    Timed best=27.707 ms, mean=28.624 ± 0.8 ms for asyncio
+    Timed best=10.728 ms, mean=11.900 ± 1.1 ms for serial
+
 Requirements:
     timerit
     pooch
@@ -78,7 +85,7 @@ def main():
             list(load_serial(fpaths))
 
 if __name__ == '__main__':
-    r"""
+    """
     CommandLine:
         python ~/misc/tests/python/test_async.py
     """
