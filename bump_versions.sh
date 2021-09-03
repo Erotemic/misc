@@ -121,7 +121,7 @@ accept_latest_gitlab_dev_mr(){
     if [[ "$CAN_MERGE" == "true" &&  "$MERGE_STATUS" == "success" ]]; then
         echo "MR is mergable and the pipelines has passed"
     else
-        echo "The MR is not in a mergable state"
+        echo "The MR is not in an auto-mergable state. Manually inspect, and merge if everything seems ok"
         return 1
     fi
 
@@ -429,6 +429,8 @@ mypkgs(){
     MODNAME=kwplot
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
+    load_secrets
+    accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
     update_master $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
