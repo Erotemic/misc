@@ -136,6 +136,7 @@ Requirements:
 import ubelt as ub
 import math
 import string
+from functools import partial
 
 
 MODE = ub.argval('--MODE', default='full')
@@ -286,6 +287,9 @@ def build_threat_models():
     devices = [
         {
             'name': 'RTX_3090',
+            # Note: it may be the case that a particular hashmode does not use
+            # all of the available GPU wattage, so we should account for that
+            # if we can.
             'watts': 370.0,
             'benchmarks': hashmodes,
         }
@@ -379,6 +383,28 @@ def humanize_seconds(seconds, colored=True, precision=4, named=False):
     return ret
 
 
+def humanize_dollars(dollars, named=False, colored=False):
+    if named:
+        text = '${}'.format(named_large_number(dollars))
+        # return '${:5.02g}'.format(float(dollars))
+    else:
+        text = '${:5.02g}'.format(float(dollars))
+    if colored:
+        if dollars > 1e16:
+            # Blue is VERY safe
+            text = ub.color_text(text, 'blue')
+        elif dollars > 1e6:
+            # Green is safe
+            text = ub.color_text(text, 'green')
+        elif dollars > 1e3:
+            # Yellow is short-term safe
+            text = ub.color_text(text, 'yellow')
+        else:
+            # Red is not safe
+            text = ub.color_text(text, 'red')
+    return text
+
+
 def named_large_number(num, prefix='auto', precision=2):
     """
     https://en.wikipedia.org/wiki/Names_of_large_numbers
@@ -401,7 +427,6 @@ def named_large_number(num, prefix='auto', precision=2):
         >>>         lines.append(line)
         >>> print('lines = {}'.format(ub.repr2(lines, nl=1), align=' '))
     """
-    import math
     magnitude_to_prefix = {
         3 *  0: '',
         3 *  1: 'thousand',
@@ -442,14 +467,6 @@ def named_large_number(num, prefix='auto', precision=2):
     coef_repr = ub.repr2(float(coeff), precision=precision)
     text = coef_repr + ' ' + prefix
     return text
-
-
-def humanize_dollars(dollars, named=False):
-    if named:
-        return '${}'.format(named_large_number(dollars))
-        # return '${:5.02g}'.format(float(dollars))
-    else:
-        return '${:5.02g}'.format(float(dollars))
 
 
 def monkeypatch_pandas_colored_stdout():
@@ -534,7 +551,8 @@ def main():
     estimates = {
         # estimated cost of using a kilowatt for an hour
         # http://www.wrecc.com/what-uses-watts-in-your-home/
-        # https://www.coinwarz.com/mining/ethereum/calculator?h=100.00&piv=1.00&pc=0.10&pf=0.00&d=6504945223037478.00000000&r=2.00000000&er=0.06440741&btcer=34726.37000000&ha=MH&hc=19999.00&hs=-1&hq=1
+        # https://www.coinwarz.com/mining/ethereum/calculator
+
         'dollars_per_kwh': 0.10,
     }
 
@@ -579,15 +597,13 @@ def main():
             }
             rows.append(row)
 
-    for row in rows:
-        pass
-
     df = pd.DataFrame(rows)
     df = df.sort_values('entropy')
 
-    df = df[df['device'] == 'RTX_3090']
+    chosen_device = 'RTX_3090'
+    df = df[df['device'] == chosen_device]
     df['time'] = df['seconds'].apply(humanize_seconds)
-    df['cost'] = df['dollars'].apply(humanize_dollars)
+    df['cost'] = df['dollars'].apply(partial(humanize_dollars, colored=1))
     df['entropy'] = df['entropy'].round(2)
     df['num_devices'] = df['num_devices'].apply(int)
 
@@ -596,6 +612,14 @@ def main():
     # https://github.com/pandas-dev/pandas/issues/18066
     monkeypatch_pandas_colored_stdout()
 
+    # Output our assumptions
+    print('\n---')
+    print('Assumptions:')
+    device_info = ub.group_items(devices, lambda x: x['name'])[chosen_device][0]
+    print('estimates = {!r}'.format(estimates))
+    print('device_info = {}'.format(ub.repr2(device_info, nl=2)))
+
+    # For each hashmode, print the scheme-vs-num_devices-vs-time matrix
     hashmode_to_pivots = {}
     for hashmode in hashmodes:
         subdf = df
@@ -611,6 +635,16 @@ def main():
         piv = hashmode_to_pivots[hashmode]
         print(piv)
 
+    # Print the scheme-vs-hashmode-vs-cost matrix
+    print('\n---')
+    print('Cost Matrix:')
+    subdf = df[df['scale'] == df['scale'].iloc[0]]
+    piv = subdf.pivot(['entropy', 'scheme'], ['hashmode_attempts_per_second', 'hashmode'], 'cost')
+    piv = piv.sort_index(axis=1, ascending=False)
+    piv.columns = piv.columns.droplevel(0)
+    print(piv)
+
+    # Make the visualizations
     if ub.argflag('--show'):
         import kwplot
         from matplotlib.colors import LogNorm
@@ -622,17 +656,16 @@ def main():
         if use_latex:
             mpl.rcParams['text.usetex'] = True
 
-        def time_humanizer(x):
+        def time_labelize(x):
             text = humanize_seconds(x, colored=False, named=True, precision=2)
             parts = text.split(' ')
-            # parts = [p.capitalize() for p in parts]
             if use_latex:
                 text = r'{\huge ' + parts[0] + '}' + '\n' + ' '.join(parts[1:])
             else:
                 text = parts[0] + '\n' + ' '.join(parts[1:])
             return text
 
-        def dollar_humanizer(dollars):
+        def dollar_labelize(dollars):
             cost = humanize_dollars(dollars, named=(dollars > 1))
             if use_latex:
                 cost = cost.replace('$', r'\$')
@@ -643,19 +676,19 @@ def main():
             hashmode_to_notes[dev['hashmode']] = dev['notes']
 
         if 1:
-            # Independent of the adversary scale we can plot cost versus
-            # scheme
+            # Independent of the adversary scale we can plot cost versus scheme
             # cost vs hashmod?
             subdf = df[df['scale'] == df['scale'].iloc[0]]
-            piv = subdf.pivot(['entropy', 'scheme'], ['hashmode_attempts_per_second', 'hashmode'], 'dollars')
+            piv = subdf.pivot(['entropy', 'scheme'],
+                              ['hashmode_attempts_per_second', 'hashmode'],
+                              'dollars')
             piv = piv.sort_index(axis=1, ascending=False)
 
             # https://stackoverflow.com/questions/64234474/cust-y-lbls-seaborn
             ax: mpl.axes.Axes = plt.subplots(figsize=(15, 10))[1]
 
-            annot = piv.applymap(dollar_humanizer)
+            annot = piv.applymap(dollar_labelize)
             piv = piv.applymap(float)
-            print(piv)
 
             sns.heatmap(piv, annot=annot, ax=ax, fmt='s',
                         norm=LogNorm(vmin=1, vmax=100_000_000_000_000_000),
@@ -709,13 +742,16 @@ def main():
                 subdf = subdf[subdf['hashmode'] == hashmode]
                 subdf = subdf.sort_values(['entropy', 'num_devices'])
 
-                piv = subdf.pivot(['entropy', 'dollars', 'scheme'], ['num_devices', 'scale'], 'seconds')
+                piv = subdf.pivot(
+                    ['entropy', 'dollars', 'scheme'],
+                    ['num_devices', 'scale'],
+                    'seconds')
                 piv = piv.applymap(float)
 
                 # https://stackoverflow.com/questions/64234474/cust-y-lbls-seaborn
                 ax: mpl.axes.Axes = plt.subplots(figsize=(15, 10))[1]
 
-                annot = piv.applymap(time_humanizer)
+                annot = piv.applymap(time_labelize)
                 sns.heatmap(piv, annot=annot, ax=ax, fmt='s',
                             norm=LogNorm(vmin=1, vmax=8640000000),
                             annot_kws={'size': 16},
@@ -729,7 +765,7 @@ def main():
 
                 new_ytick_labels = []
                 for ent, dollars, scheme in piv.index.to_list():
-                    cost = dollar_humanizer(dollars)
+                    cost = dollar_labelize(dollars)
                     if use_latex:
                         scheme = r'{\LARGE ' + scheme + '}'
                     _ = '{scheme}\nEntropy={ent}bits\nCost={cost}'.format(scheme=scheme, cost=cost, ent=ent)
@@ -742,15 +778,10 @@ def main():
                     _ = name + '\n' + named_large_number(n, precision=0) + ' GPUs'
                     new_xtick_labels.append(_)
 
-                # ax.xaxis.set_tick_params(labelsize=14)
-                # ax.yaxis.labelpad = 8
-
                 ax.set_xticklabels(new_xtick_labels, rotation=0)
                 # ax.set_yticklabels(new_ytick_labels, horizontalalignment='left', pad=30)
                 ax.set_yticklabels(new_ytick_labels)
 
-                # ax.set_ylabel('Password Scheme,\n(Entropy, Cost to Crack)')
-                # ax.set_xlabel('Adversary Resources\n(Number of GPUs)')
                 ax.set_ylabel('Password Scheme, Entropy, and Cost to Crack', labelpad=24)
                 ax.set_xlabel('Adversary Resources', labelpad=16)
 
@@ -760,7 +791,6 @@ def main():
 
                 if use_latex:
                     title = '{{\\Huge Password Time Security}}\nhashmode={}{}'.format(hashmode, notes)
-                    print('title = {!r}'.format(title))
                     ax.set_title(title)
                 else:
                     ax.set_title('Password Time Security\n(hashmode={}{})'.format(hashmode, notes))
@@ -772,64 +802,6 @@ def main():
                     fname = 'passwd_robustness_{}.png'.format(hashmode)
                     ax.figure.savefig(fname)
         plt.show()
-
-
-def notes_on_md5():
-    """
-
-    Not only is MD5 a weak hash algorithm, its also a broken one.
-
-    The academic work outlined here: [1] describes more details.
-
-    https://cryptography.hyperlink.cz/2006/diplomka.pdf
-
-
-    Python implementation of md5 itself: https://github.com/timvandermeij/md5.py
-
-    http://www.win.tue.nl/hashclash/fastcoll_v1.0.0.5_source.zip
-
-    sudo apt-get install autoconf automake libtool libperl-dev
-    sudo apt-get install zlib1g-dev libbz2-dev
-    sudo apt-get install libtool
-    git clone https://github.com/cr-marcstevens/hashclash
-
-    ./install_boost.sh
-    autoreconf --install
-    ./configure --with-boost=$(pwd)/boost-1.57.0 --without-cuda
-
-    References:
-        [1] : https://cryptography.hyperlink.cz/MD5_collisions.html
-    """
-    from kwcoco.data.grab_spacenet import Archive
-    workdir = ub.ensure_app_cache_dir('pwdemo/md5_collision')
-    import os
-    os.chdir(workdir)
-
-    zip_fpath = ub.grabdata(
-        'http://www.win.tue.nl/hashclash/fastcoll_v1.0.0.5_source.zip',
-        dpath=workdir, hash_prefix='8a3ad700945cb803c7ecfddca20cae3f147f171813b5b03f85b8')
-    boost_zip = ub.grabdata(
-        'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz',
-        hash_prefix='7bd7ddceec1a1dfdcbdb3e609b60d01739c38390a5f956385a12f3122049f0ca',
-        hasher='sha256', dpath=workdir)
-
-    extracted_fpaths = Archive(zip_fpath).extractall(workdir)
-    boost_paths = Archive(boost_zip).extractall(workdir)
-
-    bcmd = f'bash {workdir}/boost_1_76_0/bootstrap.sh --prefix={workdir}/boost_build --without-libraries=python,graph,graph_parallel,wave'
-    ub.ensuredir(f'{workdir}/boost_build')
-    ub.cmd(bcmd, verbose=3, cwd=f'{workdir}/boost_1_76_0')
-    ub.cmd('./b2', verbose=3, cwd=f'{workdir}/boost_1_76_0', shell=True)
-
-    command = ub.paragraph(
-        f'''
-        gcc
-        {' '.join(extracted_fpaths)}
-        -I {workdir}/boost_1_76_0
-        -L {workdir}/boost_1_76_0/stage/lib
-        -l libboost_system
-        ''')
-    _ = ub.cmd(command, verbose=3, cwd=f'{workdir}')
 
 
 if __name__ == '__main__':
