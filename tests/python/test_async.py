@@ -2,9 +2,9 @@
 Benchmark asyncio versus concurrent.futures versus serial image loading
 
 Results:
-    Timed best=11.373 ms, mean=14.254 ± 1.2 ms for concurrent
-    Timed best=27.707 ms, mean=28.624 ± 0.8 ms for asyncio
-    Timed best=10.728 ms, mean=11.900 ± 1.1 ms for serial
+    Timed best=128.881 ms, mean=142.050 ± 4.8 ms for concurrent
+    Timed best=346.830 ms, mean=372.968 ± 11.7 ms for asyncio
+    Timed best=188.439 ms, mean=190.456 ± 0.8 ms for serial
 
 Requirements:
     timerit
@@ -33,7 +33,7 @@ def load_serial(fpaths):
 
 
 def load_concurrent(fpaths):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
         futures = [executor.submit(load_datafile, count, fpath) for count, fpath in enumerate(fpaths)]
         for f in futures:
             yield f.result()
@@ -71,7 +71,19 @@ def main():
               for fname in image_fetcher.registry.keys()
               if fname.endswith(('.tif', '.png', '.jpg'))]
 
-    ti = timerit.Timerit(100, bestof=10, verbose=1)
+    # Load a lot of files
+    fpaths = fpaths * 15
+
+    if 0:
+        # Sanity check
+        counts, images = zip(*list(load_serial(fpaths)))
+        print('counts = {!r}'.format(counts))
+        counts, images = zip(*list(load_concurrent(fpaths)))
+        print('counts = {!r}'.format(counts))
+        counts, images = zip(*list(load_asyncio(fpaths)))
+        print('counts = {!r}'.format(counts))
+
+    ti = timerit.Timerit(100, bestof=3, verbose=1)
     for timer in ti.reset('concurrent'):
         with timer:
             list(load_concurrent(fpaths))
