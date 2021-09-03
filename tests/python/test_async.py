@@ -1,10 +1,13 @@
+"""
+Requirements:
+    timerit
+    pooch
+    skimage
+    aiofiles
+"""
 import concurrent.futures
 import aiofiles
-"""
-TODO: move to 3.6
-
-figure out why asyncio not working well
-"""
+import asyncio
 
 
 def load_datafile(count, fpath):
@@ -13,8 +16,6 @@ def load_datafile(count, fpath):
 
 
 async def aload_datafile(count, fpath):
-    # with open(fpath, 'rb') as file_:
-    #     return (count, file_.read()[0:10])
     async with aiofiles.open(fpath, 'rb') as file_:
         return (count, (await file_.read())[0:10])
 
@@ -29,8 +30,6 @@ def load_concurrent(fpaths):
         futures = [executor.submit(load_datafile, count, fpath) for count, fpath in enumerate(fpaths)]
         for f in futures:
             yield f.result()
-        # images = [f.result() for f in concurrent.futures.as_completed(futures)]
-        # return images
 
 
 async def _load_asyncio(fpaths):
@@ -43,8 +42,6 @@ async def _load_asyncio(fpaths):
     for f in finished:
         images.append(await f)
     return images
-    # images = [f.result() for f in finished]
-    # return images
 
 
 def load_asyncio(fpaths):
@@ -54,41 +51,35 @@ def load_asyncio(fpaths):
     result, = loop.run_until_complete(gathered)
     for item in result:
         yield item
-    # loop.close()
 
+
+def main():
+    import timerit
+    from os.path import join
+    from skimage import data as skimage_data
+    from skimage.data import image_fetcher
+
+    skimage_data.download_all()
+    fpaths = [join(image_fetcher.path, fname)
+              for fname in image_fetcher.registry.keys()
+              if fname.endswith(('.tif', '.png', '.jpg'))]
+
+    ti = timerit.Timerit(100, bestof=10, verbose=1)
+    for timer in ti.reset('concurrent'):
+        with timer:
+            list(load_concurrent(fpaths))
+
+    for timer in ti.reset('asyncio'):
+        with timer:
+            list(load_asyncio(fpaths))
+
+    for timer in ti.reset('serial'):
+        with timer:
+            list(load_serial(fpaths))
 
 if __name__ == '__main__':
     r"""
     CommandLine:
-        python ~/misc/python_tests/test_async.py
+        python ~/misc/tests/python/test_async.py
     """
-    import asyncio
-    import glob
-
-    fpaths = glob.glob('/home/joncrall/data/ibeis/work/PZ_MTEST/_ibsdb/images/*.jpg')
-    fpaths = fpaths
-
-    counts, images = zip(*list(load_serial(fpaths)))
-    print('counts = {!r}'.format(counts))
-    counts, images = zip(*list(load_concurrent(fpaths)))
-    print('counts = {!r}'.format(counts))
-    counts, images = zip(*list(load_asyncio(fpaths)))
-    print('counts = {!r}'.format(counts))
-
-    import ubelt
-    for timer in ubelt.Timerit(10, label='concurrent'):
-        with timer:
-            list(load_concurrent(fpaths))
-
-    import ubelt
-    for timer in ubelt.Timerit(10, label='asyncio'):
-        with timer:
-            list(load_asyncio(fpaths))
-
-    import ubelt
-    for timer in ubelt.Timerit(10, label='serial'):
-        with timer:
-            list(load_serial(fpaths))
-
-    # loop = asyncio.get_event_loop()
-    # loop.run_until_complete(test())
+    main()
