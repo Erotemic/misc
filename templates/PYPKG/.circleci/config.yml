@@ -45,7 +45,7 @@ __doc__: &__doc__
         NOTES
         -----
 
-        * This script will require matainence for new releases of Python
+        * This script will require maintenance for new releases of Python
         
 
         CIRCLECI SECRETS  # NOQA
@@ -53,7 +53,7 @@ __doc__: &__doc__
 
         Almost all of the stages in this pipeline can be performed on a local
         machine (making it much easier to debug) as well as the circleci-ci
-        machine. However, there are a handeful of required environment
+        machine. However, there are a handful of required environment
         variables which will contain sensitive information. These variables are
 
         * TWINE_USERNAME - this is your pypi username
