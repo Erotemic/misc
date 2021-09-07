@@ -1,6 +1,8 @@
 def notes_on_md5():
     """
 
+    https://github.com/mCodingLLC/VideosSampleCode/blob/master/videos/064_md5_a_broken_secure_hash_algorithm_python_implementation/md5.py
+
     Not only is MD5 a weak hash algorithm, its also a broken one.
 
     The academic work outlined here: [1] describes more details.
