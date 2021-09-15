@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Autoformat quotation marks in Python files
+Modifies Python code to roughly following quote scheme described in [1]_.
+    * Single quotes (') are used for code
+    * Double quotes (") are used for documentation
+    * Don't touch any string that has an internal quote.
+
+
+References:
+    .. [1] https://github.com/google/yapf/issues/399#issuecomment-914839071
 """
 import redbaron
 import ubelt as ub
@@ -10,20 +17,13 @@ import xdev
 
 def format_quotes_in_text(text):
     """
-    Modifies Python code to roughly following quote scheme described in [1]_.
-
-        * Single quotes (') are used for code
-        * Double quotes (") are used for documentation
-        * Don't touch any string that has an internal quote.
+    Reformat text according to formatting rules
 
     Args:
         text (str): python source code
 
     Returns:
         str: modified text
-
-    References:
-        .. [1] https://github.com/google/yapf/issues/399#issuecomment-914839071
     """
     red = redbaron.RedBaron(text)
 
@@ -31,12 +31,6 @@ def format_quotes_in_text(text):
     double_quote = chr(34)
     triple_single_quote = single_quote * 3
     triple_double_quote = double_quote * 3
-    # quotes = dict(
-    #     triple_double=triple_double_quote,
-    #     triple_single=triple_single_quote,
-    #     single=single_quote,
-    #     double=double_quote,
-    # )
 
     for found in red.find_all('string'):
 
@@ -113,21 +107,23 @@ def format_quotes_in_file(fpath, diff=True, write=False, verbose=3):
 
     new_text = format_quotes_in_text(text)
 
+    difftext = xdev.difftext(text, new_text, context_lines=3, colored=True)
+    did_anything = bool(difftext.strip())
+
+    if verbose > 1:
+        if not did_anything:
+            print('No difference!')
+
     if diff:
-        difftext = xdev.difftext(text, new_text, context_lines=3, colored=True)
         print(difftext)
-        if verbose > 1:
-            if not difftext.strip():
-                print('No difference!')
 
     if write:
         # Write the file
-        if verbose > 1:
-            print('writing to fpath = {}'.format(ub.repr2(fpath, nl=1)))
-
-        with open(fpath, 'w') as file:
-            file.write(new_text)
-
+        if did_anything:
+            if verbose > 1:
+                print('writing to fpath = {}'.format(ub.repr2(fpath, nl=1)))
+            with open(fpath, 'w') as file:
+                file.write(new_text)
     else:
         if not diff:
             if verbose > 1:
@@ -137,7 +133,7 @@ def format_quotes_in_file(fpath, diff=True, write=False, verbose=3):
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/misc/format_quotes.py ~/misc/format_quotes.py
+        python ~/misc/format_quotes.py ~/code/watch/watch/cli/propagate_labels.py --write=True
     """
     import fire
     fire.Fire(format_quotes_in_file)
