@@ -1,26 +1,29 @@
+# -*- coding: utf-8 -*-
 """
-See: https://github.com/google/yapf/issues/399#issuecomment-914839071
+Autoformat quotation marks in Python files
 """
 import redbaron
 import ubelt as ub
 import re
 import xdev
 
-# INPUT:
-# fpath = <path-to-the-file>
-fpath = ub.expandpath('~/code/fetchLandsatSentinelFromGoogleCloud/fels/fels.py')
-# fpath = ub.expandpath('~/code/fetchLandsatSentinelFromGoogleCloud/fels/landsat.py')
-# fpath = ub.expandpath('~/code/fetchLandsatSentinelFromGoogleCloud/fels/sentinel2.py')
-# fpath = ub.expandpath('~/code/fetchLandsatSentinelFromGoogleCloud/fels/utils.py')
-
 
 def format_quotes_in_text(text):
     """
+    Modifies Python code to roughly following quote scheme described in [1]_.
+
+        * Single quotes (') are used for code
+        * Double quotes (") are used for documentation
+        * Don't touch any string that has an internal quote.
+
     Args:
         text (str): python source code
 
     Returns:
         str: modified text
+
+    References:
+        .. [1] https://github.com/google/yapf/issues/399#issuecomment-914839071
     """
     red = redbaron.RedBaron(text)
 
@@ -77,10 +80,6 @@ def format_quotes_in_text(text):
         info['has_internal_triple_quote'] = (
             triple_single_quote in content or triple_double_quote in content)
 
-        if 'Search' in value:
-            print('info = {}'.format(ub.repr2(info, nl=1)))
-            print('value = {!r}'.format(value))
-
         if info['quote_type'] == 'triple_single':
             if info['is_docstring']:
                 if not info['has_internal_triple_quote']:
@@ -96,25 +95,44 @@ def format_quotes_in_text(text):
     return new_text
 
 
-def format_quotes_in_file(fpath, diff=True, write=False):
+def format_quotes_in_file(fpath, diff=True, write=False, verbose=3):
     """
+    Autoformat quotation marks in Python files
+
     Args:
         fpath (str): The file to format
         diff (bool): if True write the diff between old and new to stdout
         write (bool): if True write the modifications to disk
+        verbose (int): verbosity level
     """
+    if verbose > 1:
+        print('reading fpath = {!r}'.format(fpath))
+
     with open(fpath, 'r') as file:
         text = file.read()
 
     new_text = format_quotes_in_text(text)
 
     if diff:
-        print(xdev.difftext(text, new_text, context_lines=3, colored=True))
+        difftext = xdev.difftext(text, new_text, context_lines=3, colored=True)
+        print(difftext)
+        if verbose > 1:
+            if not difftext.strip():
+                print('No difference!')
 
     if write:
         # Write the file
+        if verbose > 1:
+            print('writing to fpath = {}'.format(ub.repr2(fpath, nl=1)))
+
         with open(fpath, 'w') as file:
             file.write(new_text)
+
+    else:
+        if not diff:
+            if verbose > 1:
+                print('dump formatted text to stdout')
+            print(new_text)
 
 if __name__ == '__main__':
     """
