@@ -1,5 +1,9 @@
 __doc__="
 
+Also:
+    https://forums.developer.nvidia.com/t/msi-3090-gpu-causes-a-full-system-crash-when-under-any-sort-of-load-ubuntu-18-04lts/175117
+    https://forums.evga.com/3090-FTW-5950X-computer-turning-off-m3237602.aspx
+
 My Question:
     https://serverfault.com/questions/1074946/debugging-unexpected-system-shutdown
 
