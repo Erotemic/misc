@@ -13,83 +13,113 @@ fpath = ub.expandpath('~/code/fetchLandsatSentinelFromGoogleCloud/fels/fels.py')
 # fpath = ub.expandpath('~/code/fetchLandsatSentinelFromGoogleCloud/fels/sentinel2.py')
 # fpath = ub.expandpath('~/code/fetchLandsatSentinelFromGoogleCloud/fels/utils.py')
 
-text = open(fpath).read()
 
-b = redbaron.RedBaron(text)
+def format_quotes_in_text(text):
+    """
+    Args:
+        text (str): python source code
 
-single_quote = chr(39)
-double_quote = chr(34)
-triple_single_quote = single_quote * 3
-triple_double_quote = double_quote * 3
+    Returns:
+        str: modified text
+    """
+    red = redbaron.RedBaron(text)
 
-quotes = dict(
-    triple_double=triple_double_quote,
-    triple_single=triple_single_quote,
-    single=single_quote,
-    double=double_quote,
-)
+    single_quote = chr(39)
+    double_quote = chr(34)
+    triple_single_quote = single_quote * 3
+    triple_double_quote = double_quote * 3
+    # quotes = dict(
+    #     triple_double=triple_double_quote,
+    #     triple_single=triple_single_quote,
+    #     single=single_quote,
+    #     double=double_quote,
+    # )
 
-for found in b.find_all('string'):
+    for found in red.find_all('string'):
 
-    value = found.value
-    info = {
-        'quote_type': None,
-        'is_docstring': None,
-        'is_assigned_or_passed': None,  # TODO
-        'has_internal_quote': None,
-    }
-    if value.startswith(triple_single_quote):
-        info['quote_type'] = 'triple_single'
-    elif value.startswith(triple_double_quote):
-        info['quote_type'] = 'triple_double'
-    elif value.startswith(single_quote):
-        info['quote_type'] = 'single'
-    elif value.startswith(double_quote):
-        info['quote_type'] = 'double'
-    else:
-        raise AssertionError
+        value = found.value
+        info = {
+            'quote_type': None,
+            'is_docstring': None,
+            'is_assigned_or_passed': None,  # TODO
+            'has_internal_quote': None,
+        }
+        if value.startswith(triple_single_quote):
+            info['quote_type'] = 'triple_single'
+        elif value.startswith(triple_double_quote):
+            info['quote_type'] = 'triple_double'
+        elif value.startswith(single_quote):
+            info['quote_type'] = 'single'
+        elif value.startswith(double_quote):
+            info['quote_type'] = 'double'
+        else:
+            raise AssertionError
 
-    if isinstance(found.parent, redbaron.RedBaron):
-        # module docstring or global string
-        info['is_docstring'] = found.parent[0] == found
-    elif found.parent.type in {'class', 'def'}:
-        info['is_docstring'] = found.parent[0] == found
-    elif isinstance(found.parent, redbaron.NodeList):
-        info['is_docstring'] = '?'
-        raise Exception
-    else:
-        info['is_docstring'] = False
+        if isinstance(found.parent, redbaron.RedBaron):
+            # module docstring or global string
+            info['is_docstring'] = found.parent[0] == found
+        elif found.parent.type in {'class', 'def'}:
+            info['is_docstring'] = found.parent[0] == found
+        elif isinstance(found.parent, redbaron.NodeList):
+            info['is_docstring'] = '?'
+            raise Exception
+        else:
+            info['is_docstring'] = False
 
-    if info['quote_type'].startswith('triple'):
-        content = value[3:-3]
-    else:
-        content = value[1:-1]
+        if info['quote_type'].startswith('triple'):
+            content = value[3:-3]
+        else:
+            content = value[1:-1]
 
-    info['has_internal_quote'] = (
-        single_quote in content or double_quote in content)
+        info['has_internal_quote'] = (
+            single_quote in content or double_quote in content)
 
-    info['has_internal_triple_quote'] = (
-        triple_single_quote in content or triple_double_quote in content)
+        info['has_internal_triple_quote'] = (
+            triple_single_quote in content or triple_double_quote in content)
 
-    if 'Search' in value:
-        print('info = {}'.format(ub.repr2(info, nl=1)))
-        print('value = {!r}'.format(value))
+        if 'Search' in value:
+            print('info = {}'.format(ub.repr2(info, nl=1)))
+            print('value = {!r}'.format(value))
 
-    if info['quote_type'] == 'triple_single':
-        if info['is_docstring']:
-            if not info['has_internal_triple_quote']:
-                found.value = re.sub(
-                    triple_single_quote, triple_double_quote, value)
-    if info['quote_type'] == 'double':
-        if not info['is_docstring']:
-            if not info['has_internal_quote']:
-                found.value = re.sub(
-                    double_quote, single_quote, value)
+        if info['quote_type'] == 'triple_single':
+            if info['is_docstring']:
+                if not info['has_internal_triple_quote']:
+                    found.value = re.sub(
+                        triple_single_quote, triple_double_quote, value)
+        if info['quote_type'] == 'double':
+            if not info['is_docstring']:
+                if not info['has_internal_quote']:
+                    found.value = re.sub(
+                        double_quote, single_quote, value)
 
-new_text = b.dumps()
-print(xdev.difftext(text, new_text, context_lines=3, colored=True))
+    new_text = red.dumps()
+    return new_text
 
-if 0:
-    # Write the file
-    with open(fpath, 'w') as file:
-        file.write(new_text)
+
+def format_quotes_in_file(fpath, diff=True, write=False):
+    """
+    Args:
+        fpath (str): The file to format
+        diff (bool): if True write the diff between old and new to stdout
+        write (bool): if True write the modifications to disk
+    """
+    with open(fpath, 'r') as file:
+        text = file.read()
+
+    new_text = format_quotes_in_text(text)
+
+    if diff:
+        print(xdev.difftext(text, new_text, context_lines=3, colored=True))
+
+    if write:
+        # Write the file
+        with open(fpath, 'w') as file:
+            file.write(new_text)
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/misc/format_quotes.py ~/misc/format_quotes.py
+    """
+    import fire
+    fire.Fire(format_quotes_in_file)
