@@ -13,7 +13,9 @@ Usage:
 
 update_pypkg(){
     cd $REPO_DPATH
-    cp -r ~/misc/PYPKG/.circleci .
+    cp -r ~/misc/templates/PYPKG/.circleci .
+
+    cp -r ~/misc/templates/PYPKG/dev .
 
     chmod +x ./setup.py
     chmod +x ./run_developer_setup.sh
