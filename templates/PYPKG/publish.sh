@@ -74,8 +74,8 @@ VERSION=$(python -c "import setup; print(setup.VERSION)")
 
 # The default should change depending on the application
 #DEFAULT_MODE_LIST=("sdist" "universal" "bdist")
-#DEFAULT_MODE_LIST=("sdist" "native" "universal")
-DEFAULT_MODE_LIST=("sdist" "bdist")
+DEFAULT_MODE_LIST=("sdist" "native" "universal")
+#DEFAULT_MODE_LIST=("sdist" "bdist")
 
 check_variable DEPLOY_REMOTE
 
