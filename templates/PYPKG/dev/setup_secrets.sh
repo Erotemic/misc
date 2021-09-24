@@ -3,10 +3,21 @@ __doc__='
 SETUP CI SECRET INSTRUCTIONS
 ============================
 
+TODO: These instructions are currently pieced together from old disparate
+instances, and are not yet fully organized.
+
 The original template file should be:
 ~/misc/templates/PYPKG/dev/setup_secrets.sh
 
 Development script for updating secrets when they rotate
+
+
+The intent of this script is to help setup secrets for whichever of the
+following CI platforms is used:
+
+../.github/workflows/tests.yml
+../.gitlab-ci.yml
+../.circleci/config.yml
 
 
 =========================
@@ -85,12 +96,16 @@ GITLAB ACTION INSTRUCTIONS
      # and masked option. Also make sure you have master and release
      # branches protected.
      # https://gitlab.kitware.com/computer-vision/kwcoco/-/settings/repository#js-protected-branches-settings
+
+
+============================
+Relevant CI Secret Locations
+============================
+
+https://github.com/pyutils/line_profiler/settings/secrets/actions
+
+https://app.circleci.com/settings/project/github/pyutils/line_profiler/environment-variables?return-to=https%3A%2F%2Fapp.circleci.com%2Fpipelines%2Fgithub%2Fpyutils%2Fline_profiler
 '
-
-
-codeblock(){
-    echo "$1" | python -c "import sys; from textwrap import dedent; print(dedent(sys.stdin.read()).strip('\n'))"
-}
 
 setup_package_environs(){
     __doc__="
@@ -100,24 +115,49 @@ setup_package_environs(){
     that the specific repo only needs to modify that configuration file.
     "
 
-    codeblock '
+    echo '
     export VARNAME_CI_SECRET="CI_KITWARE_SECRET"
+    export VARNAME_TWINE_USERNAME="TWINE_USERNAME"
+    export VARNAME_TWINE_PASSWORD="TWINE_PASSWORD"
     export GPG_IDENTIFIER="=Erotemic-CI <erotemic@gmail.com>"
-    ' > dev/secrets_configuration.sh
+    ' | python -c "import sys; from textwrap import dedent; print(dedent(sys.stdin.read()).strip(chr(10)))" > dev/secrets_configuration.sh
+    git add dev/secrets_configuration.sh
 
-    cat dev/secrets_configuration.sh
+    echo '
+    export VARNAME_CI_SECRET="EROTEMIC_CI_SECRET"
+    export VARNAME_TWINE_USERNAME="TWINE_USERNAME"
+    export VARNAME_TWINE_PASSWORD="TWINE_PASSWORD"
+    export VARNAME_TEST_TWINE_USERNAME="TEST_TWINE_USERNAME"
+    export VARNAME_TEST_TWINE_PASSWORD="TEST_TWINE_PASSWORD"
+    export GPG_IDENTIFIER="=Erotemic-CI <erotemic@gmail.com>"
+    ' | python -c "import sys; from textwrap import dedent; print(dedent(sys.stdin.read()).strip(chr(10)))" > dev/secrets_configuration.sh
+    git add dev/secrets_configuration.sh
+
+    echo '
+    export VARNAME_CI_SECRET="PYUTILS_CI_SECRET"
+    export GPG_IDENTIFIER="=PyUtils-CI <openpyutils@gmail.com>"
+    export VARNAME_TWINE_PASSWORD="PYUTILS_TWINE_PASSWORD"
+    export VARNAME_TWINE_PASSWORD="PYUTILS_TWINE_PASSWORD"
+    ' | python -c "import sys; from textwrap import dedent; print(dedent(sys.stdin.read()).strip(chr(10)))" > dev/secrets_configuration.sh
+    git add dev/secrets_configuration.sh
+
+    #echo '
+    #export VARNAME_CI_SECRET="PYUTILS_CI_SECRET"
+    #export GPG_IDENTIFIER="=PyUtils-CI <openpyutils@gmail.com>"
+    #' | python -c "import sys; from textwrap import dedent; print(dedent(sys.stdin.read()).strip(chr(10)))" > dev/secrets_configuration.sh
+}
+
+upload_github_secrets(){
+    load_secrets
+    unset GITHUB_TOKEN
+    gh auth login
     source dev/secrets_configuration.sh
+    gh secret set $VARNAME_CI_SECRET -b"${!VARNAME_CI_SECRET}"
+    gh secret set $VARNAME_TWINE_USERNAME -b"${!VARNAME_TWINE_USERNAME}"
+    gh secret set $VARNAME_TWINE_PASSWORD -b"${!VARNAME_TWINE_PASSWORD}"
+    gh secret set $VARNAME_TEST_TWINE_PASSWORD -b"${!VARNAME_TEST_TWINE_PASSWORD}"
+    gh secret set $VARNAME_TEST_TWINE_USERNAME -b"${!VARNAME_TEST_TWINE_USERNAME}"
 
-    #REPO_DPATH=$HOME/code/xdoctest
-    REPO_DPATH=$HOME/code/kwcoco
-    VARNAME_CI_SECRET="CI_KITWARE_SECRET"
-    GPG_IDENTIFIER="=Erotemic-CI <erotemic@gmail.com>"
-
-    #VARNAME_TWINE_USERNAME="TWINE_USERNAME"
-    #VARNAME_TWINE_PASSWORD="TWINE_PASSWORD"
-    #TWINE_USERNAME_VARNAME="PYUTILS_TWINE_USERNAME"
-    #TWINE_PASSWORD_VARNAME="PYUTILS_TWINE_USERNAME"
-    #CI_SECRET_VARNAME="EROTEMIC_CI_SECRET"
 }
 
 
@@ -130,10 +170,11 @@ export_encrypted_code_signing_keys(){
     source dev/secrets_configuration.sh
 
     CI_SECRET="${!VARNAME_CI_SECRET}"
-    echo "CI_SECRET = $CI_SECRET"
+    echo "VARNAME_CI_SECRET = $VARNAME_CI_SECRET"
+    echo "CI_SECRET=$CI_SECRET"
+    echo "GPG_IDENTIFIER=$GPG_IDENTIFIER"
 
     # ADD RELEVANT VARIABLES TO THE CI SECRET VARIABLES
-
     # HOW TO ENCRYPT YOUR SECRET GPG KEY
     # You need to have a known public gpg key for this to make any sense
 
@@ -153,12 +194,12 @@ export_encrypted_code_signing_keys(){
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_public_gpg_key.pgp > dev/ci_public_gpg_key.pgp.enc
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_secret_gpg_subkeys.pgp > dev/ci_secret_gpg_subkeys.pgp.enc
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
-    echo $GPG_KEYID > dev/public_gpg_key
+    echo $MAIN_GPG_KEYID > dev/public_gpg_key
 
     # Test decrpyt
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | gpg --list-packets --verbose
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc  | gpg --list-packets --verbose
-    GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | gpg --list-packets --verbose
+    GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc 
     cat dev/public_gpg_key
 
     unload_secrets
@@ -179,6 +220,8 @@ _test_gnu(){
     ls -al $GNUPGHOME
     chmod 700 -R $GNUPGHOME
 
+    source dev/secrets_configuration.sh
+
     gpg -k
     
     load_secrets
@@ -187,9 +230,11 @@ _test_gnu(){
 
     cat dev/public_gpg_key
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc 
+    GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc 
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc
 
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | gpg --import
+    GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | gpg --import-ownertrust
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | gpg --import
 
     gpg -k
