@@ -72,6 +72,33 @@ class PolyNumber:
         else:
             return cls(([0] * (degree) + [1]))
 
+    def __lshift__(self, places):
+        return PolyNumber(self.coeff[places:])
+
+    def __rshift__(self, places):
+        """
+        import timerit
+        ti = timerit.Timerit()
+        ti.reset('pad').call(lambda: np.pad(self.coeff, (n, 0))).print()
+        ti.reset('stack').call(lambda: np.hstack([np.zeros_like(self.coeff, shape=(n)), self.coeff])).print()
+
+        self = PolyNumber([1])
+        places = 3
+        self >> 5
+        self << places
+        """
+        return self.lower_pad(places)
+
+    def lower_pad(self, places):
+        left_pad = np.zeros_like(self.coeff, shape=places)
+        new_coeff = np.hstack([left_pad, self.coeff])
+        return PolyNumber(new_coeff)
+
+    def upper_pad(self, places):
+        right_pad = np.zeros_like(self.coeff, shape=places)
+        new_coeff = np.hstack([self.coeff, right_pad])
+        return PolyNumber(new_coeff)
+
     @classmethod
     def random(cls, num_coeff=3, min_coeff=0, max_coeff=21):
         coeff = np.random.randint(min_coeff, max_coeff, size=num_coeff)
@@ -174,8 +201,7 @@ class PolyNumber:
         q = zero.copy()  # init quotient (div result)
         shift = r.degree() - d.degree()
         while r != zero and shift >= 0:
-            y = PolyNumber([(r.lead() / d.lead())])
-            t = PolyNumber.from_degree(shift) * y
+            t = PolyNumber([(r.lead() / d.lead())]) >> shift
             q = q + t
             r = (r - (d * t)).drop_lead_zeros()
             shift = r.degree() - d.degree()
