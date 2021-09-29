@@ -2,9 +2,50 @@ import numpy as np
 import fractions
 
 
+class PrettyFraction(fractions.Fraction):
+    """
+    >>> 3 * -(PrettyFraction(3) / 2)
+    """
+    def __str__(self):
+        if self.denominator == 1:
+            return str(self.numerator)
+        else:
+            return '({}/{})'.format(self.numerator, self.denominator)
+
+    def __repr__(self):
+        return str(self)
+
+    def __neg__(self):
+        return PrettyFraction(super().__neg__())
+
+    def __add__(self, other):
+        return PrettyFraction(super().__add__(other))
+
+    def __radd__(self, other):
+        return PrettyFraction(super().__radd__(other))
+
+    def __sub__(self, other):
+        return PrettyFraction(super().__sub__(other))
+
+    def __mul__(self, other):
+        return PrettyFraction(super().__mul__(other))
+
+    def __rmul__(self, other):
+        return PrettyFraction(super().__rmul__(other))
+
+    def __truediv__(self, other):
+        return PrettyFraction(super().__truediv__(other))
+
+    def __floordiv__(self, other):
+        return PrettyFraction(super().__floordiv__(other))
+
+
 class PolyNumber:
     """
     A PolyNumber as defined by Norman Wildberger
+
+    Coefficients are stored in ascending order of degree, i.e.
+    ``c = self.coeff[2]`` is the term for ``c * alpha ** 2``
 
     References:
         https://www.youtube.com/channel/UCXl0Zbk8_rvjyLwAR-Xh9pQ
@@ -24,8 +65,12 @@ class PolyNumber:
 
     @classmethod
     def from_degree(cls, degree):
-        """ not sure what to call this """
-        return cls(([0] * (degree - 1) + [1]))
+        """ construct the "unary?" polynomial of a certain degree """
+        # not sure what to call this
+        if degree < 0:
+            return cls([0])
+        else:
+            return cls(([0] * (degree) + [1]))
 
     @classmethod
     def random(cls, num_coeff=3, min_coeff=0, max_coeff=21):
@@ -34,7 +79,7 @@ class PolyNumber:
         return self
 
     def as_rational(self):
-        return PolyNumber(np.array(list(map(fractions.Fraction, self.coeff)), dtype=object))
+        return PolyNumber(np.array(list(map(PrettyFraction, self.coeff)), dtype=object))
 
     def drop_lead_zeros(self):
         nonzero_idxs = np.nonzero(self.coeff)[0]
@@ -51,7 +96,10 @@ class PolyNumber:
         """
         Return leading (highest power) coefficient
         """
-        return self.coeff[-1]
+        if len(self.coeff) > 0:
+            return self.coeff[-1]
+        else:
+            return 0
 
     def __eq__(self, other):
         p = self.coeff
@@ -62,13 +110,16 @@ class PolyNumber:
     def degree(self):
         """
         Number of coefficients
+
+        References:
+            https://en.wikipedia.org/wiki/Degree_of_a_polynomial#Degree_of_the_zero_polynomial
         """
         if len(self.coeff) == 0:
-            return 0
+            return -float('inf')
         elif self.coeff[-1] != 0:
-            return len(self.coeff)
+            return len(self.coeff) - 1
         else:
-            return len(self.drop_lead_zeros().coeff)
+            return len(self.drop_lead_zeros().coeff) - 1
 
     def __neg__(self):
         return PolyNumber(-self.coeff)
@@ -124,7 +175,7 @@ class PolyNumber:
         shift = r.degree() - d.degree()
         while r != zero and shift >= 0:
             y = PolyNumber([(r.lead() / d.lead())])
-            t = PolyNumber.from_degree(shift + 1) * y
+            t = PolyNumber.from_degree(shift) * y
             q = q + t
             r = (r - (d * t)).drop_lead_zeros()
             shift = r.degree() - d.degree()
@@ -140,8 +191,8 @@ class PolyNumber:
 def demo():
     p = PolyNumber([2, 7, 2, -3]).as_rational()
     q = PolyNumber([1, 3]).as_rational()
-    p = PolyNumber.random(4).as_rational()
-    q = PolyNumber.random(3).as_rational()
+    p = PolyNumber.random(23).as_rational()
+    q = PolyNumber.random(20).as_rational()
     self, other = p, q  # NOQA
     r_sum = p + q
     r_sub = p - q
