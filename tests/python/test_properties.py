@@ -54,3 +54,81 @@ self = Husk()
 self.x
 self.x = 3
 del self.x
+
+
+
+# Test inject properties
+
+class SomeParent:
+    def __init__(self):
+        self.prop1 = 1
+        self.prop2 = 2
+
+
+class SomeChild1(SomeParent):
+    def __init__(self):
+        super().__init__()
+
+
+self = SomeChild1()
+print('self.prop1 = {!r}'.format(self.prop1))
+print('self.prop2 = {!r}'.format(self.prop2))
+
+
+def afunc(self):
+    return lambda: 'abc'
+
+setattr(self.__class__, 'prop1', property(afunc))
+
+print('self.prop1 = {!r}'.format(self.prop1()))
+print('self.prop2 = {!r}'.format(self.prop2))
+
+
+class SomeChild2(SomeParent):
+    def __init__(self):
+        super().__init__()
+        self.__class__.prop1 = property(afunc)
+
+self = SomeChild2()
+print('self.prop1 = {!r}'.format(self.prop1()))
+print('self.prop2 = {!r}'.format(self.prop2))
+
+
+import logging
+import sys
+class StreamHandler2(logging.StreamHandler):
+    def __init__(self, _getstream=None):
+        """
+        Initialize the handler.
+
+        If stream is not specified, sys.stderr is used.
+        """
+        logging.Handler.__init__(self)
+        if _getstream is None:
+            _getstream = lambda: sys.stderr
+        self._getstream = _getstream
+        self.__class__.stream = property(lambda self: self._getstream())
+
+    def setStream(self, stream):
+        raise NotImplementedError
+
+
+handler = StreamHandler2(lambda: sys.stdout)
+
+_log = logging.getLogger('mylog')
+_log.setLevel(logging.INFO)
+_log.addHandler(handler)
+
+_log.info('hello')
+_log.info('hello hello')
+
+
+def func_with_doctest():
+    """
+    Example:
+        >>> _log.info('greetings from my doctest')
+        greetings from my doctest
+    """
+
+import xdoctest
+xdoctest.doctest_callable(func_with_doctest)
