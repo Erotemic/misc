@@ -1,10 +1,13 @@
 import numpy as np
 import fractions
+import numbers
 
 
-class PrettyFraction(fractions.Fraction):
+class Rational(fractions.Fraction):
     """
-    >>> 3 * -(PrettyFraction(3) / 2)
+    Extension of the Fraction class, mostly to make printing nicer
+
+    >>> 3 * -(Rational(3) / 2)
     """
     def __str__(self):
         if self.denominator == 1:
@@ -16,28 +19,45 @@ class PrettyFraction(fractions.Fraction):
         return str(self)
 
     def __neg__(self):
-        return PrettyFraction(super().__neg__())
+        return Rational(super().__neg__())
 
     def __add__(self, other):
-        return PrettyFraction(super().__add__(other))
+        return Rational(super().__add__(other))
 
     def __radd__(self, other):
-        return PrettyFraction(super().__radd__(other))
+        return Rational(super().__radd__(other))
 
     def __sub__(self, other):
-        return PrettyFraction(super().__sub__(other))
+        return Rational(super().__sub__(other))
 
     def __mul__(self, other):
-        return PrettyFraction(super().__mul__(other))
+        return Rational(super().__mul__(other))
 
     def __rmul__(self, other):
-        return PrettyFraction(super().__rmul__(other))
+        return Rational(super().__rmul__(other))
 
     def __truediv__(self, other):
-        return PrettyFraction(super().__truediv__(other))
+        return Rational(super().__truediv__(other))
 
     def __floordiv__(self, other):
-        return PrettyFraction(super().__floordiv__(other))
+        return Rational(super().__floordiv__(other))
+
+
+def rationalize(data):
+    """
+    Takes an ndarray and ensures its members are rational
+
+    Example:
+        >>> data = ((np.random.rand(3, 5)) * 100)
+        >>> rationalize(data)
+    """
+    if isinstance(data, np.ndarray):
+        data = np.vectorize(Rational)(data)
+    elif isinstance(data, numbers.Number):
+        data = Rational(data)
+    else:
+        raise TypeError(type(data))
+    return data
 
 
 class PolyNumber:
@@ -106,7 +126,7 @@ class PolyNumber:
         return self
 
     def as_rational(self):
-        return PolyNumber(np.array(list(map(PrettyFraction, self.coeff)), dtype=object))
+        return PolyNumber(np.array(list(map(Rational, self.coeff)), dtype=object))
 
     def drop_lead_zeros(self):
         nonzero_idxs = np.nonzero(self.coeff)[0]
@@ -164,29 +184,53 @@ class PolyNumber:
     def __sub__(self, other):
         return self + (-other)
 
+    def as_polynomial(self):
+        """
+        Returns the numpy polynomial representation
+        """
+        return np.polynomial.Polynomial(self.coeff)
+
     def __mul__(self, other):
         """
-        Reasonably efficient
+        Example:
+            self = PolyNumber([2, 7, 2, -3]).as_rational()
+            other = PolyNumber([1, 3]).as_rational()
+            result = self * other
+            print('result = {!r}'.format(result))
+
+            p1 = self.as_polynomial()
+            p2 = other.as_polynomial()
+            p3 = p1 * p2
+            print('p3 = {!r}'.format(p3))
+
+            divmod(p1, p2)
+            divmod(self, other)
         """
-        p = self.coeff
-        q = other.coeff
-        len_p = len(p)
-        len_q = len(q)
+        if 0:
+            # More efficient
+            return PolyNumber(np.polymul(self.coeff, other.coeff))
+        else:
+            # Reasonably efficient
+            p = self.coeff
+            q = other.coeff
 
-        p_basis_idxs = np.arange(len_p)[:, None]
-        q_basis_idxs = np.arange(len_q)[None, :]
+            len_p = len(p)
+            len_q = len(q)
 
-        r_idxs = (q_basis_idxs + p_basis_idxs).ravel()
-        raveled_r_idxs = np.arange(len_p * len_q)
-        p_idxs, q_idxs = np.unravel_index(raveled_r_idxs, (len_p, len_q))
+            p_basis_idxs = np.arange(len_p)[:, None]
+            q_basis_idxs = np.arange(len_q)[None, :]
 
-        terms = p[p_idxs] * q[q_idxs]
+            r_idxs = (q_basis_idxs + p_basis_idxs).ravel()
+            raveled_r_idxs = np.arange(len_p * len_q)
+            p_idxs, q_idxs = np.unravel_index(raveled_r_idxs, (len_p, len_q))
 
-        len_r = (len_p + len_q) - 1
-        r = np.zeros(len_r, dtype=terms.dtype)
-        np.add.at(r, r_idxs, terms)
-        result = PolyNumber(r)
-        return result
+            terms = p[p_idxs] * q[q_idxs]
+
+            len_r = (len_p + len_q) - 1
+            r = np.zeros(len_r, dtype=terms.dtype)
+            np.add.at(r, r_idxs, terms)
+            result = PolyNumber(r)
+            return result
 
     def __divmod__(self, other):
         """
@@ -201,7 +245,7 @@ class PolyNumber:
         q = zero.copy()  # init quotient (div result)
         shift = r.degree() - d.degree()
         while r != zero and shift >= 0:
-            t = PolyNumber([(r.lead() / d.lead())]) >> shift
+            t = PolyNumber([(r.lead() / d.lead())]).lower_pad(shift)
             q = q + t
             r = (r - (d * t)).drop_lead_zeros()
             shift = r.degree() - d.degree()
@@ -212,6 +256,30 @@ class PolyNumber:
 
     def __mod__(self, other):
         return divmod(self, other)[1]
+
+
+class PolyNumberNd(PolyNumber):
+    """
+    Generalization of PolyNumbers, BiPolyNumbers, TriPolyNumbers, etc...
+    """
+    def __init__(self, coeff):
+        """
+        Args:
+            coeff (ndarray): each dimension corresponds to a different poly
+                number "variable", i.e. alpha, beta, etc...
+
+        Example:
+            >>> import sys, ubelt
+            >>> sys.path.append(ubelt.expandpath('~/misc/learn'))
+            >>> from polynumber import *  # NOQA
+            >>> coeff = rationalize(np.array([
+            >>>     [1,   7, 10],
+            >>>     [7,  20,  0],
+            >>>     [10,  0,  0],
+            >>> ]))
+            >>> self = PolyNumberNd(coeff)
+        """
+        self.coeff = coeff
 
 
 def demo():
