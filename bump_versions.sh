@@ -164,6 +164,7 @@ create_new_gitlab_dev_mr(){
 
     cd $HOME/code/$MODNAME
     MERGE_BRANCH=$(git branch --show-current)
+    DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
     GROUP_NAME=$(git remote get-url $DEPLOY_REMOTE | cut -d ":" -f 2 | cut -d "/" -f 1)
     HOST=https://$(git remote get-url $DEPLOY_REMOTE | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
 
@@ -215,7 +216,7 @@ create_new_gitlab_dev_mr(){
         --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" \
         --data-urlencode "title=$TITLE" \
         --data-urlencode "source_branch=$SOURCE_BRANCH" \
-        --data-urlencode "target_branch=master" \
+        --data-urlencode "target_branch=$DEFAULT_BRANCH" \
         --data-urlencode "description=auto created mr" \
         --data-urlencode "assignee_id=$SELF_USER_ID" \
         "$HOST/api/v4/projects/$PROJ_ID/merge_requests" > $TMP_DIR/new_mr
@@ -237,6 +238,9 @@ create_new_gitlab_dev_mr(){
 
 
 git_checkeven(){
+    __doc__="
+    Check if two branches are equal (i.e. even)
+    "
     # https://stackoverflow.com/questions/31982954/how-can-i-check-whether-two-branches-are-even
     if [ $# -ne 2 ]; then
         printf "usage: git checkeven <revA> <revB>\n\n"
@@ -261,7 +265,23 @@ git_checkeven(){
     fi
 }
 
-update_master(){
+
+gitlab_update_master_to_main(){
+    __doc__="
+    # https://boleary.dev/blog/2020-06-11-change-your-default-branch.html
+    "
+    # Locally
+    git branch -m master main
+    git push -u origin main
+
+    # Remotely, go to settings
+    # https://gitlab.kitware.com/computer-vision/kwcoco/-/settings/repository
+    # Update the default branch
+    # Update protected branches
+
+}
+
+update_default_branch(){
     MODNAME=$1
     DEPLOY_REMOTE=$2
     # -----
@@ -275,22 +295,24 @@ update_master(){
     cd $HOME/code/$MODNAME
     VERSION=$(python -c "import $MODNAME; print($MODNAME.__version__)")
     NEXT_VERSION=$(python -c "print('.'.join('$VERSION'.split('.')[0:2]) + '.' + str(int('$VERSION'.split('.')[2]) + 1))")
+    DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
     echo "
     VERSION = $VERSION
     NEXT_VERSION = $NEXT_VERSION
+    DEFAULT_BRANCH = $DEFAULT_BRANCH
     "
 
     git fetch $DEPLOY_REMOTE
-    git_checkeven $DEPLOY_REMOTE/release $DEPLOY_REMOTE/master
+    git_checkeven $DEPLOY_REMOTE/release $DEPLOY_REMOTE/$DEFAULT_BRANCH
     RES=$?
     if [ "$RES" == "0" ]; then
-        echo "WARNING: master is up to date with release, did you forget to merge the topic branch?"
+        echo "WARNING: $DEFAULT_BRANCH is up to date with release, did you forget to merge the topic branch?"
     else
-        echo "master is different than release, that is expected"
+        echo "$DEFAULT_BRANCH is different than release, that is expected"
     fi
 
-    git checkout master || git checkout $DEPLOY_REMOTE/master -b master
-    git pull $DEPLOY_REMOTE master
+    git checkout $DEFAULT_BRANCH || git checkout $DEPLOY_REMOTE/$DEFAULT_BRANCH -b $DEFAULT_BRANCH
+    git pull $DEPLOY_REMOTE $DEFAULT_BRANCH
 
 }
 
@@ -301,7 +323,7 @@ finish_deployment(){
     DEPLOY_BRANCH=$3
     # -----
     echo "
-    Ensure you've merged the topic-branch into master
+    Ensure you've merged the topic-branch into teh default branch (main/master)
 
     TODO: assert the version doesnt already exist (if we forgot to bump the version var)
 
@@ -319,10 +341,14 @@ finish_deployment(){
     VERSION = $VERSION
     NEXT_VERSION = $NEXT_VERSION
     "
-    git checkout master || git checkout $DEPLOY_REMOTE/master -b master
+
+    # Get default branch name (master/main)
+    DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+    echo "DEFAULT_BRANCH = $DEFAULT_BRANCH"
+    git checkout $DEFAULT_BRANCH || git checkout $DEPLOY_REMOTE/$DEFAULT_BRANCH -b $DEFAULT_BRANCH
     git fetch $DEPLOY_REMOTE
-    git pull $DEPLOY_REMOTE master
-    git push $DEPLOY_REMOTE master:release
+    git pull $DEPLOY_REMOTE $DEFAULT_BRANCH
+    git push $DEPLOY_REMOTE $DEFAULT_BRANCH:release
     #git tag "${TAG_NAME}" "${TAG_NAME}"^{} -f -m "tarball tag ${VERSION}"
     #git tag "${TAG_NAME}" -f -m "tarball tag ${VERSION}"
     #git push --tags $DEPLOY_REMOTE 
@@ -368,7 +394,7 @@ mypkgs(){
     MODNAME=bioharn
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
@@ -377,13 +403,13 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     MODNAME=liberator
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
@@ -391,7 +417,7 @@ mypkgs(){
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
     create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE 
 
@@ -401,7 +427,7 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
     create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE 
 
@@ -411,7 +437,7 @@ mypkgs(){
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
     create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE 
 
@@ -421,7 +447,7 @@ mypkgs(){
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
     create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE 
 
@@ -431,7 +457,7 @@ mypkgs(){
     DEPLOY_BRANCH=release
     load_secrets
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
@@ -440,7 +466,7 @@ mypkgs(){
     DEPLOY_REMOTE=public
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
     create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE 
 
@@ -450,7 +476,7 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
     create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE 
 
@@ -465,7 +491,7 @@ mypkgs(){
     MODNAME=ubelt
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
@@ -473,7 +499,7 @@ mypkgs(){
     MODNAME=mkinit
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
 
@@ -481,7 +507,7 @@ mypkgs(){
     MODNAME=xdoctest
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
 
@@ -489,7 +515,7 @@ mypkgs(){
     MODNAME=line_profiler
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
-    update_master $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
 

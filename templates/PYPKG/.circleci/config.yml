@@ -28,7 +28,7 @@ workflows:
   version: 2
   test:
     jobs:
-      - test_full/cp310-310-linux
+      - test_full/cp3_10-3_10-linux
       - test_full/cp39-39-linux
       - test_full/cp38-38-linux
       - test_full/cp37-37m-linux
@@ -37,7 +37,7 @@ workflows:
       #- test_full/cp34-34m-linux
       #- test_full/cp27-27mu-linux
 
-      - test_minimal/cp310-310-linux
+      - test_minimal/cp3_10-3_10-linux
       - test_minimal/cp39-39-linux
       - test_minimal/cp38-38-linux
       - test_minimal/cp37-37m-linux
@@ -62,8 +62,9 @@ jobs:
     environment:
       # Setting the python executable environ allows template reuse for pypy
       - PYTHON_EXE: python
+      - PIP_DOWNLOAD_CACHE=./pipcache
     docker:
-      - image: circleci/python
+      - image: cimg/python
     steps:
       - checkout
     #working_directory: ~/{{ .Environment.CIRCLE_JOB }}
@@ -78,7 +79,7 @@ jobs:
       - restore_cache:
           # NOTE: cache keys should contain the Python Version
           keys:
-          - v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ .Environment.CIRCLE_JOB }}
+          - v4-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ .Environment.CIRCLE_JOB }}
       - run:
           name: install dependencies
           command: |
@@ -91,8 +92,8 @@ jobs:
             pip install .[tests] -v
       - save_cache:
           paths:
-            - ./venv
-          key: v3-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ .Environment.CIRCLE_JOB }}
+            - ./pipcache
+          key: v4-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ .Environment.CIRCLE_JOB }}
       # ### RUN TESTS ###
       - run:
           name: run tests
@@ -126,7 +127,7 @@ jobs:
             pip install .[all] -v
       - save_cache:
           paths:
-            - ./venv
+            - ./pipcache
           key: v2-dependencies-{{ checksum "requirements/runtime.txt" }}-{{ checksum "requirements/optional.txt" }}-{{ checksum "requirements/tests.txt" }}-{{ .Environment.CIRCLE_JOB }}
       # ### RUN TESTS ###
       - run:
@@ -150,87 +151,86 @@ jobs:
   # All we need to do is change the base docker image so python is the
   # version we want we can reuse everything else from the template
   
-  test_full/cp310-310-linux:
+  test_full/cp3_10-3_10-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.10-rc
+      - image: cimg/python:3.10.0
   
   test_full/cp39-39-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
   
   test_full/cp38-38-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
   
   test_full/cp37-37m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
 
   test_full/cp36-36m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.5
+      - image: cimg/python:3.6
 
   test_full/cp35-35m-linux:
     <<: *test_full_template
     docker:
-      - image: circleci/python:3.5
+      - image: cimg/python:3.5
 
-  #test_full/cp34-34m-linux:
-  #  <<: *test_full_template
-  #  docker:
-  #    - image: circleci/python:3.4
+  test_full/cp34-34m-linux:
+    <<: *test_full_template
+    docker:
+      - image: circleci/python:3.4
 
-  #test_full/cp27-27mu-linux:
-  #  <<: *test_full_template
-  #  docker:
-  #    - image: circleci/python:2.7
+  test_full/cp27-27mu-linux:
+    <<: *test_full_template
+    docker:
+      - image: cimg/python:2.7
 
   # ------------
-  
-  test_minimal/cp310-310-linux:
+  test_minimal/cp3_10-3_10-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.10-rc
+      - image: cimg/python:3.10
   
   test_minimal/cp39-39-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.9
+      - image: cimg/python:3.9
   
   test_minimal/cp38-38-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
 
   test_minimal/cp37-37m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
 
   test_minimal/cp36-36m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.6
+      - image: cimg/python:3.6
 
   test_minimal/cp35-35m-linux:
     <<: *test_minimal_template
     docker:
-      - image: circleci/python:3.5
+      - image: cimg/python:3.5
 
-  #test_minimal/cp34-34m-linux:
-  #  <<: *test_minimal_template
-  #  docker:
-  #    - image: circleci/python:3.4
+  test_minimal/cp34-34m-linux:
+    <<: *test_minimal_template
+    docker:
+      - image: circleci/python:3.4
 
-  #test_minimal/cp27-27mu-linux:
-  #  <<: *test_minimal_template
-  #  docker:
-  #    - image: circleci/python:2.7
+  test_minimal/cp27-27mu-linux:
+    <<: *test_minimal_template
+    docker:
+      - image: cimg/python:2.7
 
   # --- pypy ----
 
@@ -247,7 +247,6 @@ jobs:
       - image: pypy:3
     environment:
       - PYTHON_EXE: pypy3
-
  
 
 __scratch_work__:
