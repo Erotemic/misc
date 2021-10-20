@@ -1,3 +1,12 @@
+"""
+TODO:
+    Translation, Derivatives, and Subdevatives
+    Translating polynumbers and the Derivative | Arithmetic and Geometry Math Foundations 69 | https://www.youtube.com/watch?v=vyRFz8J4Y_M&list=PL5A714C94D40392AB&index=72
+
+
+
+L_beta(p) = p(beta + alpha) = p(alpha + beta)
+"""
 import numpy as np
 import fractions
 import numbers

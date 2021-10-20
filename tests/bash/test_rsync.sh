@@ -251,9 +251,92 @@ correct_rsync_invoke(){
     fi
 }
 
-correct_rsync_invoke
+#correct_rsync_invoke
+#rsync -avrP $REMOTE_URI/$TEST_BASE/root/dir_L0_X2_D $LOCAL_DPATH/$TEST_BASE/root/dir_L0_X2_D
+#tree $LOCAL_DPATH/$TEST_BASE
 
 
+#correct_rsync_invoke
+#rsync -avrP $REMOTE_URI/$TEST_BASE/root/dir_L0_X2_D $LOCAL_DPATH/$TEST_BASE/root/dir_L0_X2_D
+#tree $LOCAL_DPATH/$TEST_BASE
 
-rsync -avrP $REMOTE_URI/$TEST_BASE/root/dir_L0_X2_D $LOCAL_DPATH/$TEST_BASE/root/dir_L0_X2_D
-tree $LOCAL_DPATH/$TEST_BASE
+
+reset_rsync_test_local_move(){
+    LOCAL_DPATH=$HOME/tmp/rsync-test/local
+    MOVE_TEST_ROOT=$LOCAL_DPATH/rsync_move_test
+    # Setup home data
+    echo "LOCAL_DPATH = $LOCAL_DPATH"
+    if [ -d "$LOCAL_DPATH" ]; then
+        rm -rf $LOCAL_DPATH
+    fi
+    mkdir -p $LOCAL_DPATH
+    mkdir -p $MOVE_TEST_ROOT
+    # Pretend that we accidently botched a move and have a repo inside of a repo
+    # so the goal is merge all files from repo/repo into repo
+    mkdir -p $MOVE_TEST_ROOT/repo/
+    mkdir -p $MOVE_TEST_ROOT/repo/primes/
+    mkdir -p $MOVE_TEST_ROOT/repo/perfect/
+    mkdir -p $MOVE_TEST_ROOT/repo/nat/
+
+    mkdir -p $MOVE_TEST_ROOT/repo/repo
+    mkdir -p $MOVE_TEST_ROOT/repo/repo/primes/
+    mkdir -p $MOVE_TEST_ROOT/repo/repo/perfect/
+    mkdir -p $MOVE_TEST_ROOT/repo/repo/nat/
+
+    # Some of the primes ended up in the correct and the botched repo
+    touch $MOVE_TEST_ROOT/repo/primes/prime02
+    touch $MOVE_TEST_ROOT/repo/primes/prime05
+    touch $MOVE_TEST_ROOT/repo/primes/prime13
+    touch $MOVE_TEST_ROOT/repo/repo/primes/prime03
+    touch $MOVE_TEST_ROOT/repo/repo/primes/prime11
+    # For prime7, lets say there is a conflict in the data contained in the file
+    echo "correct data" > $MOVE_TEST_ROOT/repo/primes/prime07
+    echo "botched data" > $MOVE_TEST_ROOT/repo/repo/primes/prime07
+
+    # All of the perfects ended up in the botched repo
+    touch $MOVE_TEST_ROOT/repo/repo/perfect/perfect006
+    touch $MOVE_TEST_ROOT/repo/repo/perfect/perfect028
+    touch $MOVE_TEST_ROOT/repo/repo/perfect/perfect496
+
+    # The naturals have some symlinks, so we need to be careful there
+    touch $MOVE_TEST_ROOT/repo/nat/nat04
+    touch $MOVE_TEST_ROOT/repo/nat/nat06
+
+    # basedir nats
+    touch $MOVE_TEST_ROOT/repo/nat/nat01
+    ln -s $MOVE_TEST_ROOT/repo/primes/prime02 $MOVE_TEST_ROOT/repo/nat/nat02
+    (cd $MOVE_TEST_ROOT/repo/nat/ && ln -s ../primes/prime05 nat05)
+    ln -s $MOVE_TEST_ROOT/repo/primes/prime11 $MOVE_TEST_ROOT/repo/nat/nat11
+
+    # Botched nats
+    touch  $MOVE_TEST_ROOT/repo/repo/nat/nat08
+    ln -s $MOVE_TEST_ROOT/repo/primes/prime07  $MOVE_TEST_ROOT/repo/repo/nat/nat07 
+    (cd $MOVE_TEST_ROOT/repo/repo/nat/ && ln -s  ../primes/prime03 nat03)
+    ln -s $MOVE_TEST_ROOT/repo/repo/primes/prime11 $MOVE_TEST_ROOT/repo/repo/nat/nat11
+
+    tree $MOVE_TEST_ROOT
+}
+
+test_rsync_merge_folders(){
+    __doc__="
+    source ~/misc/tests/bash/test_rsync.sh
+    "
+    reset_rsync_test_local_move
+
+    # Does not work
+    #mv $MOVE_TEST_ROOT/repo/repo/* $MOVE_TEST_ROOT/repo
+    rsync -avrRP $MOVE_TEST_ROOT/repo/./repo $MOVE_TEST_ROOT
+
+    tree $MOVE_TEST_ROOT
+
+    # Check the content of prime7 to see if it was overwritten or not
+    # Ans: the data is not overwritten, only disjoint files are merged in
+    cat $MOVE_TEST_ROOT/repo/primes/prime07
+
+    # Remove the botched repo
+    rm -rf $MOVE_TEST_ROOT/repo/repo
+
+    # Note that the broken (nat11) link is overwritten
+    tree $MOVE_TEST_ROOT
+
+}

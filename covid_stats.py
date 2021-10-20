@@ -47,9 +47,9 @@ file.seek(0)
 data = pd.read_csv(file)
 
 
-sub = data[['Start Date', 'End Date', 'Age Group', 'COVID-19 Deaths', 'State']]
+sub = data[['Start Date', 'End Date', 'Age Group', 'COVID-19 Deaths', 'State', 'Sex']]
 flags1 = (sub['State'] == 'Florida') | (sub['State'] == 'New York')
-flags &= sub[sub['Sex'] == 'All Sexes']
+flags1 &= sub['Sex'] == 'All Sexes'
 sub2 = sub[flags1]
 
 flags3 = (

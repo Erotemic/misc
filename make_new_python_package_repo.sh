@@ -12,6 +12,8 @@ Usage:
 
 
 update_pypkg(){
+    REPO_DPATH=$HOME/code/kwarray
+
     cd $REPO_DPATH
     cp -r ~/misc/templates/PYPKG/.circleci .
 
