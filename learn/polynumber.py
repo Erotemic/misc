@@ -69,9 +69,9 @@ def rationalize(data):
     return data
 
 
-class PolyNumber:
+class PolyNumberV1:
     """
-    A PolyNumber as defined by Norman Wildberger
+    A PolyNumberV1 as defined by Norman Wildberger
 
     Coefficients are stored in ascending order of degree, i.e.
     ``c = self.coeff[2]`` is the term for ``c * alpha ** 2``
@@ -83,10 +83,10 @@ class PolyNumber:
         self.coeff = np.asarray(coeff)
 
     def __str__(self):
-        return 'PolyNumber({})'.format(str(self.coeff))
+        return 'PolyNumberV1({})'.format(str(self.coeff))
 
     def __repr__(self):
-        return repr(self.coeff).replace('array', 'PolyNumber')
+        return repr(self.coeff).replace('array', 'PolyNumberV1')
 
     @classmethod
     def coerce(cls, data):
@@ -102,7 +102,7 @@ class PolyNumber:
             return cls(([0] * (degree) + [1]))
 
     def __lshift__(self, places):
-        return PolyNumber(self.coeff[places:])
+        return PolyNumberV1(self.coeff[places:])
 
     def __rshift__(self, places):
         """
@@ -111,7 +111,7 @@ class PolyNumber:
         ti.reset('pad').call(lambda: np.pad(self.coeff, (n, 0))).print()
         ti.reset('stack').call(lambda: np.hstack([np.zeros_like(self.coeff, shape=(n)), self.coeff])).print()
 
-        self = PolyNumber([1])
+        self = PolyNumberV1([1])
         places = 3
         self >> 5
         self << places
@@ -121,12 +121,12 @@ class PolyNumber:
     def lower_pad(self, places):
         left_pad = np.zeros_like(self.coeff, shape=places)
         new_coeff = np.hstack([left_pad, self.coeff])
-        return PolyNumber(new_coeff)
+        return PolyNumberV1(new_coeff)
 
     def upper_pad(self, places):
         right_pad = np.zeros_like(self.coeff, shape=places)
         new_coeff = np.hstack([self.coeff, right_pad])
-        return PolyNumber(new_coeff)
+        return PolyNumberV1(new_coeff)
 
     @classmethod
     def random(cls, num_coeff=3, min_coeff=0, max_coeff=21):
@@ -135,7 +135,7 @@ class PolyNumber:
         return self
 
     def as_rational(self):
-        return PolyNumber(np.array(list(map(Rational, self.coeff)), dtype=object))
+        return PolyNumberV1(np.array(list(map(Rational, self.coeff)), dtype=object))
 
     def drop_lead_zeros(self):
         nonzero_idxs = np.nonzero(self.coeff)[0]
@@ -143,10 +143,10 @@ class PolyNumber:
             d = nonzero_idxs.max() + 1
         else:
             d = 0
-        return PolyNumber(self.coeff[0:d])
+        return PolyNumberV1(self.coeff[0:d])
 
     def copy(self):
-        return PolyNumber(self.coeff.copy())
+        return PolyNumberV1(self.coeff.copy())
 
     def lead(self):
         """
@@ -178,7 +178,7 @@ class PolyNumber:
             return len(self.drop_lead_zeros().coeff) - 1
 
     def __neg__(self):
-        return PolyNumber(-self.coeff)
+        return PolyNumberV1(-self.coeff)
 
     def __add__(self, other):
         p = self.coeff
@@ -188,7 +188,7 @@ class PolyNumber:
         dtype = np.result_type(p, q)
         r = q.copy().astype(dtype)
         r[0:len(p)] += p
-        return PolyNumber(r)
+        return PolyNumberV1(r)
 
     def __sub__(self, other):
         return self + (-other)
@@ -202,8 +202,8 @@ class PolyNumber:
     def __mul__(self, other):
         """
         Example:
-            self = PolyNumber([2, 7, 2, -3]).as_rational()
-            other = PolyNumber([1, 3]).as_rational()
+            self = PolyNumberV1([2, 7, 2, -3]).as_rational()
+            other = PolyNumberV1([1, 3]).as_rational()
             result = self * other
             print('result = {!r}'.format(result))
 
@@ -217,7 +217,7 @@ class PolyNumber:
         """
         if 0:
             # More efficient
-            return PolyNumber(np.polymul(self.coeff, other.coeff))
+            return PolyNumberV1(np.polymul(self.coeff, other.coeff))
         else:
             # Reasonably efficient
             p = self.coeff
@@ -238,7 +238,7 @@ class PolyNumber:
             len_r = (len_p + len_q) - 1
             r = np.zeros(len_r, dtype=terms.dtype)
             np.add.at(r, r_idxs, terms)
-            result = PolyNumber(r)
+            result = PolyNumberV1(r)
             return result
 
     def __divmod__(self, other):
@@ -249,12 +249,12 @@ class PolyNumber:
         d = other
         # https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclidean_division
         # https://en.wikipedia.org/wiki/Polynomial_long_division
-        zero = PolyNumber.coerce(0)
+        zero = PolyNumberV1.coerce(0)
         r = n            # init remainder
         q = zero.copy()  # init quotient (div result)
         shift = r.degree() - d.degree()
         while r != zero and shift >= 0:
-            t = PolyNumber([(r.lead() / d.lead())]).lower_pad(shift)
+            t = PolyNumberV1([(r.lead() / d.lead())]).lower_pad(shift)
             q = q + t
             r = (r - (d * t)).drop_lead_zeros()
             shift = r.degree() - d.degree()
@@ -267,7 +267,7 @@ class PolyNumber:
         return divmod(self, other)[1]
 
 
-class PolyNumberNd(PolyNumber):
+class PolyNumberNd(PolyNumberV1):
     """
     Generalization of PolyNumbers, BiPolyNumbers, TriPolyNumbers, etc...
     """
@@ -292,10 +292,10 @@ class PolyNumberNd(PolyNumber):
 
 
 def demo():
-    p = PolyNumber([2, 7, 2, -3]).as_rational()
-    q = PolyNumber([1, 3]).as_rational()
-    p = PolyNumber.random(23).as_rational()
-    q = PolyNumber.random(20).as_rational()
+    p = PolyNumberV1([2, 7, 2, -3]).as_rational()
+    q = PolyNumberV1([1, 3]).as_rational()
+    p = PolyNumberV1.random(23).as_rational()
+    q = PolyNumberV1.random(20).as_rational()
     self, other = p, q  # NOQA
     r_sum = p + q
     r_sub = p - q
@@ -325,3 +325,44 @@ def symcheck():
 
     terms = poly_c.as_ordered_terms()
     print(sum(sorted(terms, key=lambda term: term.as_powers_dict().get(x, 0))))
+
+
+class PolyNumber(np.polynomial.Polynomial):
+    """
+    Inherit capabilities from numpy Polynomial
+    """
+
+    # def __init__(self, coeff):
+    #     super().__init__(coeff)
+    #     self.coeff = np.asarray(coeff)
+
+    def __str__(self):
+        return 'PolyNumber({})'.format(str(self.coef))
+
+    def __repr__(self):
+        return repr(self.coef).replace('array', 'PolyNumber')
+
+    @classmethod
+    def coerce(cls, data):
+        return cls(np.atleast_1d(np.asarray(data)))
+
+    @classmethod
+    def random(cls, num_coeff=3, min_coeff=0, max_coeff=21):
+        coef = np.random.randint(min_coeff, max_coeff, size=num_coeff)
+        self = cls(coef)
+        return self
+
+    def as_rational(self):
+        return PolyNumber(np.array(list(map(Rational, self.coef)), dtype=object))
+
+
+def numpy_polynomials():
+
+    # Numpy does not seem to have a polynomial class for N dimensions
+    poly_a = PolyNumber([2, 7, 2, -3]).as_rational()
+    poly_b = PolyNumber([1, 3]).as_rational()
+
+    prod = poly_a * poly_b
+    div, rem = divmod(poly_a, poly_b)
+
+    bipoly_b = PolyNumber(np.array([[1, 0, 1], [0, 0, 0], [1, 0, 0]]))
