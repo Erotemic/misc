@@ -1,4 +1,5 @@
 
+from math import sqrt, factorial, floor
 import sympy as sym
 n, t = sym.symbols('n, t')
 nth_triangular_number = (n * (n + 1)) / 2
@@ -60,8 +61,36 @@ M.ravel()[raveled_r_idxs] = np.arange(len(raveled_r_idxs))
 
 
 
- 0,  2,  5,  9, 14,
- 1,  4,  8, 13,
- 3,  7, 12,
- 6, 11,
-10,
+#  0,  2,  5,  9, 14,
+#  1,  4,  8, 13,
+#  3,  7, 12,
+#  6, 11,
+# 10,
+
+import numpy as np
+from scipy.special import factorial
+
+def find_ij(n):
+    n_0a = np.floor((1 + np.sqrt(8 * n + 1)) / 2)
+    n_0b = factorial(n_0a) // 2.0 // factorial(n_0a - 2)
+    n_0b = np.nan_to_num(n_0b)
+    i_0 = (-1 + np.sqrt(8 * n_0b + 1)) / 2
+    i = (i_0 - (n - n_0b)).astype(int)
+    j = (n - n_0b).astype(int)
+    return i, j
+
+n = np.arange(0, 105)
+i, j = find_ij(n)
+
+N = max(i.max(), j.max()) + 1
+M = np.zeros((N, N), dtype=int)
+M[i, j] = n
+print(M)
+
+
+
+np.stack(find_ij(np.arange(0, 105)), axis=1).astype(int)
+
+
+def find_n(i, j):
+    return (i**2 + i) / 2 + i * j + (j**2 + 3 * j) / 2
