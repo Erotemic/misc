@@ -275,7 +275,7 @@ gitlab_update_master_to_main(){
     git push -u origin main
 
     # Remotely, go to settings
-    # https://gitlab.kitware.com/computer-vision/kwcoco/-/settings/repository
+    # https://gitlab.kitware.com/computer-vision/kwarray/-/settings/repository
     # Update the default branch
     # Update protected branches
 
@@ -415,7 +415,7 @@ mypkgs(){
 
     source ~/misc/bump_versions.sh
     MODNAME=scriptconfig
-    DEPLOY_REMOTE=public
+    DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
     update_default_branch $MODNAME $DEPLOY_REMOTE
@@ -435,7 +435,7 @@ mypkgs(){
     source ~/misc/bump_versions.sh
     load_secrets
     MODNAME=kwarray
-    DEPLOY_REMOTE=public
+    DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
     update_default_branch $MODNAME $DEPLOY_REMOTE
@@ -454,7 +454,7 @@ mypkgs(){
 
     source ~/misc/bump_versions.sh
     MODNAME=kwplot
-    DEPLOY_REMOTE=public
+    DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     load_secrets
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
@@ -464,7 +464,7 @@ mypkgs(){
     source ~/misc/bump_versions.sh
     load_secrets
     MODNAME=ndsampler
-    DEPLOY_REMOTE=public
+    DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
     update_default_branch $MODNAME $DEPLOY_REMOTE
