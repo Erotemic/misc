@@ -133,17 +133,12 @@ stages:
     python -V  # Print out python version for debugging
 
 ._install_strict_minimal_requirements: &_install_strict_minimal_requirements |-
-    mkdir -p requirements-strict
-    sed 's/>=/==/' requirements/runtime.txt > requirements-strict/runtime.txt
-    sed 's/>=/==/' requirements/tests.txt > requirements-strict/tests.txt
+    ./dev/make_strict_req.sh
     pip install -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
 
 
 ._install_strict_full_requirements: &_install_strict_full_requirements |-
-    mkdir -p requirements-strict
-    sed 's/>=/==/' requirements/optional.txt > requirements-strict/optional.txt
-    sed 's/>=/==/' requirements/runtime.txt > requirements-strict/runtime.txt
-    sed 's/>=/==/' requirements/tests.txt > requirements-strict/tests.txt
+    ./dev/make_strict_req.sh
     pip install -r requirements-strict/optional.txt -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
 
 
@@ -204,7 +199,7 @@ stages:
         - export GPG_EXECUTABVE=gpg
         - export GPG_KEYID=$(cat dev/public_gpg_key)
         - echo "GPG_KEYID = $GPG_KEYID"
-        - source source dev/secrets_configuration.sh
+        - source dev/secrets_configuration.sh
         # note the variable pointed to by VARNAME_CI_SECRET is a protected variables only available on main and release branch
         - CI_SECRET=${!VARNAME_CI_SECRET}
         - $GPG_EXECUTABLE --version
@@ -248,7 +243,7 @@ stages:
         - export GPG_EXECUTABLE=gpg
         - export GPG_KEYID=$(cat dev/public_gpg_key)
         - echo "GPG_KEYID = $GPG_KEYID"
-        - source source dev/secrets_configuration.sh
+        - source dev/secrets_configuration.sh
         # note the variable pointed to by VARNAME_CI_SECRET is a protected variables only available on main and release branch
         - CI_SECRET=${!VARNAME_CI_SECRET}
         - $GPG_EXECUTABLE --version
