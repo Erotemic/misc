@@ -60,6 +60,9 @@ accept_latest_gitlab_dev_mr(){
     __doc__='
     Accepts an MR if the pipeline is passing.
 
+    The current branch you are on must corespond to the merge request you would
+    like to accept.
+
     Requires that you have loaded a loaded secret
 
     load_secrets
@@ -275,7 +278,7 @@ gitlab_update_master_to_main(){
     git push -u origin main
 
     # Remotely, go to settings
-    # https://gitlab.kitware.com/computer-vision/kwarray/-/settings/repository
+    # https://gitlab.kitware.com/computer-vision/kwplot/-/settings/repository
     # Update the default branch
     # Update protected branches
 

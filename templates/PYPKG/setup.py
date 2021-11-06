@@ -219,6 +219,8 @@ if __name__ == '__main__':
             'all': parse_requirements('requirements.txt'),
             'tests': parse_requirements('requirements/tests.txt'),
             'optional': parse_requirements('requirements/optional.txt'),
+            # 'headless': parse_requirements('requirements/headless.txt'),
+            # 'graphics': parse_requirements('requirements/graphics.txt'),
         },
         license='Apache 2',
         packages=find_packages('.'),
