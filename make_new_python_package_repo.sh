@@ -14,6 +14,7 @@ Usage:
 update_pypkg(){
     REPO_DPATH=$HOME/code/kwarray
 
+
     cd $REPO_DPATH
     cp -r ~/misc/templates/PYPKG/.circleci .
 
@@ -38,6 +39,9 @@ update_pypkg(){
     sed "s/Pypi:/${TEXT}Pypi:/g" setup.py
     # </FIXME>
 
+    git tag -a "first" "$(git rev-list --max-parents=0 HEAD)" -m "first commit"
+    git push --tags
+    (git checkout -b "first" "$(git rev-list --max-parents=0 HEAD)" ; git push) && git checkout - 
 
     #>> $REPO_DPATH/docs/source/conf.py
 }
