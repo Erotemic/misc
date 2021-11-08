@@ -10,6 +10,12 @@ References:
     https://wiki.debian.org/Hardware/Database
     https://github.com/linuxhw/
 
+
+    Sandy Bridge Release MSRP
+    https://hw-lab.com/price-and-release-day-of-intel-sandy-bridge-cpu.html
+
+    https://www.techpowerup.com/cpu-specs/
+
 """
 import pint
 import dateutil
@@ -26,6 +32,7 @@ pixels = define2('pixels')
 ms = ureg.Unit('milliseconds')
 mm = ureg.Unit('millimeters')
 MHz = ureg.Unit('megahertz')
+GHz = ureg.Unit('gigahertz')
 Hz = ureg.Unit('hertz')
 MB = ureg.Unit('megabyte')
 inches = ureg.Unit('inches')
@@ -83,6 +90,7 @@ items = [
         'type': 'gpu',
         'part_number': '11G-P4-6593-KR',
         'spec_url': 'https://www.evga.com/products/specs/gpu.aspx?pn=61e6d689-506e-45df-8202-b49614e9d54d',
+        'msrp': Currency(769.99 * dollars) @ '2017',
         'cuda_cores': 3584,
         'memory': 11264 * MB,
         'clock': {
@@ -204,6 +212,36 @@ items = [
         'references': [
             'https://www.evga.com/products/product.aspx?pn=220-T2-1000-X1',
         ]
+    },
+
+    {
+        'name': 'Intel Core i7-2600K 3.4 GHz Quad-Core Processor',
+        'part_number': 'i7-2600K',
+        'type': 'cpu',
+        'sockets': ['LGA1155'],
+        'power': 95 * watts,
+        'msrp': Currency(315.99 * dollars) @ '2011-01-09',
+        'total_cores': 4,
+        'total_threads': 8,
+        'clock': {
+            'base': 3.4 * GHz,
+            'turbo': 3.8 * GHz,
+        },
+        'references': [
+            'https://hw-lab.com/price-and-release-day-of-intel-sandy-bridge-cpu.html',
+            'https://ark.intel.com/content/www/us/en/ark/products/52214/intel-core-i72600k-processor-8m-cache-up-to-3-80-ghz.html',
+        ]
+    },
+
+    {
+        'name': 'Asus P8P67 Pro ATX LGA1155 Motherboard',
+        'type': 'mobo',
+        'msrp': Currency(179.99 * dollars) @ '2011',
+        'references': [
+            'https://uk.pcmag.com/chipsets-processors/20823/asus-p8p67-pro',
+            'https://web.archive.org/web/20201026195622/https://uk.pcmag.com/chipsets-processors/20823/asus-p8p67-pro',
+        ]
+
     }
 
 

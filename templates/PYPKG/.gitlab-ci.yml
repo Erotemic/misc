@@ -2,46 +2,23 @@
 .__heredoc__: &__heredoc__
     - | 
 
-        __doc__="""
-        # Note: expand yaml
-        yaml merge-expand .gitlab-ci.yml _expandyml && cat _expandyml
-         
-        # GITLAB LINTER
-        https://gitlab.org.com/utils/PYPKG/-/ci/lint
+        NOTE: INSTRUCTION HAVE BEEN MOVED TO ./dev/setup_secrets.sh
+        This file should need minimal modification.
 
-        # This CI file has 4 types of jobs:
-        # (1) in the build stage we we build the wheels on a manylinux docker image
-        # (2) then in the test stage we install the wheels, run unit tests, and measure coverage
-        # (3) after testing we sign the wheels with the CI's GPG key
-        # (4) finally if we are on the release branch we will push the signed wheels to pypi
-        
-        NOTE: THESE INSTRUCTION ARE BEING MOVED AND UPDATED IN THE DEV FOLDER
-       
+        Template for this files is from
+        ~/misc/templates/PYPKG/.gitlab-ci.yml
 
-        TEST GITLAB_ORG_PUSH_TOKEN 
-        -------------------
+        Templates used in:
 
-        The following script tests if your GITLAB_ORG_PUSH_TOKEN environment variable is correctly setup.
-
-        ```bash
-        docker run -it python:3.8 bash
-        git clone https://gitlab.org.com/utils/PYPKG.git
-        cd kwcoco
-        # do sed twice to handle the case of https clone with and without a read token
-        git config user.email "ci@gitlab.org.com"
-        git config user.name "Gitlab-CI"
-        URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
-        echo "URL_HOST = $URL_HOST"
-        git tag "test-tag4"
-        git push --tags "https://${GITLAB_ORG_PUSH_TOKEN}@${URL_HOST}"
-
-        # Cleanup after you verify the tags shows up on the remote
-        git push --delete "https://${GITLAB_ORG_PUSH_TOKEN}@${URL_HOST}" test-tag4
-        git tag --delete test-tag4
-        ```
+        ~/code/kwplot/.gitlab-ci.yml
+        ~/code/kwimage/.gitlab-ci.yml
+        ~/code/kwarray/.gitlab-ci.yml
+        ~/code/kwcoco/.gitlab-ci.yml
 
 
-        """ # "  # hack for vim yml syntax highlighter
+        Enable the opencv-hack if needed, and turn on/off the desired versions
+        of Python.
+
 
 stages:
   - build
@@ -133,17 +110,12 @@ stages:
     python -V  # Print out python version for debugging
 
 ._install_strict_minimal_requirements: &_install_strict_minimal_requirements |-
-    mkdir -p requirements-strict
-    sed 's/>=/==/' requirements/runtime.txt > requirements-strict/runtime.txt
-    sed 's/>=/==/' requirements/tests.txt > requirements-strict/tests.txt
+    ./dev/make_strict_req.sh
     pip install -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
 
 
 ._install_strict_full_requirements: &_install_strict_full_requirements |-
-    mkdir -p requirements-strict
-    sed 's/>=/==/' requirements/optional.txt > requirements-strict/optional.txt
-    sed 's/>=/==/' requirements/runtime.txt > requirements-strict/runtime.txt
-    sed 's/>=/==/' requirements/tests.txt > requirements-strict/tests.txt
+    ./dev/make_strict_req.sh
     pip install -r requirements-strict/optional.txt -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
 
 
@@ -156,7 +128,7 @@ stages:
         - *_setup_virtualenv_template
         - *_install_strict_minimal_requirements
         - pip install .[tests]  
-        #- pip install opencv-python-headless
+        #- pip install opencv-python-headless==4.5.3.56
 
 
 .test_full_strict_template: &test_full_strict_template
@@ -168,7 +140,7 @@ stages:
         - *_setup_virtualenv_template
         - *_install_strict_full_requirements
         - pip install .[all]  
-        #- pip install opencv-python-headless
+        #- pip install opencv-python-headless==4.5.3.56
 
 .test_minimal_loose_template: &test_minimal_loose_template
     # Tags define which runners will accept which jobs
@@ -177,8 +149,8 @@ stages:
 
     before_script:
         - *_setup_virtualenv_template
-        - pip install .[tests]  
-        #- pip install opencv-python-headless
+        - pip install .[tests]
+        #- pip install .[tests,headless]
 
 
 .test_full_loose_template: &test_full_loose_template
@@ -189,7 +161,7 @@ stages:
     before_script:
         - *_setup_virtualenv_template
         - pip install .[all]  
-        #- pip install opencv-python-headless
+        #- pip install .[all,headless]  
 
 
 
@@ -201,10 +173,10 @@ stages:
         gpgsign
 
     script: 
-        - export GPG_EXECUTABVE=gpg
+        - export GPG_EXECUTABLE=gpg
         - export GPG_KEYID=$(cat dev/public_gpg_key)
         - echo "GPG_KEYID = $GPG_KEYID"
-        - source source dev/secrets_configuration.sh
+        - source dev/secrets_configuration.sh
         # note the variable pointed to by VARNAME_CI_SECRET is a protected variables only available on main and release branch
         - CI_SECRET=${!VARNAME_CI_SECRET}
         - $GPG_EXECUTABLE --version
@@ -248,9 +220,11 @@ stages:
         - export GPG_EXECUTABLE=gpg
         - export GPG_KEYID=$(cat dev/public_gpg_key)
         - echo "GPG_KEYID = $GPG_KEYID"
-        - source source dev/secrets_configuration.sh
-        # note the variable pointed to by VARNAME_CI_SECRET is a protected variables only available on main and release branch
+        # source repo-specific secrets
+        # VARNAME_CI_SECRET points to a protected variable only available on main and release branch
+        - source dev/secrets_configuration.sh
         - CI_SECRET=${!VARNAME_CI_SECRET}
+        - PUSH_TOKEN=${!VARNAME_PUSH_TOKEN}
         - $GPG_EXECUTABLE --version
         - openssl version
         - $GPG_EXECUTABLE --list-keys
@@ -265,24 +239,31 @@ stages:
         - pip install six pyopenssl ndg-httpsclient pyasn1 -U 
         - pip install requests[security] twine 
         # Execute the publish script for real this time
-        - MB_PYTHON_TAG=$MB_PYTHON_TAG DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE CURRENT_BRANCH=release DEPLOY_BRANCH=release DO_TAG=True DO_UPLOAD=True ./publish.sh 
+        - MB_PYTHON_TAG=$MB_PYTHON_TAG DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE CURRENT_BRANCH=release DEPLOY_BRANCH=release DO_TAG=True DO_UPLOAD=True ./publish.sh || echo "upload already exists"
         # Have the server git-tag the release and push the tags
         - VERSION=$(python -c "import setup; print(setup.VERSION)")
         # do sed twice to handle the case of https clone with and without a read token
         - | 
             URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g' | sed -e 's|git@||g' | sed -e 's|:|/|g')
+            git push --tags $DEPLOY_REMOTE
             echo "URL_HOST = $URL_HOST"
             # A git config user name and email is required. Set if needed.
             if [[ "$(git config user.email)" == "" ]]; then
                 git config user.email "ci@gitlab.org.com"
                 git config user.name "Gitlab-CI"
             fi
-            if [ $(git tag -l "$VERSION") ]; then
+            TAG_NAME="v${VERSION}"
+            if [ $(git tag -l "$TAG_NAME") ]; then
                 echo "Tag already exists"
             else
+                # if we messed up we can delete the tag
+                # git push origin :refs/tags/$TAG_NAME
+                # and then tag with -f
+                git tag $TAG_NAME -m "tarball tag $VERSION"
                 git tag $VERSION -m "tarball tag $VERSION"
-                git push --tags "https://${GITLAB_ORG_PUSH_TOKEN}@${URL_HOST}"
+                git push --tags "https://${PUSH_TOKEN}@${URL_HOST}"
             fi
+
             
     only:
         refs:
@@ -630,3 +611,46 @@ test_minimal_strict/cp27-cp27m-linux:
     needs: 
         -  build/cp27-cp27m-linux
 
+
+
+.__local_docker_heredoc__:
+        - | 
+
+            # Commands to help developers debug pipelines on their local machine
+            # Grab the base docker image, (forwarding your ssh credentials), clone
+            # the watch repo, create the environment, and run the tests. 
+            #docker login gitlab.kitware.com:4567
+
+            IMAGE_NAME=gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.8
+            docker run -v $PWD:/io:ro -v $HOME/.cache/pip:/pip_cache -it $IMAGE_NAME bash
+            # Will need to chmod things afterwords
+            export PIP_CACHE_DIR=/pip_cache
+            echo $PIP_CACHE_DIR
+            chmod -R o+rw $PIP_CACHE_DIR
+            chmod -R o+rw $PIP_CACHE_DIR
+            chmod -R g+rw $PIP_CACHE_DIR
+            USER=$(whoami)
+            chown -R $USER $PIP_CACHE_DIR
+            cd $HOME
+            git clone /io ./repo
+
+            cd $HOME/repo
+
+            # Make a virtualenv
+            export PYVER=$(python -c "import sys; print('{}{}'.format(*sys.version_info[0:2]))")
+            pip install virtualenv
+            virtualenv venv$PYVER
+            source venv$PYVER/bin/activate
+            #pip install pip -U
+            #pip install pip setuptools -U
+
+            # STRICT VARIANT
+            ./dev/make_strict_req.sh
+            pip install -r requirements-strict.txt -r requirements-strict/headless.txt
+            pip install -e .
+            ./run_tests.py
+
+            # LOOSE VARIANT
+            pip install -r requirements.txt
+            pip install -e .
+            ./run_tests.py

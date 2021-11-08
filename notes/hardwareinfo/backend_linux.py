@@ -104,6 +104,11 @@ def motherboard_info():
     # print(info['out'])
 
 
+def ram_info():
+    info = ub.cmd('sudo dmidecode --type 17')
+    print(info['out'])
+
+
 def parse_cpu_info(percore=False):
     """
     Get a nice summary of CPU information

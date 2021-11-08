@@ -4,7 +4,27 @@ import sys
 from os.path import exists
 
 from setuptools import find_packages
-from setuptools import setup
+
+if exists('CMakeLists.txt'):
+    try:
+        import os
+        val = os.environ.get('DISABLE_C_EXTENSIONS', '').lower()
+        flag = val in {'true', 'on', 'yes', '1'}
+
+        if '--universal' in sys.argv:
+            flag = True
+
+        if '--disable-c-extensions' in sys.argv:
+            sys.argv.remove('--disable-c-extensions')
+            flag = True
+
+        if flag:
+            # Hack to disable all compiled extensions
+            from setuptools import setup
+        else:
+            from skbuild import setup
+    except ImportError:
+        setup = None
 
 
 def parse_version(fpath):
@@ -199,6 +219,8 @@ if __name__ == '__main__':
             'all': parse_requirements('requirements.txt'),
             'tests': parse_requirements('requirements/tests.txt'),
             'optional': parse_requirements('requirements/optional.txt'),
+            # 'headless': parse_requirements('requirements/headless.txt'),
+            # 'graphics': parse_requirements('requirements/graphics.txt'),
         },
         license='Apache 2',
         packages=find_packages('.'),
