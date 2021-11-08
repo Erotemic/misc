@@ -12,14 +12,15 @@ Usage:
 
 
 update_pypkg(){
-    REPO_DPATH=$HOME/code/kwarray
+    REPO_NAME=git-sync
+    REPO_DPATH=$HOME/code/$REPO_NAME
 
     cd $REPO_DPATH
     cp -r ~/misc/templates/PYPKG/.circleci .
 
     cp -rv ~/misc/templates/PYPKG/dev .
     cp -rv ~/misc/templates/PYPKG/.github .
-    find . -iname '*.yml' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
+    #find . -iname '*.yml' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
 
     chmod +x ./setup.py
     chmod +x ./run_developer_setup.sh
