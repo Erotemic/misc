@@ -121,6 +121,7 @@ setup_package_environs(){
     export VARNAME_TWINE_PASSWORD="TWINE_PASSWORD"
     export VARNAME_TEST_TWINE_USERNAME="TEST_TWINE_USERNAME"
     export VARNAME_TEST_TWINE_PASSWORD="TEST_TWINE_PASSWORD"
+    export VARNAME_PUSH_TOKEN="GITLAB_KITWARE_TOKEN"
     export GPG_IDENTIFIER="=Erotemic-CI <erotemic@gmail.com>"
     ' | python -c "import sys; from textwrap import dedent; print(dedent(sys.stdin.read()).strip(chr(10)))" > dev/secrets_configuration.sh
     git add dev/secrets_configuration.sh

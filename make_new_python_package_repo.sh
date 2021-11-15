@@ -6,13 +6,15 @@ Usage:
     source ~/misc/make_new_python_package_repo.sh
 
     REPO_NAME=supersetup
+    REPO_NAME=shitspotter
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 '
 
 
 update_pypkg(){
-    REPO_DPATH=$HOME/code/kwarray
+    REPO_NAME=shitspotter
+    REPO_DPATH=$HOME/code/$REPO_NAME
 
 
     cd $REPO_DPATH
