@@ -13,7 +13,11 @@ Usage:
 
 
 update_pypkg(){
+<<<<<<< HEAD
     REPO_NAME=shitspotter
+=======
+    REPO_NAME=git-sync
+>>>>>>> db105a06c085476ec3de7aef852eacdf01747fe9
     REPO_DPATH=$HOME/code/$REPO_NAME
 
 
@@ -22,7 +26,7 @@ update_pypkg(){
 
     cp -rv ~/misc/templates/PYPKG/dev .
     cp -rv ~/misc/templates/PYPKG/.github .
-    find . -iname '*.yml' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
+    #find . -iname '*.yml' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
 
     chmod +x ./setup.py
     chmod +x ./run_developer_setup.sh
