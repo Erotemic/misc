@@ -220,11 +220,12 @@ stages:
         - export GPG_EXECUTABLE=gpg
         - export GPG_KEYID=$(cat dev/public_gpg_key)
         - echo "GPG_KEYID = $GPG_KEYID"
-        # source repo-specific secrets
         # VARNAME_CI_SECRET points to a protected variable only available on main and release branch
         - source dev/secrets_configuration.sh
         - CI_SECRET=${!VARNAME_CI_SECRET}
         - PUSH_TOKEN=${!VARNAME_PUSH_TOKEN}
+        - TWINE_PASSWORD=${!VARNAME_TWINE_PASSWORD}
+        - TWINE_USERNAME=${!VARNAME_TWINE_USERNAME}
         - $GPG_EXECUTABLE --version
         - openssl version
         - $GPG_EXECUTABLE --list-keys
@@ -245,7 +246,6 @@ stages:
         # do sed twice to handle the case of https clone with and without a read token
         - | 
             URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g' | sed -e 's|git@||g' | sed -e 's|:|/|g')
-            git push --tags $DEPLOY_REMOTE
             echo "URL_HOST = $URL_HOST"
             # A git config user name and email is required. Set if needed.
             if [[ "$(git config user.email)" == "" ]]; then
@@ -253,6 +253,7 @@ stages:
                 git config user.name "Gitlab-CI"
             fi
             TAG_NAME="v${VERSION}"
+            echo "TAG_NAME = $TAG_NAME"
             if [ $(git tag -l "$TAG_NAME") ]; then
                 echo "Tag already exists"
             else
@@ -260,8 +261,7 @@ stages:
                 # git push origin :refs/tags/$TAG_NAME
                 # and then tag with -f
                 git tag $TAG_NAME -m "tarball tag $VERSION"
-                git tag $VERSION -m "tarball tag $VERSION"
-                git push --tags "https://${PUSH_TOKEN}@${URL_HOST}"
+                git push --tags "https://git-push-token:${PUSH_TOKEN}@${URL_HOST}"
             fi
 
             

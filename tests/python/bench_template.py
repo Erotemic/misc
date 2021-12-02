@@ -5,14 +5,14 @@ def benchmark_template():
     import pandas as pd
     import timerit
 
-    def method1(x):
+    def method1(x, y, z):
         ret = []
-        for i in range(x):
+        for i in range((x + y) * z):
             ret.append(i)
         return ret
 
-    def method2(x):
-        ret = [i for i in range(x)]
+    def method2(x, y, z):
+        ret = [i for i in range((x + y) * z)]
         return ret
 
     method_lut = locals()  # can populate this some other way
@@ -22,17 +22,30 @@ def benchmark_template():
     basis = {
         'method': ['method1', 'method2'],
         'x': list(range(7)),
+        'y': [0, 100],
+        'z': [2, 3]
         # 'param_name': [param values],
     }
-    grid_iter = ub.named_product(basis)
+    xlabel = 'x'
+    kw_labels = ['x', 'y', 'z']
+    group_labels = {
+        'style': ['y'],
+        'size': ['z'],
+    }
+    group_labels['hue'] = list(
+        (ub.oset(basis) - {xlabel}) - set.union(*map(set, group_labels.values())))
+    grid_iter = list(ub.named_product(basis))
 
     # For each variation of your experiment, create a row.
     rows = []
     for params in grid_iter:
+        group_keys = {}
+        for gname, labels in group_labels.items():
+            group_keys[gname + '_key'] = ub.repr2(
+                ub.dict_isect(params, labels), compact=1, si=1)
         key = ub.repr2(params, compact=1, si=1)
-        kwargs = params.copy()
-        method_key = kwargs.pop('method')
-        method = method_lut[method_key]
+        kwargs = ub.dict_isect(params.copy(),  kw_labels)
+        method = method_lut[params['method']]
         # Timerit will run some user-specified number of loops.
         # and compute time stats with similar methodology to timeit
         for timer in ti.reset(key):
@@ -45,6 +58,7 @@ def benchmark_template():
             'mean': ti.mean(),
             'min': ti.min(),
             'key': key,
+            **group_keys,
             **params,
         }
         rows.append(row)
@@ -52,6 +66,7 @@ def benchmark_template():
     # The rows define a long-form pandas data array.
     # Data in long-form makes it very easy to use seaborn.
     data = pd.DataFrame(rows)
+    data = data.sort_values('min')
     print(data)
 
     plot = True
@@ -62,9 +77,14 @@ def benchmark_template():
         import kwplot
         sns = kwplot.autosns()
 
+        plotkw = {}
+        for gname, labels in group_labels.items():
+            if labels:
+                plotkw[gname] = gname + '_key'
+
         # Your variables may change
         ax = kwplot.figure(fnum=1, doclf=True).gca()
-        sns.lineplot(data=data, x='x', y='min', hue='method', marker='o', ax=ax)
+        sns.lineplot(data=data, x=xlabel, y='min', marker='o', ax=ax, **plotkw)
         ax.set_title('Benchmark')
         ax.set_xlabel('A better x-variable description')
         ax.set_ylabel('A better y-variable description')
