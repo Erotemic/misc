@@ -308,7 +308,7 @@ def ford_circles():
     plt = kwplot.autoplt()
     sns = kwplot.autosns()  # NOQA
 
-    limit = 128 * 128
+    limit = 256 * 256
     _circles = []
     rationals = []
     rats_to_plot = set()
@@ -336,9 +336,13 @@ def ford_circles():
     #     _stern_rats.add(Rational(*item))
     # rats_to_plot |= _stern_rats
 
+    maxx = 1
     _iter = Rational.members(limit=limit)
     _genrat = set(ub.ProgIter(_iter, total=limit, desc='gen rats'))
     rats_to_plot |= _genrat
+    rats_to_plot2 = {Rational(r % maxx) for r in rats_to_plot} | {maxx}
+    print(f'{len(rats_to_plot)  = }')
+    print(f'{len(rats_to_plot2) = }')
 
     # def stern_brocot(n):
     #     """
@@ -375,17 +379,19 @@ def ford_circles():
     # rats_to_plot = _genrat
 
     ax = kwplot.figure(fnum=1, doclf=True).gca()
-    prog = ub.ProgIter(sorted(rats_to_plot), verbose=3)
-    maxrat = max(rats_to_plot)
+    prog = ub.ProgIter(sorted(rats_to_plot2), verbose=1)
     for rat in prog:
         rationals.append(rat)
         diameter = 1 / (rat.denominator ** 2)
         radius = diameter / 2
         point = (rat, radius)
-        prog.set_extra(f'{rat} {diameter}')
+        # prog.set_extra(f'{rat} {diameter}')
         new_circle = plt.Circle(point, radius, facecolor='none', edgecolor='black', linewidth=1)
         _circles.append(new_circle)
         ax.add_patch(new_circle)
+
+    print(f'{len(rats_to_plot)  = }')
+    print(f'{len(rats_to_plot2) = }')
 
     # import numpy as np
     # points = np.array([c.center for c in _circles])
@@ -396,5 +402,5 @@ def ford_circles():
     # ax.set_xlim(0, np.sqrt(int(maxx)))
     # ax.set_ylim(0, np.sqrt(int(maxy)))
     ax.set_aspect('equal')
-    ax.set_xlim(0, -3, 3)
+    ax.set_xlim(0, maxx)
     ax.set_ylim(0, 1)
