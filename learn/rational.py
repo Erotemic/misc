@@ -289,9 +289,53 @@ class Rational(fractions.Fraction):
         return Rational(self.numerator + other.numerator, self.denominator + other.denominator)
 
 
+def farey_sequence(minval, maxval):
+    """
+    """
+    # def gen_farey_level(prev_level):
+    #     pass
+    # rat1 = Rational(0)
+    # rat2 = Rational(1)
+    zero = Rational(minval)
+    one = Rational(maxval)
+    level = []
+    while True:
+        new_middle = [a.mediant(b) for a, b in zip(level[0:-1], level[1:])]
+        level = [zero] + new_middle + [one]
+        yield from level
+
+
+def Stern_Brocot(n):
+    """
+    Another way to iterate over rationals
+
+    References:
+        https://stackoverflow.com/questions/24997970/iterating-over-parts-of-the-stern-brocot-tree-in-python
+    """
+    states = [(0, 1, 1, 1)]
+    result = []
+    while len(states) != 0:
+        a, b, c, d = states.pop()
+        if a + b + c + d <= n:
+            result.append((a + c, b + d))
+            states.append((a, b, a + c, b + d))
+            states.append((a + c, b + d, c, d))
+    return result
+
+
+# def float_members(num, min_val=0, max_val=1):
+#     # probably dont want to do this like this
+#     import numpy as np
+#     members = np.linspace(min_val, max_val, limit)
+#     yield from members
+
+
 def ford_circles():
     """
     Draw Ford Circles
+
+    This is a Ford Circle diagram of the Rationals and Float32 numbers.
+    Only 163 of the 32608 rationals I generated can be exactly represented by a float32.
 
     [MF 14]
     [MF 95]
@@ -305,93 +349,73 @@ def ford_circles():
     """
     import kwplot
     import ubelt as ub
+    import matplotlib as mpl
     plt = kwplot.autoplt()
     sns = kwplot.autosns()  # NOQA
 
     limit = 256 * 256
-    _circles = []
-    rationals = []
+    print('limit = {!r}'.format(limit))
     rats_to_plot = set()
-
-    def Stern_Brocot(n):
-        """
-        Another way to iterate over rationals
-
-        References:
-            https://stackoverflow.com/questions/24997970/iterating-over-parts-of-the-stern-brocot-tree-in-python
-        """
-        states = [(0, 1, 1, 1)]
-        result = []
-        while len(states) != 0:
-            a, b, c, d = states.pop()
-            if a + b + c + d <= n:
-                result.append((a + c, b + d))
-                states.append((a, b, a + c, b + d))
-                states.append((a + c, b + d, c, d))
-        return result
-
-    # import itertools as it  # NOQA
-    # _stern_rats = set()
-    # for item in Stern_Brocot(limit):
-    #     _stern_rats.add(Rational(*item))
-    # rats_to_plot |= _stern_rats
 
     maxx = 1
     _iter = Rational.members(limit=limit)
     _genrat = set(ub.ProgIter(_iter, total=limit, desc='gen rats'))
     rats_to_plot |= _genrat
-    rats_to_plot2 = {Rational(r % maxx) for r in rats_to_plot} | {maxx}
+    rats_to_plot2 = sorted({Rational(r % maxx) for r in rats_to_plot} | {maxx})
+
+    floats = sorted(ub.unique(map(float, rats_to_plot2), key=lambda f: f.as_integer_ratio()))
     print(f'{len(rats_to_plot)  = }')
     print(f'{len(rats_to_plot2) = }')
-
-    # def stern_brocot(n):
-    #     """
-    #     References:
-    #         https://stackoverflow.com/questions/24997970/iterating-over-parts-of-the-stern-brocot-tree-in-python
-    #     """
-    #     states = [(0, 1, 1, 1)]
-    #     while len(states) != 0:
-    #         a, b, c, d = states.pop()
-    #         if a + b + c + d <= n:
-    #             yield (a + c, b + d)
-    #             states.append((a, b, a + c, b + d))
-    #             states.append((a + c, b + d, c, d))
-
-    # _iter = Rational.members(limit=limit, maxnumer=8)
-    # _genrat = set(ub.ProgIter(_iter, total=limit, desc='gen rats'))
-
-    # def farey_sequence(minval, maxval):
-    #     """
-    #     """
-    #     # def gen_farey_level(prev_level):
-    #     #     pass
-    #     # rat1 = Rational(0)
-    #     # rat2 = Rational(1)
-    #     zero = Rational(minval)
-    #     one = Rational(maxval)
-    #     level = []
-    #     while True:
-    #         new_middle = [a.mediant(b) for a, b in zip(level[0:-1], level[1:])]
-    #         level = [zero] + new_middle + [one]
-    #         yield from level
-
-    # # rats_to_plot = _genrat2 | _genrat
-    # rats_to_plot = _genrat
+    print(f'{len(floats)        = }')
+    import numpy as np
 
     ax = kwplot.figure(fnum=1, doclf=True).gca()
     prog = ub.ProgIter(sorted(rats_to_plot2), verbose=1)
+    dtype = np.float32
+    patches = ub.ddict(list)
+    errors = []
     for rat in prog:
-        rationals.append(rat)
-        diameter = 1 / (rat.denominator ** 2)
-        radius = diameter / 2
+        denominator = rat.denominator
+        radius = 1 / (2 * (denominator * denominator))
         point = (rat, radius)
-        # prog.set_extra(f'{rat} {diameter}')
-        new_circle = plt.Circle(point, radius, facecolor='none', edgecolor='black', linewidth=1)
-        _circles.append(new_circle)
-        ax.add_patch(new_circle)
+        flt = dtype(rat)
+        a, b = flt.as_integer_ratio()
+        flt_as_rat = Rational(a, b)
+        error = abs(rat - flt_as_rat)
+        if error == 0:
+            new_circle = plt.Circle(point, radius, facecolor='dodgerblue', edgecolor='none', linewidth=0, alpha=0.5)
+            patches['good'].append(new_circle)
+        else:
+            errors.append(error)
+            # Plot a line for error
+            new_circle = plt.Circle(point, radius, facecolor='orangered', edgecolor='none', linewidth=0, alpha=0.5)
+            patches['bad'].append(new_circle)
+            ax.plot((rat - error, rat + error), (radius, radius), 'x-', color='darkgray')
 
-    print(f'{len(rats_to_plot)  = }')
-    print(f'{len(rats_to_plot2) = }')
+    print(ub.map_vals(len, patches))
+    total = float(sum(errors))
+    print('total = {!r}'.format(total))
+    print(max(errors))
+    print(min(errors))
+
+    for v in patches.values():
+        first = ub.peek(v)
+        prop = ub.dict_isect(first.properties(), ['facecolor', 'linewidth', 'alpha', 'edgecolor'])
+        col = mpl.collections.PatchCollection(v, **prop)
+        ax.add_collection(col)
+
+    # Lets look for the holes in IEEE float
+    # for flt in ub.ProgIter(sorted(floats), verbose=1):
+
+    kwplot.phantom_legend({
+        f'rationals without a {dtype}': 'orangered',
+        f'rationals with a {dtype}': 'dodgerblue',
+        f'x-x indicates {dtype} approximation error': 'darkgray',
+    })
+
+    ax.set_title('Holes in IEEE 754 Float64')
+    ax.set_xlabel('A rational number')
+    ax.set_ylabel('The squared rational denominator')
 
     # import numpy as np
     # points = np.array([c.center for c in _circles])
@@ -401,6 +425,7 @@ def ford_circles():
     # maxx, maxy = maxx // 2, maxy // 2
     # ax.set_xlim(0, np.sqrt(int(maxx)))
     # ax.set_ylim(0, np.sqrt(int(maxy)))
-    ax.set_aspect('equal')
-    ax.set_xlim(0, maxx)
-    ax.set_ylim(0, 1)
+    # ax.set_aspect('equal')
+    # ax.set_xlim(0.2, 0.22)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 0.1)
