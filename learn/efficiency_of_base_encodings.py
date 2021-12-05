@@ -4,6 +4,11 @@ in terms of the number of total distinct states you have to have access to.
 
 To see this, we simply consider the number of nodes in a tree with branching
 factor b needed to encode all states at the leaves.
+
+References:
+    https://en.m.wikipedia.org/wiki/Radix_economy
+    https://en.wikipedia.org/wiki/Ternary_computer
+    https://en.wikipedia.org/wiki/Decimal_computer
 """
 import numpy as np
 import kwplot
