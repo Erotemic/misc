@@ -2,9 +2,10 @@
 Definition of concepts from Wildberger's Foundations of Mathematics
 
 
-
 References:
     [MF PlayList] https://www.youtube.com/watch?v=91c5Ti6Ddio&list=PL5A714C94D40392AB
+
+    [MF 103] & [MF 104] Extend rational numbers to include infinity
 
     [MF 123] Affine one-dimensional geometry and the Triple Quad Formula
     https://www.youtube.com/watch?v=8rjxOFAzBa4
@@ -17,8 +18,67 @@ References:
 
     [MF 126] Brahmagupta's formula and the Quadruple Quad Formula (II) | Rational Geometry Math Foundations 126
 
+
+TODO:
+    [MF 130] - Has that rotation + scaling thing I was interested in
+
 """
 import fractions
+import math
+import numpy as np
+import sympy as sym  # NOQA
+from kwarray import ensure_rng
+
+
+def MF_122_Notes():
+    """
+    In MF 122 NJW defines:
+
+    Points in an Affine geometry
+        A 1-point A = [a] is of type [Rat] or A¹
+        A 2-point A = [a1, a2] is of type [Rat²] or A²
+        A N-point A = [a1, a2, ..., an] is of type [Ratⁿ] or Aⁿ
+
+    Points in an Projective geometry:
+        A 2-proporation is an expression of the form a:b where a and b are
+        numbers, not both zero, with the convention that
+
+        a:b = λa:λb, for any non-zero λ
+
+        A projective 1-point is an expression p = [a, b] where
+            a:b is a 2-proportion of rational numbers
+
+        We visualize such a projective 1-point as the line 2-dim space through
+        the origin and [a,b]
+
+    There is a natural association A=[a] <--> p=[a:1]
+
+    The projective 1-point [1:0] does not correspond to any Affine point, which
+    in some sense can play the role of infinity in an extended affine space.
+
+    In other words, let:
+        P1 be the set of projective 1 points
+        A1 be the set of affine 1 points
+        The projective 1 point be ∞ in an affine sense
+
+        P1 = A1 ∪ ∞
+    """
+
+
+def sqrt(data):
+    if isinstance(data, np.ndarray):
+        return np.sqrt(data)
+    elif isinstance(data, sym.Symbol):
+        return sym.sqrt(data)
+    else:
+        return math.sqrt(data)
+
+
+def distance(p1, p2):
+    """
+    The distance between two points
+    """
+    sqrt(quadrence(p1, p2))
 
 
 def quadrence(p1, p2):
@@ -26,8 +86,16 @@ def quadrence(p1, p2):
     The squared distance between two points.
 
     This is a fully rational analog if distance.
+
+    Example:
+        >>> p1, p2 = Rational.symbols('a1:3')
+        >>> q12 = quadrence(p1, p2)
+        >>> print('q12 = {!r}'.format(q12))
+        >>> p1, p2 = Rational.random(2)
+        >>> q12 = quadrence(p1, p2)
+        >>> print('q12 = {!r}'.format(q12))
     """
-    return ((p1 - p2) ** 2).sum()
+    return (p1 - p2) ** 2
 
 
 def quadrea(geom):
@@ -64,7 +132,51 @@ class Eq:
 
 class TripleQuadForumla(Theorem):
     """
+    TODO:
+        What is a good structure that automatically
+
+        - [ ] Defines the theorem
+        - [ ] Visualizes it
+        - [ ] Communicates it
+        - [ ] Proves it
+        - [ ] Gives examples
+
+    References:
+        https://brilliant.org/wiki/triple-quad-formula/
+
     [MF 123]
+
+    The relationship between the quadrances between three Rational 1-points.
+
+    Note:
+        NJW introduces this in terms of affine 1-Points. In this context
+        the TQF is true for any 3 rational 1-points. For rational N-points,
+        this statement is true iff all 3 N-points are co-linear.
+
+    Example:
+        a1, a2, a3 = sorted(Rational.random(3))
+        self = TripleQuadForumla()
+        self.given(a1, a2, a3)
+        claim = self.claim()
+        assert sym.simplify(claim)
+
+        import kwplot
+        plt = kwplot.autoplt()
+        ax = kwplot.figure().gca()
+        ax.plot(a1, 0, 'o')
+        ax.annotate('a1', (a1, 0))
+        ax.plot(a2, 0, 'o')
+        ax.annotate('a2', (a2, 0))
+        ax.plot(a3, 0, 'o')
+        ax.annotate('a3', (a3, 0))
+
+        plt.eventplot(np.array([a1, a2, a3]).astype(float))
+
+        a1, a2, a3 = Rational.symbols('a1:4')
+        self = TripleQuadForumla()
+        self.given(a1, a2, a3)
+        claim = self.claim()
+        assert sym.simplify(claim)
     """
 
     def given(self, a1, a2, a3):
@@ -80,14 +192,16 @@ class TripleQuadForumla(Theorem):
         q2 = self.q2
         q3 = self.q3
         lhs = (q1 + q2 + q3) ** 2
-        rhs = 2 * (q1 ** 2 + q2 ** 2 + q3 ** 3)
-        return Eq(lhs, rhs)
+        rhs = 2 * (q1 ** 2 + q2 ** 2 + q3 ** 2)
+        return sym.Eq(lhs, rhs)
 
 
 def archimedes(q1, q2, q3):
     """
     This is the difference between the lhs and the rhs of the
-    TripleQuadForumula.  [MF 124 @ 2:23]
+    TripleQuadForumula.  [MF 124 @ 2:23].
+
+    The TQF is satisfied when this is zero.
 
     Given:
         TQF: ((q1 + q2 + q3) ** 2) == (2 * (q1 ** 2 + q2 ** 2 + q3 ** 3))
@@ -101,19 +215,47 @@ def archimedes(q1, q2, q3):
     return 4 * q1 * q2 - (q1 + q2 - q3) ** 2
 
 
+def herons_forumla(a, b, c):
+    """
+    Given the side lengths of a triangle, this computes the area of the
+    triangle. [MF 124]
+
+    Example:
+        >>> triangle = kwimage.Polygon.random(n=3).to_shapely()
+        >>> p1, p2, p3 = list(map(shapely.geometry.Point, list(triangle.exterior.coords)[0:3]))
+        >>> a = p1.distance(p2)
+        >>> b = p1.distance(p3)
+        >>> c = p2.distance(p3)
+        >>> area = float(herons_forumla(a, b, c))
+        >>> assert np.isclose(triangle.area, area)
+    """
+    s = (a + b + c) / 2  # semi-perimeter
+    area = sym.sqrt(s * (s - a) * (s - b) * (s - c))
+    return area
+
+
 class AchimedesForumla:
     """
     [MF 124]
     Rational version of Heron's formula
 
-
-    The area of a planar triangel with quadrances q1, q2, q3 is given by
+    The area of a planar triangle with side-quadrances q1, q2, q3 is given by
     16 * (area ** 2) = A(q1, q2, q3). Where A is :func:`archimedes`.
 
     A(q1, q2, q3) = 4 * q1 * q2 - (q1 + q2 - q3) ** 2
 
     [MF 124 @ 37:00]
 
+    Example:
+        >>> triangle = kwimage.Polygon.random(n=3).to_shapely()
+        >>> flt_pts = np.array(list(triangle.exterior.coords)[0:3])
+        >>> p1, p2, p3 = np.array(list(map(Rational.coerce, flt_pts.ravel()))).reshape(3, 2)
+        >>> q12 = ((p1 - p2) ** 2).sum()
+        >>> q13 = ((p1 - p3) ** 2).sum()
+        >>> q23 = ((p2 - p3) ** 2).sum()
+        >>> triangle_quadrea = archimedes(q12, q13, q23)
+        >>> approx_quadrea = 16 * (triangle.area ** 2)
+        >>> assert np.isclose(float(approx_quadrea), float(triangle_quadrea))
     """
 
     def claim(self):
@@ -157,7 +299,9 @@ class Rational(fractions.Fraction):
     """
     Extension of the Fraction class, mostly to make printing nicer
 
-    >>> 3 * -(Rational(3) / 2)
+    Example:
+        >>> r = 3 * -(Rational(3) / 2)
+        >>> Rational.random()
     """
     def __str__(self):
         if self.denominator == 1:
@@ -184,6 +328,9 @@ class Rational(fractions.Fraction):
             return cls(data, 1)
         elif isinstance(data, str):
             return cls(*map(int, data.split('/')))
+        elif isinstance(data, float):
+            n, d = data.as_integer_ratio()
+            return cls(n, d)
         else:
             from PIL.TiffImagePlugin import IFDRational
             if isinstance(data, IFDRational):
@@ -213,6 +360,9 @@ class Rational(fractions.Fraction):
     def __mul__(self, other):
         return Rational(super().__mul__(other))
 
+    def __pow__(self, other):
+        return Rational(super().__pow__(other))
+
     def __rmul__(self, other):
         return Rational(super().__rmul__(other))
 
@@ -221,6 +371,25 @@ class Rational(fractions.Fraction):
 
     def __floordiv__(self, other):
         return Rational(super().__floordiv__(other))
+
+    @classmethod
+    def random(cls, size=None, min=None, max=None, rng=None):
+        min = np.iinfo(int).min if min is None else min
+        max = np.iinfo(int).max if max is None else max
+        rng = ensure_rng(rng)
+        if size is None:
+            n, d = map(int, rng.randint(min, max, size=2))
+            return cls(n, d)
+        else:
+            items = np.empty(size, dtype=Rational)
+            ns, ds = rng.randint(min, max, size=(2, items.size))
+            items.ravel()[:] = [Rational(int(n), int(d)) for n, d in zip(ns, ds)]
+            return items
+
+    @classmethod
+    def symbols(cls, names, **kwargs):
+        kwargs['rational'] = True
+        return sym.symbols(names, **kwargs)
 
     @classmethod
     def members(cls, limit=None, zero=True, positive=True, negative=True, maxnumer=None):
