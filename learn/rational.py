@@ -28,6 +28,7 @@ import math
 import numpy as np
 import sympy as sym  # NOQA
 from kwarray import ensure_rng
+import itertools as it
 
 
 def MF_122_Notes():
@@ -295,6 +296,116 @@ def quadruple_quad_forumla(a1, a2, a3, a4):
     q13, q24  # if we know 4 quadrences between points we know the other 2
 
 
+def ptolemys_theorem():
+    """
+    [MF 131]
+
+    References:
+        https://en.wikipedia.org/wiki/Group_of_rational_points_on_the_unit_circle
+        https://math.stackexchange.com/questions/845426/rational-points-on-a-surface
+
+    Example:
+        >>> # Generate random rational points on a circle - how to?
+        >>>
+    """
+
+
+def pythagorean_triples():
+    # Pythagorean triples
+    _ratiter = Rational.members(negative=False, zero=False)
+    for rat in _ratiter:
+        m = rat.numerator
+        n = rat.denominator
+        a = 2 * m * n
+        b = m * m - n * n
+        c = m * m + n * n
+        if a > 0 and b > 0 and c > 0:
+            yield a, b, c
+
+
+def rational_circle_points(num, mode='stereographic', rng=None):
+    """
+    References:
+        https://en.wikipedia.org/wiki/Pythagorean_triple
+
+    Example:
+        >>> import kwplot
+        >>> plt = kwplot.autoplt()
+        >>> points1 = rational_circle_points(16, mode='stereographic')
+        >>> points2 = rational_circle_points(16, mode='parametric')
+        >>> ax = kwplot.figure(fnum=1, doclf=True).gca()
+        >>> ax.plot(points2.T[0], points2.T[1], 'ro', label='parametric')
+        >>> ax.plot(points1.T[0], points1.T[1], 'bx', label='stereographic')
+        >>> ax.legend()
+        >>> ax.set_aspect('equal')
+        >>> ax.set_xlim(-1, 1)
+        >>> ax.set_ylim(-1, 1)
+    """
+    import itertools as it
+    if mode == 'stereographic':
+        points = []
+        # Stereographic approach
+        _ratiter = Rational.members()
+        for rat in it.islice(_ratiter, num):
+            m = rat.numerator
+            n = rat.denominator
+            x = Rational(2 * m * n, m * m + n * n)
+            y = Rational(m * m - n * n, m * m + n * n)
+            assert (x * x + y * y) == 1
+            points.append((x, y))
+    elif mode == 'parametric':
+        # parametric
+        points = []
+        for t in it.islice(Integer.members(), num):
+            x = Rational((1 - t * t), (1 + t * t))
+            y = Rational((2 * t), (1 + t * t))
+            assert (x * x + y * y) == 1
+            points.append((x, y))
+    else:
+        raise KeyError(mode)
+
+    def _order_vertices(verts):
+        """
+        References:
+            https://stackoverflow.com/questions/1709283/how-can-i-sort-a-coordinate-list-for-a-rectangle-counterclockwise
+
+        Ignore:
+            verts = poly.data['exterior'].data[::-1]
+        """
+        mean_x = verts.T[0].sum() / len(verts)
+        mean_y = verts.T[1].sum() / len(verts)
+
+        delta_x = mean_x - verts.T[0]
+        delta_y = verts.T[1] - mean_y
+
+        tau = np.pi * 2
+        # Is there a rational version of this?
+        angle = (np.arctan2(delta_x.astype(float), delta_y.astype(float)) + tau) % tau
+        sortx = angle.argsort()
+        verts = verts.take(sortx, axis=0)
+        return verts
+    points = np.array(points)
+    points = _order_vertices(points)
+    return points
+
+
+class Integer(int):
+
+    @classmethod
+    def members(cls, zero=True, positive=True, negative=True):
+        """
+        Example:
+            >>> list(it.islice(Integer.members(), 10))
+        """
+        if zero:
+            yield 0
+        for index in it.count(1):
+            if positive:
+                yield index
+            if negative:
+                yield -index
+
+
 class Rational(fractions.Fraction):
     """
     Extension of the Fraction class, mostly to make printing nicer
@@ -355,10 +466,22 @@ class Rational(fractions.Fraction):
         return Rational(super().__radd__(other))
 
     def __sub__(self, other):
-        return Rational(super().__sub__(other))
+        try:
+            return Rational(super().__sub__(other))
+        except TypeError:
+            if isinstance(other, np.ndarray):
+                return np.array(self) - other
+            else:
+                raise
+
+    # def __rsub__(self, other):
+    #     return Rational(super().__sub__(other))
 
     def __mul__(self, other):
         return Rational(super().__mul__(other))
+
+    def __mod__(self, other):
+        return Rational(super().__mod__(other))
 
     def __pow__(self, other):
         return Rational(super().__pow__(other))
@@ -371,6 +494,9 @@ class Rational(fractions.Fraction):
 
     def __floordiv__(self, other):
         return Rational(super().__floordiv__(other))
+
+    # def arctan2(self, other):
+    #     return math.atan2(float(self), float(other))
 
     @classmethod
     def random(cls, size=None, min=None, max=None, rng=None):
