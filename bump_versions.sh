@@ -501,6 +501,14 @@ mypkgs(){
 
     source ~/misc/bump_versions.sh
     load_secrets
+    MODNAME=progiter
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    update_default_branch $MODNAME $DEPLOY_REMOTE
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+
+    source ~/misc/bump_versions.sh
+    load_secrets
     MODNAME=mkinit
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release

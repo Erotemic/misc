@@ -7,19 +7,16 @@ Usage:
 
     REPO_NAME=supersetup
     REPO_NAME=shitspotter
+    REPO_NAME=mathutf
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 '
 
 
 update_pypkg(){
-<<<<<<< HEAD
-    REPO_NAME=shitspotter
-=======
-    REPO_NAME=git-sync
->>>>>>> db105a06c085476ec3de7aef852eacdf01747fe9
+    #REPO_NAME=shitspotter
+    REPO_NAME=mathutf
     REPO_DPATH=$HOME/code/$REPO_NAME
-
 
     cd $REPO_DPATH
     cp -r ~/misc/templates/PYPKG/.circleci .
