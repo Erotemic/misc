@@ -37,7 +37,7 @@ def benchmark_template():
 
     method_lut = locals()  # can populate this some other way
 
-    ti = timerit.Timerit(100, bestof=10, verbose=2)
+    ti = timerit.Timerit(1000, bestof=100, verbose=2)
 
     def generate_data(size, subsize=None):
         assert size > 0
@@ -51,9 +51,6 @@ def benchmark_template():
         sub = string[a:b]
         data = {'string': string, 'sub': sub}
         return data
-
-    """
-    """
 
     if __debug__:
         sub = '01'
@@ -74,15 +71,23 @@ def benchmark_template():
         print('found2 = {!r}'.format(found2))
         assert found1 == found2
 
+    import numpy as np
+    base = 10
     basis = {
         'method': ['method_finditer', 'method_forloop', 'method_awky'],
-        'size': [1, 10, 100, 200, 200, 500, 1000, 2000, 10000],
-        'subsize': [2, 64],
+        # 'size': [1, 2, 8, 10, 16, 32, 64, 100, 128, 200, 256, 500, 512, 1000, 1200, 1500, 1800, 2000, 5000, 10000],
+        'size': np.logspace(0, np.log(10000) / np.log(base), num=10, base=base).round().astype(int),
+        'subsize': [2, 8, 32, 64],
     }
-    xlabel = 'size'
     data_kwkeys = ub.compatible(basis, generate_data)
     func_kwkeys = ub.compatible(basis, method_lut[basis['method'][0]])
+
+    # These variable influence what is plotted on the x-asis y-axis and
+    # with different line types
+    xlabel = 'size'
+    ylabel = 'time'
     group_labels = {
+        'size': ['subsize'],
         'style': ['subsize'],
     }
     hue_labels = ub.oset(basis) - {xlabel}
@@ -109,19 +114,21 @@ def benchmark_template():
             with timer:
                 # MAIN LOGIC
                 method(**func_kwargs)
-        row = {
-            'mean': ti.mean(),
-            'min': ti.min(),
-            'key': key,
-            **group_keys,
-            **params,
-        }
-        rows.append(row)
+
+        for time in ti.times:
+            row = {
+                # 'mean': ti.mean(),
+                'time': time,
+                'key': key,
+                **group_keys,
+                **params,
+            }
+            rows.append(row)
 
     # The rows define a long-form pandas data array.
     # Data in long-form makes it very easy to use seaborn.
     data = pd.DataFrame(rows)
-    data = data.sort_values('min')
+    data = data.sort_values('time')
     print(data)
 
     plot = True
@@ -131,17 +138,28 @@ def benchmark_template():
         # not sure about notebooks.
         import kwplot
         sns = kwplot.autosns()
+        import matplotlib as mpl
+        mpl.use('Qt5Agg')
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        sns.set()
 
         plotkw = {}
         for gname, labels in group_labels.items():
             if labels:
                 plotkw[gname] = gname + '_key'
 
+        plotkw['sizes'] = {'subsize={}'.format(s): linwidth for linwidth, s in enumerate(basis['subsize'], start=1)}
+
         # Your variables may change
-        ax = kwplot.figure(fnum=1, doclf=True).gca()
-        sns.lineplot(data=data, x=xlabel, y='min', marker='o', ax=ax, **plotkw)
+        # ax = kwplot.figure(fnum=1, doclf=True).gca()
+        fig = plt.figure()
+        fig.clf()
+        ax = fig.gca()
+
+        sns.lineplot(data=data, x=xlabel, y=ylabel, marker='o', ax=ax, **plotkw, markers=True)
         ax.set_title('Benchmark')
-        ax.set_xlabel('Substring size')
-        ax.set_ylabel('Minimum execution time')
+        ax.set_xlabel('String size')
+        ax.set_ylabel('Execution time')
         ax.set_xscale('log')
         ax.set_yscale('log')
