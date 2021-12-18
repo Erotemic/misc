@@ -1,0 +1,91 @@
+title = "Fact Database"
+
+[[facts]]
+text = """
+As of 2021 the estimated number of people to have ever lived is
+100,000,000,000.  This is calculated with a cutoff point of 50,000 BCE of when
+modern humans arose and counts estimated infant mortalities.
+"""
+references = """
+https://en.wikipedia.org/wiki/Estimates_of_historical_world_population
+"""
+
+
+[[facts]]
+text = """
+As of 2021 the current best estimated age of the universe is 13.787±0.020
+billion years.  This is based on studies of the cosmic microwave background,
+the current observed expansion rate of space, and the age of the oldest
+observable stars, and has an uncertainty of only 20 million years.
+"""
+references = """
+https://en.wikipedia.org/wiki/Age_of_the_universe
+"""
+
+
+[[facts]]
+text = """
+The Bekenstein bound states that the maximum amount of information
+(/energy/matter) that can exist in a region of space is surprisingly not
+related to it's volume, but instead to it's surface area. If this limit is
+exceeded that region of space collapses into a black hole.
+"""
+references = """
+https://en.wikipedia.org/wiki/Bekenstein_bound
+"""
+
+
+[[facts]]
+text = """
+As of 2021 the best estimated age of the earth is 4.543 billion years.  This is
+known through a combination of radiometric dating of the oldest rocks on the
+Earth and radiometric dating of meteorites, which are known to have formed at
+the same time as the other bodies in the solar system.
+"""
+references = """
+https://en.wikipedia.org/wiki/Age_of_Earth
+"""
+
+
+
+[[facts]]
+text = """
+The English language is over 1,400 years old. Broadly speaking --- as languages
+are constantly in evolutionary flux --- we can say it started with Old English
+in ~400CE. It became Middle English in ~1,000 CE, Early Modern English in
+1400CE, and Modern English in 1600CE.
+"""
+references = """
+https://en.wikipedia.org/wiki/English_language
+"""
+
+
+
+[[facts]]
+text = """
+As of 2021 our best estimates find that anatomically modern humans arose
+300,000 years ago. Behaviorally modern humans arose 50,000 years ago.
+Agriculture began about 12,000 years ago. Written history began 5,000 years
+ago.  Digital history began 70 years ago, and began to scale 34 years ago.
+"""
+references = """
+https://en.wikipedia.org/wiki/Human_history
+https://en.wikipedia.org/wiki/Magnetic_tape
+"""
+
+
+[[facts]]
+text = """
+There are only 144 scientific writers from antiquity known by name. Of these 29
+are Greek: Aristarchus, Autolycus, Philo of Byzantium, Biton, Apollonius,
+Archimedes, Euclid, Theodosius, Hypsicles, Athenaeus, Geminus, Hero, 
+Apollodorus, Theon of Smyrna, Cleomedes, Nicomachus, Ptolemy,
+Gaudentius, Anatolius, Aristides Quintilian, Porphyry, Diophantus,
+Alypius, Damianus, Pappus, Serenus, Theon of Alexandria, Anthemius,
+and Eutocius.
+"""
+references = """
+https://en.wikipedia.org/wiki/Greek_mathematics#CITEREFBoyer1991
+https://en.wikipedia.org/wiki/Reviel_Netz
+The Bibliosphere of Ancient Science (Outside of Alexandria). N.T.M. 19, 239 (2011).  https://doi.org/10.1007/s00048-011-0057-2
+"""
