@@ -1,10 +1,11 @@
-def main():
-    """
+"""
+Does nice rendering of the fact database
+
+Requires:
     pip install toml
     pip install pylatex
-    """
-    fact_data = load_facts()
-    print_facts(fact_data)
+    pip install pyqrcode pylatex pypng
+"""
 
 
 def load_facts():
@@ -16,10 +17,16 @@ def load_facts():
     return fact_data
 
 
-def print_facts(fact_data):
+def print_facts():
+    """
+    Print facts with rich
+    """
     from rich.panel import Panel
     from rich.console import Console
     import ubelt as ub
+
+    fact_data = load_facts()
+
     console = Console()
     for fact in fact_data['facts']:
         text = ub.codeblock(
@@ -38,9 +45,7 @@ def print_facts(fact_data):
 
 def render_facts():
     """
-    pip install pyqrcode pylatex pypng
-
-    pyqrcode.create('google.com').png('foo.png', scale=4)
+    Render facts to a latex document
     """
     import pylatex
     import os
@@ -72,7 +77,7 @@ def render_facts():
 
     # Dont use fontenc, lmodern, or textcomp
     # https://tex.stackexchange.com/questions/179778/xelatex-under-ubuntu
-    doc = pylatex.Document('fact_document', inputenc='utf8',
+    doc = pylatex.Document('fact_document', inputenc=None,
                            page_numbers=False, indent=False, fontenc=None,
                            lmodern=False, textcomp=False)
 
@@ -104,7 +109,30 @@ def render_facts():
         with contexts:
             doc.append(pylatex.NoEscape(r'\paragraph{Fact:}'))
             text = ub.paragraph(fact['text'])
-            doc.append(text)
+
+            if r'\[' in text:
+                import re
+                found = list(re.finditer('(' + re.escape(r'\[') + '|' + re.escape(r'\]') + ')', text))
+                prev_x = 0
+                for a, b in ub.iter_window(found, step=2):
+                    part = text[prev_x:a.span()[0]]
+                    doc.append(part)
+                    ax, bx = a.span()[1], b.span()[0]
+                    part = pylatex.NoEscape(r'$' + text[ax:bx] + r'$ ')
+                    doc.append(part)
+                    prev_x = b.span()[1]
+                part = text[prev_x:]
+                doc.append(part)
+            else:
+                # if '$' in text:
+                #     parts = text.split('$')
+                #     for idx, p in enumerate(parts):
+                #         if idx % 2 == 1:
+                #             doc.append(pylatex.NoEscape('$' + p + '$ '))
+                #         else:
+                #             doc.append(p)
+                # else:
+                doc.append(text)
             if QR_REFERENCE:
                 doc.append('\n')
                 num_refs = 0
@@ -132,7 +160,7 @@ def render_facts():
         if stop_flag:
             break
 
-    # print(doc.dumps())
+    print(doc.dumps())
     print('generate pdf')
     doc.generate_pdf(clean_tex=True)
     # compiler='lualatex')
@@ -141,11 +169,12 @@ def render_facts():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/misc/facts/parser.py render_facts
+        python ~/misc/facts/renderer.py print_facts
+        python ~/misc/facts/renderer.py render_facts
     """
     import sys
     if len(sys.argv) > 1:
         import fire
         fire.Fire()
     else:
-        main()
+        print_facts()
