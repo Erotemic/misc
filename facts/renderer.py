@@ -228,7 +228,7 @@ def render_facts():
 
     print(doc.dumps())
     print('generate pdf')
-    doc.generate_pdf(clean_tex=True)
+    doc.generate_pdf(str(Path('~/misc/facts/fact_document').expand()), clean_tex=True)
 
 
 if __name__ == '__main__':
