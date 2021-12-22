@@ -6,14 +6,80 @@ Requires:
     pip install pylatex
     pip install pyqrcode pylatex pypng
 """
+import os
+import pathlib
+import re
+import toml
+import ubelt as ub
+
+
+class _ExtendedPathMixin(object):
+    """
+    An extension of :class:`pathlib.Path` with extra convinience methods
+    """
+
+    def ensuredir(self, mode=0o777):
+        """
+        Concise alias of `self.mkdir(parents=True, exist_ok=True)`
+        """
+        self.mkdir(mode=mode, parents=True, exist_ok=True)
+        return self
+
+    def expandvars(self):
+        """
+        As discussed in CPythonIssue21301_, CPython wont be adding expandvars
+        to pathlib. I think this is a mistake, so I added it in this extension.
+
+        References:
+            .. [CPythonIssue21301] https://bugs.python.org/issue21301
+        """
+        return self.__class__(os.path.expandvars(self))
+
+    def expand(self):
+        """
+        Expands user tilde and environment variables.
+
+        Concise alias of `Path(os.path.expandvars(self.expanduser()))`
+
+        Example:
+            >>> print(Path('$HOME').expand())
+            >>> print(Path('~/').expand())
+        """
+        return self.expandvars().expanduser()
+
+
+class Path(pathlib.Path, _ExtendedPathMixin):
+    """
+    An extension of :class:`pathlib.Path` with extra convinience methods
+    """
+
+    def __new__(cls, *args, **kwargs):
+        if cls is Path:
+            cls = WindowsPath2 if os.name == 'nt' else PosixPath2
+        self = cls._from_parts(args, init=False)
+        if not self._flavour.is_supported:
+            raise NotImplementedError("cannot instantiate %r on your system"
+                                      % (cls.__name__,))
+        self._init()
+        return self
+
+
+class WindowsPath2(pathlib.WindowsPath, _ExtendedPathMixin):
+    pass
+
+
+class PosixPath2(pathlib.PosixPath, _ExtendedPathMixin):
+    pass
 
 
 def load_facts():
-    import toml
-    import pathlib
-    fact_fpath = pathlib.Path('~/misc/facts/facts.toml').expanduser()
+    fact_fpath = Path('~/misc/facts/facts.toml').expand()
     with open(fact_fpath, 'r') as file:
         fact_data = toml.load(file)
+
+    if 0:
+        with open(Path('~/misc/facts/internal.toml').expand(), 'r') as file:
+            fact_data['facts'].extend(toml.load(file)['facts'])
     return fact_data
 
 
@@ -23,7 +89,6 @@ def print_facts():
     """
     from rich.panel import Panel
     from rich.console import Console
-    import ubelt as ub
 
     fact_data = load_facts()
 
@@ -48,10 +113,8 @@ def render_facts():
     Render facts to a latex document
     """
     import pylatex
-    import os
     from pylatex.base_classes.command import Options  # NOQA
     import pyqrcode
-    import ubelt as ub
 
     fact_data = load_facts()
 
@@ -99,6 +162,9 @@ def render_facts():
     QR_REFERENCE = True
     stop_flag = 0
 
+    image_dpath = Path('~/misc/facts/images').expand().ensuredir()
+    # image_dpath =
+
     for fact in ub.ProgIter(fact_data['facts']):
         contexts = ComposeContexts(
             # doc.create(SamePage()),
@@ -111,7 +177,6 @@ def render_facts():
             text = ub.paragraph(fact['text'])
 
             if r'\[' in text:
-                import re
                 found = list(re.finditer('(' + re.escape(r'\[') + '|' + re.escape(r'\]') + ')', text))
                 prev_x = 0
                 for a, b in ub.iter_window(found, step=2):
@@ -139,11 +204,12 @@ def render_facts():
                 for refline in fact['references'].split('\n'):
                     if refline.startswith('http'):
                         found = refline
-                        fpath = ub.hash_data(found, base='abc')[0:16] + '.png'
-                        fpath = os.path.abspath(fpath)
-                        # pyqrcode.create(found).svg(fpath, scale=6)
-                        pyqrcode.create(found).png(fpath, scale=2)
-                        doc.append(pylatex.NoEscape(r'\includegraphics[width=90px]{' + fpath + '}'))
+                        image_fname = ub.hash_data(found, base='abc')[0:16] + '.png'
+                        image_fpath = image_dpath / image_fname
+                        if not image_fpath.exists():
+                            # pyqrcode.create(found).svg(fpath, scale=6)
+                            pyqrcode.create(found).png(str(image_fpath), scale=2)
+                        doc.append(pylatex.NoEscape(r'\includegraphics[width=90px]{' + str(image_fpath) + '}'))
                         # doc.append(pylatex.NoEscape(r'\includesvg[width=120px]{' + fpath + '}'))
                         num_refs += 1
                         if num_refs > 3:
@@ -163,7 +229,6 @@ def render_facts():
     print(doc.dumps())
     print('generate pdf')
     doc.generate_pdf(clean_tex=True)
-    # compiler='lualatex')
 
 
 if __name__ == '__main__':
