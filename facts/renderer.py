@@ -5,6 +5,10 @@ Requires:
     pip install toml
     pip install pylatex
     pip install pyqrcode pylatex pypng
+
+CommandLine:
+    python ~/misc/facts/renderer.py print_facts
+    python ~/misc/facts/renderer.py render_facts
 """
 import os
 import pathlib
