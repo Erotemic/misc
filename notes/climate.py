@@ -11,11 +11,37 @@ References:
 """
 
 import pint
+import ubelt as ub
+
+
+@ub.util_format._FORMATTER_EXTENSIONS.register(pint.Unit)
+def format_unit(data, **kwargs):
+    numer = [k for k, v in data._units.items() if v > 0]
+    denom = [k for k, v in data._units.items() if v < 0]
+    numer_str = ' * '.join(numer)
+    if len(denom) == 0:
+        return '* ' + numer_str
+    elif len(denom) > 1:
+        denom_str = '({})'.format(' * '.join(denom))
+    elif len(denom) == 1:
+        denom_str = ' * '.join(denom)
+    else:
+        raise AssertionError
+    if len(numer) == 0:
+        return '/ ' + denom_str
+    else:
+        return '* ' + numer_str + ' / ' + denom_str
+
+
+@ub.util_format._FORMATTER_EXTENSIONS.register(pint.Quantity)
+def format_quantity(data, _return_info=None, **kwargs):
+    return ub.repr2(data.magnitude, **kwargs) + ' ' + ub.repr2(data.u)
 
 reg = pint.UnitRegistry()
 
 reg.define('CO2 = []')
 reg.define('dollar = []')
+reg.define('us_person = []')
 
 billion = 1_000_000_000
 million = 1_000_000
@@ -26,34 +52,37 @@ kwh = reg.Unit('kilowatt/hour')
 
 cents = 0.01 * reg.dollar
 
-us_emissions_2018 = 5.27 * billion * reg.metric_ton * reg.CO2
-us_population_2018 = 327.2 * million
+us_emissions_2018 = 5.27 * billion * reg.metric_ton * reg.CO2 / reg.year
+us_population_2018 = 327.2 * million * reg.us_person
 
-us_person_anual_footprint = 16 * reg.metric_ton
+us_person_anual_footprint = 16 * reg.metric_ton / (reg.year * reg.us_person)
 
 # Different estimates for this number
 us_person_anual_footprint_candidates = {
-    'nature.org': 16 * CO2_ton,
-    'terrapass': (63_934 * CO2_pound).to(CO2_ton),
+    'nature.org': 16 * CO2_ton / (reg.year * reg.us_person),
+    'terrapass': (63_934 * CO2_pound).to(CO2_ton) / (reg.year * reg.us_person),
 }
-us_person_anual_footprint = us_person_anual_footprint_candidates['terrapass']
-
-
-offsets = {
+co2_offset_costs = {
     'terrapass': (100.75 * reg.dollars) / (20_191 * CO2_pound).to(CO2_ton),
     'cotap': (75 * reg.dollars) / (5 * CO2_ton),
 }
-dollar_per_co2ton = offsets['terrapass']
+print('us_person_anual_footprint_candidates = {}'.format(ub.repr2(us_person_anual_footprint_candidates, precision=2, nl=1, align=':', sort=0)))
+print('co2_offset_costs = {}'.format(ub.repr2(co2_offset_costs, precision=2, nl=1, align=':', sort=0)))
+
+us_person_anual_footprint = us_person_anual_footprint_candidates['nature.org']
+dollar_per_co2ton = co2_offset_costs['cotap']
 
 
-us_person_anual_offset_cost = us_person_anual_footprint * dollar_per_co2ton
-print('us_person_anual_offset_cost = {!r}'.format(us_person_anual_offset_cost))
+person_offset_costs = {}
+person_offset_costs['us_person_anual_offset_cost'] = us_person_anual_offset_cost = us_person_anual_footprint * dollar_per_co2ton
+person_offset_costs['us_cost_to_offset_2018'] = us_cost_to_offset_2018 = us_emissions_2018 * dollar_per_co2ton
+person_offset_costs['us_cost_to_offset_2018_percapita'] = us_cost_to_offset_2018 / us_population_2018
+print('person_offset_costs = {}'.format(ub.repr2(person_offset_costs, precision=2, nl=1, align=':', sort=0)))
 
-us_cost_to_offset_2018 = us_emissions_2018 * dollar_per_co2ton
-print('us_cost_to_offset_2018 = {!r}'.format(us_cost_to_offset_2018))
 
-us_cost_to_offset_2018_percapita = us_cost_to_offset_2018 / us_population_2018
-print('us_cost_to_offset_2018_percapita = {!r}'.format(us_cost_to_offset_2018_percapita))
+# I started offsetting yearly when I was 30, so I have 30 years of backlog
+backlog = 30 * reg.year * reg.us_person * us_person_anual_offset_cost
+print('backlog = {!r}'.format(backlog))
 
 
 coal_2019_energy = 947_891 * million * kwh
