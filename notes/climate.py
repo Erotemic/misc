@@ -42,6 +42,7 @@ reg = pint.UnitRegistry()
 reg.define('CO2 = []')
 reg.define('dollar = []')
 reg.define('us_person = []')
+reg.define('year_2018 = []')
 
 billion = 1_000_000_000
 million = 1_000_000
@@ -52,7 +53,7 @@ kwh = reg.Unit('kilowatt/hour')
 
 cents = 0.01 * reg.dollar
 
-us_emissions_2018 = 5.27 * billion * reg.metric_ton * reg.CO2 / reg.year
+us_emissions_2018 = 5.27 * billion * reg.metric_ton * reg.CO2 / reg.year_2018
 us_population_2018 = 327.2 * million * reg.us_person
 
 us_person_anual_footprint = 16 * reg.metric_ton / (reg.year * reg.us_person)

@@ -81,7 +81,7 @@ def load_facts():
     with open(fact_fpath, 'r') as file:
         fact_data = toml.load(file)
 
-    if 0:
+    if 1:
         with open(Path('~/misc/facts/internal.toml').expand(), 'r') as file:
             fact_data['facts'].extend(toml.load(file)['facts'])
     return fact_data
