@@ -12,6 +12,10 @@ References:
 
 import pint
 import ubelt as ub
+from dateutil import parser
+import datetime
+import json
+import pandas as pd
 
 
 @ub.util_format._FORMATTER_EXTENSIONS.register(pint.Unit)
@@ -41,6 +45,8 @@ reg = pint.UnitRegistry()
 
 reg.define('CO2 = []')
 reg.define('dollar = []')
+
+reg.define('dollar_2011 = []')
 reg.define('us_person = []')
 reg.define('year_2018 = []')
 
@@ -50,13 +56,64 @@ million = 1_000_000
 CO2_ton = reg.CO2 * reg.metric_ton
 CO2_pound = reg.CO2 * reg.pound
 kwh = reg.Unit('kilowatt/hour')
+twh = reg.Unit('terawatt/hour')
 
 cents = 0.01 * reg.dollar
 
-us_emissions_2018 = 5.27 * billion * reg.metric_ton * reg.CO2 / reg.year_2018
-us_population_2018 = 327.2 * million * reg.us_person
+ONLINE_MODE = True
+if ONLINE_MODE:
+    columns_of_interest = [
+        'co2',
+        'year',
+        'total_ghg',
+        'population',
+        'gdp',
+        'primary_energy_consumption',
+        'consumption_co2',
+    ]
 
-us_person_anual_footprint = 16 * reg.metric_ton / (reg.year * reg.us_person)
+    header_info_fpath = ub.grabdata('https://github.com/owid/co2-data/raw/master/owid-co2-codebook.csv')
+    header_info = pd.read_csv(header_info_fpath).set_index('column').drop('source', axis=1)
+    column_descriptions = header_info.loc[columns_of_interest]
+
+    key_to_description = {}
+    for key, row in column_descriptions.iterrows():
+        key_to_description[key] = ub.paragraph(row['description']).split('. ')
+    print('key_to_description = {}'.format(ub.repr2(key_to_description, nl=2)))
+    print(column_descriptions.to_string())
+
+    # Download carbon emission dataset
+    # https://github.com/owid/co2-data
+    # https://github.com/owid/co2-data/blob/master/owid-co2-codebook.csv
+    # Annual production-based emissions of carbon dioxide (CO2), measured in
+    # million tonnes. This is based on territorial emissions, which do not
+    # account for emissions embedded in traded goods.
+    owid_co2_data_fpath = ub.grabdata('https://github.com/owid/co2-data/raw/master/owid-co2-data.json')
+    with open(owid_co2_data_fpath, 'r') as file:
+        co2_data = json.load(file)
+    us_co2_data = co2_data['United States']['data']
+
+    _raw_us_data = pd.DataFrame(us_co2_data).set_index('year', drop=0)
+    us_data = _raw_us_data.loc[1980:][columns_of_interest]
+    us_data = us_data.assign(year=_raw_us_data['year'].apply(lambda x: x * reg.year))
+    us_data = us_data.assign(co2=_raw_us_data['co2'].apply(lambda x: x * million * CO2_ton))
+    us_data = us_data.assign(population=_raw_us_data['population'].apply(lambda x: x * reg.us_person))
+    us_data = us_data.assign(primary_energy_consumption=_raw_us_data['primary_energy_consumption'].apply(lambda x: x * twh / reg.year))
+    us_data = us_data.assign(gdp=_raw_us_data['gdp'].apply(lambda x: x * reg.dollar_2011))
+
+    if 0:
+        import kwplot
+        sns = kwplot.autosns()
+        sns.lineplot(data=us_data, x='year', y='co2')
+
+    us_emissions_2018 = us_data['co2'].loc[2018]
+    us_population_2018 = us_data['population'].loc[2018]
+    us_person_anual_footprint = us_emissions_2018 / us_population_2018
+    us_data['co2_per_capita'] = us_data['co2'] / us_data['population']
+else:
+    us_emissions_2018 = 5.27 * billion * CO2_ton / reg.year_2018
+    us_population_2018 = 327.2 * million * reg.us_person
+    us_person_anual_footprint = us_emissions_2018 / us_population_2018
 
 # Different estimates for this number
 us_person_anual_footprint_candidates = {
@@ -65,7 +122,8 @@ us_person_anual_footprint_candidates = {
 }
 co2_offset_costs = {
     'terrapass': (100.75 * reg.dollars) / (20_191 * CO2_pound).to(CO2_ton),
-    'cotap': (75 * reg.dollars) / (5 * CO2_ton),
+    # 'cotap': (75 * reg.dollars) / (5 * CO2_ton),
+    'cotap': (15 * reg.dollars) / (1 * CO2_ton),
 }
 print('us_person_anual_footprint_candidates = {}'.format(ub.repr2(us_person_anual_footprint_candidates, precision=2, nl=1, align=':', sort=0)))
 print('co2_offset_costs = {}'.format(ub.repr2(co2_offset_costs, precision=2, nl=1, align=':', sort=0)))
@@ -81,11 +139,6 @@ person_offset_costs['us_cost_to_offset_2018_percapita'] = us_cost_to_offset_2018
 print('person_offset_costs = {}'.format(ub.repr2(person_offset_costs, precision=2, nl=1, align=':', sort=0)))
 
 
-# I started offsetting yearly when I was 30, so I have 30 years of backlog
-backlog = 30 * reg.year * reg.us_person * us_person_anual_offset_cost
-print('backlog = {!r}'.format(backlog))
-
-
 coal_2019_energy = 947_891 * million * kwh
 coal_2019_footprint = 952 * million * CO2_ton
 coal_2019_co2_per_kwh = coal_2019_footprint / coal_2019_energy
@@ -97,3 +150,53 @@ print('paid_cost_per_kwh  = {!r}'.format(paid_cost_per_kwh))
 # What is the carbon cost of each coal kwh?
 extra_cost_per_kwh = dollar_per_co2ton * coal_2019_co2_per_kwh
 print('extra_cost_per_kwh = {!r}'.format(extra_cost_per_kwh))
+
+
+# Figure out where my balance is
+# import dateutil
+# dateutil.relativedelta
+
+life_start = parser.parse('1989')
+current_date = datetime.datetime.now()
+
+years_alive = (current_date.year - life_start.year) * reg.year
+
+if ONLINE_MODE:
+    per_cap_extrap = us_data[['co2_per_capita', 'year']]
+    num_missing_years = current_date.year - per_cap_extrap.year.max().m
+    rolling_mean = us_data.co2_per_capita.apply(lambda x: x.m).rolling(5).mean()
+    extrap_value = rolling_mean.iloc[-1] * us_data.co2_per_capita.iloc[-1].u
+    extrap_rows = []
+    for extrap_year in range(per_cap_extrap.year.max().m, per_cap_extrap.year.max().m + 1):
+        row = {}
+        row['year'] = extrap_year
+        row['co2_per_capita'] = extrap_value
+        extrap_rows.append(row)
+    per_cap_extrap = pd.concat([per_cap_extrap, pd.DataFrame(extrap_rows).set_index('year', drop=0)])
+    personal_carbon_used = per_cap_extrap.loc[life_start.year:]['co2_per_capita'].sum()
+else:
+    personal_carbon_used = us_person_anual_footprint * years_alive * reg.us_person
+
+rows = [
+    {'date': '2021-12-27', 'amount': 2000.00 * reg.dollars, 'organization': 'cotap'},
+    {'date': '2021-12-27', 'amount':  340.00 * reg.dollars, 'organization': 'cotap'},
+    {'date': '2021-07-05', 'amount':   99.80 * reg.dollars, 'organization': 'terrapass'},
+    {'date': '2020-01-11', 'amount':  179.64 * reg.dollars, 'organization': 'terrapass'},
+]
+for row in rows:
+    tonnes_offset = row['amount'] / co2_offset_costs[row['organization']]
+    row['offset'] = tonnes_offset
+
+personal_offsets = pd.DataFrame(rows)
+print(personal_offsets)
+
+personal_carbon_offset = personal_offsets.offset.sum()
+personal_carbon_footprint = personal_carbon_used - personal_carbon_offset
+
+print('personal_carbon_used      = {!r}'.format(ub.repr2(personal_carbon_used, precision=2)))
+print('personal_carbon_offset    = {!r}'.format(ub.repr2(personal_carbon_offset, precision=2)))
+print('personal_carbon_footprint = {!r}'.format(ub.repr2(personal_carbon_footprint, precision=2)))
+
+
+backlog_cost = personal_carbon_footprint * dollar_per_co2ton
+print('backlog_cost = {}'.format(ub.repr2(backlog_cost, nl=1, precision=2)))
