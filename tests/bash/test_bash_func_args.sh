@@ -169,6 +169,15 @@ demo_array_use_cases "${INPUT_ARR[@]}"
 
 # Example of THE RIGHT WAY™ to pass array arguments around in bash funcs
 
+check_handler(){
+    # tests the _handle_help ars really should be quoted
+    for var in "$@"
+    do
+        echo "var=$var"
+    done
+    return 0
+}
+
 func_stack3(){
     # Either of these works
 
@@ -188,11 +197,15 @@ func_stack1(){
     #func_stack2 $@
     #func_stack2 "$@"
 
+    #check_handler $@  # incorrect
+
     # This is THE RIGHT WAY™
+    check_handler "$@"
     func_stack2 "${@}"
 }
 
 func_stack1 1 2 "3 4 5"
+
 
 
 positional_arg_test(){
