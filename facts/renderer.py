@@ -22,7 +22,7 @@ def load_facts():
     with open(fact_fpath, 'r') as file:
         fact_data = toml.load(file)
 
-    if 1:
+    if 0:
         with open(ub.Path('~/misc/facts/internal.toml').expand(), 'r') as file:
             fact_data['facts'].extend(toml.load(file)['facts'])
     return fact_data

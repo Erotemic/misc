@@ -278,7 +278,7 @@ gitlab_update_master_to_main(){
     git push -u origin main
 
     # Remotely, go to settings
-    # https://gitlab.kitware.com/computer-vision/kwplot/-/settings/repository
+    # https://gitlab.kitware.com/computer-vision/ndsampler/-/settings/repository
     # Update the default branch
     # Update protected branches
 
