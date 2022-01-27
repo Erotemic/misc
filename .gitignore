@@ -101,3 +101,7 @@ ENV/
 .mypy_cache/
 
 *.out
+facts/images/
+
+facts/fact_document.synctex
+facts/internal.toml
