@@ -18,6 +18,9 @@ References:
 
     [MF 126] Brahmagupta's formula and the Quadruple Quad Formula (II) | Rational Geometry Math Foundations 126
 
+    [MF 108] - Limits to Infinity
+    [MF 109] - Logical difficulties with the modern theory of limits
+
 
 TODO:
     [MF 130] - Has that rotation + scaling thing I was interested in
@@ -724,3 +727,20 @@ def ford_circles():
     # ax.set_xlim(0.2, 0.22)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 0.1)
+
+
+def limits_to_infinity():
+    r"""
+    Limits of rational PolyNumber on-sequences
+
+    If [p(n)> is a rational poly on-seq, and A \in Rat then
+
+    lim(n -> inf)(p(n)) = A  is equivalent to
+
+    we can find k, m \in Nat such that if m <= n then
+
+    (-k / n) <= p(n) - A <= (k / n)
+
+    The above definition is only for infinity,
+    https://www.reddit.com/r/mathmemes/comments/sh72iw/its_all_good_until_we_had_to_prove_limits/
+    """

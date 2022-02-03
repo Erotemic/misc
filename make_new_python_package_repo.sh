@@ -16,6 +16,7 @@ Usage:
 update_pypkg(){
     #REPO_NAME=shitspotter
     REPO_NAME=mathutf
+    REPO_NAME=pyhesaff
     REPO_DPATH=$HOME/code/$REPO_NAME
 
     cd $REPO_DPATH
