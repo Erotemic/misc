@@ -1,6 +1,6 @@
 
 
-def benchmark_template():
+def benchmark_mul_vs_pow():
     import ubelt as ub
     import pandas as pd
     import timerit
@@ -105,3 +105,10 @@ def benchmark_template():
         ax.set_xlabel('N')
         ax.set_ylabel('Time')
         ax.set_yscale('log')
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/misc/tests/python/bench_mul_pow.py
+    """
+    benchmark_mul_vs_pow()
