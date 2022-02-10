@@ -9,35 +9,37 @@ def benchmark_mul_vs_pow():
     import operator as op
     import itertools as it
 
-    def method_mul_raw(n):
+    def method_pow_via_mul_raw(n):
+        """ Construct a function that does multiplication of a value n times """
         return eval('lambda v: ' + ' * '.join(['v'] * n))
 
-    def method_mul_for(v, n):
+    def method_pow_via_mul_for(v, n):
         ret = v
         for _ in range(1, n):
             ret = ret * v
         return ret
 
-    def method_mul_reduce(v, n):
+    def method_pow_via_mul_reduce(v, n):
+        """ Alternative way to multiply a value n times """
         return reduce(op.mul, it.repeat(v, n))
 
-    def method_pow(v, n):
+    def method_pow_via_pow(v, n):
         return v ** n
 
     method_lut = locals()  # can populate this some other way
 
-    ti = timerit.Timerit(500000, bestof=200, verbose=2)
+    ti = timerit.Timerit(500000, bestof=1000, verbose=2)
 
     basis = {
-        'method': ['method_mul_raw', 'method_mul_reduce', 'method_pow'],
+        'method': ['method_pow_via_mul_raw', 'method_pow_via_pow'],
         'n': list(range(1, 20)),
-        'v': ['random'],
+        'v': ['random-int', 'random-float'],
         # 'param_name': [param values],
     }
     xlabel = 'n'
     kw_labels = ['v', 'n']
     group_labels = {
-        'style': [],
+        'style': ['v'],
         'size': [],
     }
     group_labels['hue'] = list(
@@ -57,7 +59,7 @@ def benchmark_mul_vs_pow():
         # Timerit will run some user-specified number of loops.
         # and compute time stats with similar methodology to timeit
 
-        if params['method'] == 'method_mul_raw':
+        if params['method'] == 'method_pow_via_mul_raw':
             method = method(kwargs.pop('n'))
 
         for timer in ti.reset(key):
@@ -66,6 +68,10 @@ def benchmark_mul_vs_pow():
             import random
             if kwargs['v'] == 'random':
                 kwargs['v'] = random.randint(1, 31000) if random.random() > 0.5 else random.random()
+            elif kwargs['v'] == 'random-int':
+                kwargs['v'] = random.randint(1, 31000)
+            elif kwargs['v'] == 'random-float':
+                kwargs['v'] = random.random()
             with timer:
                 # Put the logic you want to time here
                 method(**kwargs)
@@ -92,6 +98,7 @@ def benchmark_mul_vs_pow():
         # not sure about notebooks.
         import kwplot
         sns = kwplot.autosns()
+        plt = kwplot.autoplt()
 
         plotkw = {}
         for gname, labels in group_labels.items():
@@ -105,6 +112,8 @@ def benchmark_mul_vs_pow():
         ax.set_xlabel('N')
         ax.set_ylabel('Time')
         ax.set_yscale('log')
+
+        plt.show()
 
 if __name__ == '__main__':
     """
