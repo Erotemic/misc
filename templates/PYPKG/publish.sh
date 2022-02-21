@@ -116,6 +116,7 @@ WAS_INTERACTION="False"
 
 echo "
 === PYPI BUILDING SCRIPT ==
+NAME='$NAME'
 VERSION='$VERSION'
 TWINE_USERNAME='$TWINE_USERNAME'
 TWINE_REPOSITORY_URL = $TWINE_REPOSITORY_URL
@@ -226,23 +227,18 @@ if [ "$DO_BUILD" == "True" ]; then
 
     echo "LIVE BUILDING"
     # Build wheel and source distribution
-
-    #WHEEL_PATHS=()
     for _MODE in "${MODE_LIST[@]}"
     do
         echo "_MODE = $_MODE"
         if [[ "$_MODE" == "sdist" ]]; then
             python setup.py sdist || { echo 'failed to build sdist wheel' ; exit 1; }
-            WHEEL_PATH=$(ls "dist/$NAME-$VERSION*.tar.gz")
-            #WHEEL_PATHS+=($WHEEL_PATH)
+            WHEEL_PATH=$(ls "dist/$NAME-$VERSION"*.tar.gz)
         elif [[ "$_MODE" == "native" ]]; then
             python setup.py bdist_wheel || { echo 'failed to build native wheel' ; exit 1; }
-            WHEEL_PATH=$(ls "dist/$NAME-$VERSION*.whl")
-            #WHEEL_PATHS+=($WHEEL_PATH)
+            WHEEL_PATH=$(ls "dist/$NAME-$VERSION"*.whl)
         elif [[ "$_MODE" == "bdist" ]]; then
             echo "Assume wheel has already been built"
             WHEEL_PATH=$(ls "wheelhouse/$NAME-$VERSION-"*.whl)
-            #WHEEL_PATHS+=($WHEEL_PATH)
         else
             echo "bad mode"
             exit 1
@@ -264,10 +260,10 @@ for _MODE in "${MODE_LIST[@]}"
 do
     echo "_MODE = $_MODE"
     if [[ "$_MODE" == "sdist" ]]; then
-        WHEEL_PATH=$(ls "dist/$NAME-$VERSION*.tar.gz")
+        WHEEL_PATH=$(ls "dist/$NAME-$VERSION"*.tar.gz)
         WHEEL_PATHS+=("$WHEEL_PATH")
     elif [[ "$_MODE" == "native" ]]; then
-        WHEEL_PATH=$(ls "dist/$NAME-$VERSION*.whl")
+        WHEEL_PATH=$(ls "dist/$NAME-$VERSION"*.whl)
         WHEEL_PATHS+=("$WHEEL_PATH")
     elif [[ "$_MODE" == "bdist" ]]; then
         WHEEL_PATH=$(ls "wheelhouse/$NAME-$VERSION-"*.whl)
@@ -380,4 +376,3 @@ else
         !!! FINISH: DRY RUN !!!
     """
 fi
-
