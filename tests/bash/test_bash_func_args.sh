@@ -1,3 +1,21 @@
+#!/bin/bash
+__doc__='
+
+Takeaways:
+
+1. Quoting an array when you pass it, maintains the same exact elements as the
+   inputs. So it is correct to do:
+
+   Doing:
+       `subfunction "$@"`
+   Will maintain the length of the array and keep items bundled correctly.
+
+   And doing 
+       `subfunction $@`
+   May break items appart and increase the number of items in the array.
+'
+
+
 bash_parameter_test(){
     # https://linuxize.com/post/bash-functions/#passing-arguments-to-bash-functions
     echo "#args = \$# = $#"
@@ -94,7 +112,7 @@ _print_call_sig(){
     ARGS=("$@")
     for ARG in "${ARGS[@]}"; do
         ESCAPED_ARG=$(escape_bash_string "$ARG")
-        printf " $ESCAPED_ARG"
+        printf " %s" "$ESCAPED_ARG"
     done
     printf "\n"
 }
@@ -132,7 +150,7 @@ demo_array_use_cases(){
 
 
     # Print via ARR and via @
-    echo ""
+    echo " ==== DEMO ARRAY USE CASES ===="
     echo "PRINT TEST"
     echo "ARR = "$(bash_array_repr "${ARR[@]}")
     echo "@   = "$(bash_array_repr "${@}")
@@ -144,7 +162,7 @@ demo_array_use_cases(){
     echo "len(@)   = ${#}"
 
     # Pass array to another function as all args (similar to *args in Python)
-    echo "\nCALLSIG TEST"
+    printf "\nCALLSIG TEST\n"
     _print_call_sig "${@}"
     _print_call_sig "${ARR[@]}"
 
@@ -153,12 +171,13 @@ demo_array_use_cases(){
     echo "LOOP TEST"
     echo "Loop ARR"
     for ARG in "${ARR[@]}"; do
-        echo "ARG = $ARG"
+        echo "  * ARG = $ARG"
     done
     echo "Loop @"
     for ARG in "${@}"; do
-        echo "ARG = $ARG"
+        echo "  * ARG = $ARG"
     done
+    echo " ==== END DEMO ARRAY USE CASES ===="
 }
 
 INPUT_ARR=(1 "2 3" 4 "five" "bobby tables" "path'o'lo\"ic")
