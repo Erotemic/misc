@@ -51,7 +51,7 @@ def plot_searchsorted_visualization(array, values, side='left', ax=None):
 
     kwplot.phantom_legend(colors)
 
-    ax.set_ylim(-1, 5)
+    ax.set_ylim(-1, 2)
 
 
 def main():
