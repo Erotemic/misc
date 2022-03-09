@@ -28,6 +28,10 @@ Notes:
     # https://packaging.python.org/tutorials/distributing-packages/
     # https://stackoverflow.com/questions/45188811/how-to-gpg-sign-a-file-that-is-built-by-travis-ci
 
+    Based on template in
+
+    ~/misc/templates/PYPKG/publish.sh
+
 Usage:
     cd <YOUR REPO>
 
@@ -136,6 +140,7 @@ else
     if [[ "$DO_TAG" == "False" ]]; then
         echo "We are NOT about to tag VERSION='$VERSION'" 
     else
+        # shellcheck disable=SC2162
         read -p "Do you want to git tag and push version='$VERSION'? (input 'yes' to confirm)" ANS
         echo "ANS = $ANS"
         WAS_INTERACTION="True"
@@ -164,6 +169,7 @@ else
     if [[ "$DO_BUILD" == "False" ]]; then
         echo "We are NOT about to build wheels"
     else
+        # shellcheck disable=SC2162
         read -p "Do you need to build wheels? (input 'yes' to confirm)" ANS
         echo "ANS = $ANS"
         WAS_INTERACTION="True"
@@ -180,6 +186,7 @@ else
     if [[ "$DO_UPLOAD" == "False" ]]; then
         echo "We are NOT about to directly publish VERSION='$VERSION'" 
     else
+        # shellcheck disable=SC2162
         read -p "Are you ready to directly publish version='$VERSION'? ('yes' will twine upload)" ANS
         echo "ANS = $ANS"
         WAS_INTERACTION="True"
@@ -202,6 +209,7 @@ if [[ "$WAS_INTERACTION" == "True" ]]; then
     DO_GPG=${DO_GPG}
     DO_BUILD=${DO_BUILD}
     "
+    # shellcheck disable=SC2162
     read -p "Look good? Ready? Enter any text to continue" ANS
 fi
 
