@@ -60,7 +60,7 @@ def main():
 
     if 1:
         array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-        values = [-1, 0, 1, 4, 6, 6.1, 6.5, 7, 7.1, 7.9, 8.0, 15, 16]
+        values = [-1, 0, 1, 4, 6, 6.1, 6.5, 7, 10.3, 10.5, 10.7, 15, 16]
 
     if 0:
         array = np.linspace(0, 30)
@@ -75,12 +75,20 @@ def main():
     fig = kwplot.figure(fnum=1, doclf=1, pnum=(2, 1, 1))
     ax = fig.gca()
     plot_searchsorted_visualization(array, values, side='left', ax=ax)
-    ax.set_title('searchsorted side=left')
+    ax.set_title('association = searchsorted(array, values, side=left)')
 
     fig = kwplot.figure(fnum=1, doclf=0, pnum=(2, 1, 2))
     ax = fig.gca()
     plot_searchsorted_visualization(array, values, side='right', ax=ax)
-    ax.set_title('searchsorted side=right')
+    ax.set_title('association = searchsorted(array, values, side=right)')
+
+    import ubelt as ub
+    fig.suptitle(ub.codeblock(
+        '''
+        Notice:
+        side=left and side=right have the same result except when the value is
+        already in the array.
+        '''))
 
 if __name__ == '__main__':
     """
