@@ -1,38 +1,32 @@
 
 
-def benchmark_template():
+def benchmark_pathlib_vs_fspath():
     import ubelt as ub
+    import pathlib
     import pandas as pd
+    import random
     import timerit
+    import os
 
-    def method1(x, y, z):
-        ret = []
-        for i in range((x + y) * z):
-            ret.append(i)
-        return ret
+    def method_pathlib(inputs):
+        p = pathlib.Path(*inputs)
 
-    def method2(x, y, z):
-        ret = [i for i in range((x + y) * z)]
-        return ret
+    def method_ospath(inputs):
+        p = os.path.join(*inputs)
 
     method_lut = locals()  # can populate this some other way
 
-    ti = timerit.Timerit(100, bestof=10, verbose=2)
+    ti = timerit.Timerit(10000, bestof=10, verbose=2)
 
     basis = {
-        'method': ['method1', 'method2'],
-        'x': list(range(7)),
-        'y': [0, 100],
-        'z': [2, 3]
-        # 'param_name': [param values],
+        'method': ['method_pathlib', 'method_ospath'],
+        'num_parts': [2, 4, 8, 12, 16],
     }
-    xlabel = 'x'
-    # Set these to param labels that directly transfer to method kwargs
-    kw_labels = ['x', 'y', 'z']
-    # Set these to empty lists if they are not used
+    xlabel = 'num_parts'
+    kw_labels = []
     group_labels = {
-        'style': ['y'],
-        'size': ['z'],
+        'style': [],
+        'size': [],
     }
     group_labels['hue'] = list(
         (ub.oset(basis) - {xlabel}) - set.union(*map(set, group_labels.values())))
@@ -46,9 +40,11 @@ def benchmark_template():
             group_keys[gname + '_key'] = ub.repr2(
                 ub.dict_isect(params, labels), compact=1, si=1)
         key = ub.repr2(params, compact=1, si=1)
-        # Make any modifications you need to compute input kwargs for each
-        # method here.
         kwargs = ub.dict_isect(params.copy(),  kw_labels)
+
+        n = params['num_parts']
+        inputs = [chr(random.randint(97, 120)) for _ in range(n)]
+        kwargs['inputs'] = inputs
         method = method_lut[params['method']]
         # Timerit will run some user-specified number of loops.
         # and compute time stats with similar methodology to timeit
@@ -90,5 +86,5 @@ def benchmark_template():
         ax = kwplot.figure(fnum=1, doclf=True).gca()
         sns.lineplot(data=data, x=xlabel, y='min', marker='o', ax=ax, **plotkw)
         ax.set_title('Benchmark')
-        ax.set_xlabel('Time (todo: A better x-variable description)')
-        ax.set_ylabel('Size (todo: A better y-variable description)')
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Number of parts')
