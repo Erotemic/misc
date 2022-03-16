@@ -18,10 +18,92 @@ def simple_bench():
     """
 
 
+def bench2():
+    import numpy as np
+    np.sqrt(ppv * tpr * tnr * npv) - np.sqrt(fdr * fnr * fpr * fmr)
+
+
 def benchmark_repeat_vs_reduce_mul():
     import ubelt as ub
     import pandas as pd
     import timerit
+
+    def reduce_daq_rec(func, arrs):
+        if len(arrs) == 1:
+            return arrs[0]
+        if len(arrs) == 2:
+            return func(arrs[0], arrs[1])
+        elif len(arrs) == 3:
+            return func(func(arrs[0], arrs[1]), arrs[3])
+        else:
+            arrs1 = arrs[0::2]
+            arrs2 = arrs[1::2]
+            res1 = reduce_daq_rec(func, arrs1)
+            res2 = reduce_daq_rec(func, arrs2)
+            res = func(res1, res2)
+        return res
+
+    def reduce_daq_iter(func, arrs):
+        """
+        https://www.baeldung.com/cs/convert-recursion-to-iteration
+        https://stackoverflow.com/questions/159590/way-to-go-from-recursion-to-iteration
+        arrs = [2, 3, 5, 7, 11, 13, 17, 21]
+        """
+        raise NotImplementedError
+        # TODO: make the iterative version
+        from collections import deque
+        empty_result = None
+        stack = deque([(arrs, empty_result)])
+        idx = 0
+        while stack:
+            print('----')
+            print('stack = {}'.format(ub.repr2(list(stack), nl=1)))
+            arrs0, result = stack.pop()
+            if len(arrs0) == 0:
+                raise Exception
+            if result is not None:
+                # raise Exception
+                results = [result]
+                while stack:
+                    next_arrs0, next_result = stack.pop()
+                    if next_result is None:
+                        break
+                    else:
+                        results.append(next_result)
+                if results:
+                    if len(results) == 1:
+                        stack.append((results, results[0]))
+                    else:
+                        stack.append((results, None))
+                if next_result is None:
+                    stack.append((next_arrs0, None))
+            elif result is None:
+                if len(arrs0) == 1:
+                    result = arrs0[0]
+                    stack.append((arrs0, result))
+                    # return arrs0[0]
+                if len(arrs0) == 2:
+                    result = func(arrs0[0], arrs0[1])
+                    stack.append((arrs0, result))
+                elif len(arrs0) == 3:
+                    result = func(func(arrs0[0], arrs0[1]), arrs0[3])
+                    stack.append((arrs0, result))
+                else:
+                    arrs01 = arrs0[0::2]
+                    arrs02 = arrs0[1::2]
+                    stack.append((arrs0, empty_result))
+                    stack.append((arrs01, empty_result))
+                    stack.append((arrs02, empty_result))
+                    # res1 = reduce_daq_rec(func, arrs01)
+                    # res2 = reduce_daq_rec(func, arrs2)
+                    # res = func(res1, res2)
+            idx += 1
+            if idx > 10:
+                raise Exception
+        return res
+
+    def method_daq_rec(arrs):
+        return reduce_daq_rec(np.multiply, arrs)
 
     def method_repeat(arrs):
         """
@@ -58,7 +140,7 @@ def benchmark_repeat_vs_reduce_mul():
     ti = timerit.Timerit(10000, bestof=10, verbose=2)
 
     basis = {
-        'method': ['method_repeat', 'method_reduce', 'method_stack'],
+        'method': ['method_repeat', 'method_reduce', 'method_stack', 'method_daq_rec'],
         'arr_size': [10, 100, 1000, 10000],
         'num_arrs': [4, 8, 32],
     }
@@ -131,5 +213,5 @@ def benchmark_repeat_vs_reduce_mul():
         ax = kwplot.figure(fnum=1, doclf=True).gca()
         sns.lineplot(data=data, x=xlabel, y='min', marker='o', ax=ax, **plotkw)
         ax.set_title('Benchmark')
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Array Size')
+        ax.set_xlabel('Array Size')
+        ax.set_ylabel('Time')
