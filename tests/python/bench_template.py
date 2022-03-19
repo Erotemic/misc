@@ -95,7 +95,6 @@ def benchmark_template():
     # Data in long-form makes it very easy to use seaborn.
     data = pd.DataFrame(rows)
     data = data.sort_values(time_key)
-    print(data)
 
     if RECORD_ALL:
         # Show the min / mean if we record all
@@ -103,8 +102,47 @@ def benchmark_template():
         mean_times = data.groupby('key')[['time']].mean().rename({'time': 'mean'}, axis=1)
         stats_data = pd.concat([min_times, mean_times], axis=1)
         stats_data = stats_data.sort_values('min')
-        print('Statistics:')
-        print(stats_data)
+    else:
+        stats_data = data
+
+    USE_OPENSKILL = 1
+    if USE_OPENSKILL:
+        # Lets try a real ranking method
+        # https://github.com/OpenDebates/openskill.py
+        import openskill
+        method_ratings = {m: openskill.Rating() for m in basis['method']}
+
+    groups = stats_data.groupby('method')
+    other_keys = sorted(set(stats_data.columns) - {'key', 'method', 'min', 'mean', 'hue_key', 'size_key', 'style_key'})
+    for params, variants in stats_data.groupby(other_keys):
+        variants = variants.sort_values('mean')
+        ranking = variants['method'].reset_index(drop=True)
+
+        mean_speedup = variants['mean'].max() / variants['mean']
+        stats_data.loc[mean_speedup.index, 'mean_speedup'] = mean_speedup
+        min_speedup = variants['min'].max() / variants['min']
+        stats_data.loc[min_speedup.index, 'min_speedup'] = min_speedup
+
+        if USE_OPENSKILL:
+            # The idea is that each setting of parameters is a game, and each
+            # "method" is a player. We rank the players by which is fastest,
+            # and update their ranking according to the Weng-Lin Bayes ranking
+            # model. This does not take the fact that some "games" (i.e.
+            # parameter settings) are more important than others, but it should
+            # be fairly robust on average.
+            old_ratings = [[r] for r in ub.take(method_ratings, ranking)]
+            new_values = openskill.rate(old_ratings)  # Not inplace
+            new_ratings = [openskill.Rating(*new[0]) for new in new_values]
+            method_ratings.update(ub.dzip(ranking, new_ratings))
+
+    print('Statistics:')
+    print(stats_data)
+
+    if USE_OPENSKILL:
+        from openskill import predict_win
+        win_prob = predict_win([[r] for r in method_ratings.values()])
+        skill_agg = pd.Series(ub.dzip(method_ratings.keys(), win_prob)).sort_values(ascending=False)
+        print('Aggregated Rankings =\n{}'.format(skill_agg))
 
     plot = True
     if plot:
