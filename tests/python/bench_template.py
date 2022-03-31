@@ -112,7 +112,6 @@ def benchmark_template():
         import openskill
         method_ratings = {m: openskill.Rating() for m in basis['method']}
 
-    groups = stats_data.groupby('method')
     other_keys = sorted(set(stats_data.columns) - {'key', 'method', 'min', 'mean', 'hue_key', 'size_key', 'style_key'})
     for params, variants in stats_data.groupby(other_keys):
         variants = variants.sort_values('mean')
