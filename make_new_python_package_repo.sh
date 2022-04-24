@@ -8,6 +8,8 @@ Usage:
     REPO_NAME=supersetup
     REPO_NAME=shitspotter
     REPO_NAME=mathutf
+
+    REPO_NAME=cmd_queue
     echo "REPO_NAME = $REPO_NAME"
     source ~/misc/make_new_python_package_repo.sh && make_pypkg $REPO_NAME
 '
