@@ -249,6 +249,18 @@ def build_threat_models():
                 },
 
                 {
+                    'hashmode': 'HMAC-SHA256',
+                    'notes': 'weak',
+                    'attempts_per_second': 1898.6 * 1e6,
+                },
+
+                {
+                    'hashmode': 'sha256($pass.$salt)',
+                    'notes': 'weak',
+                    'attempts_per_second': 9746.6 * 1e6,
+                },
+
+                {
                     # A "Weak" but still used scheme
                     'hashmode': 'md5',
                     'notes': 'weak',
