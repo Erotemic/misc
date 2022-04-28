@@ -5,8 +5,8 @@ openssl ciphers | sed "s/:/\n/g"
 '
 
 # OpenSSL Standalone stdin demo:
-echo "secret_text" | SECRET_PASSWORD=12345 openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:SECRET_PASSWORD -S "deadbeaf00000bad" -e -a 
-echo "U2FsdGVkX1/erb6vAAALrdMUExJTaVfj5d60EGl8Gu0=" | SECRET_PASSWORD=123456 openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:SECRET_PASSWORD -d -a 
+echo "secret_text" | SECRET_PASSWORD=12345 openssl enc -aes-256-cbc -pbkdf2 -md sha512 -pass env:SECRET_PASSWORD -S "deadbeaf00000bad" -e -a 
+echo "U2FsdGVkX1/erb6vAAALrdMUExJTaVfj5d60EGl8Gu0=" | SECRET_PASSWORD=12345 openssl enc -aes-256-cbc -pbkdf2 -md sha512 -pass env:SECRET_PASSWORD -d -a 
 
 
 # Configurable Sandalone OpenSSL Demo
