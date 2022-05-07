@@ -14,137 +14,18 @@ printf "secret" | SECRET_PASSWORD=12345 openssl enc -aes-256-cbc -pbkdf2 -md sha
 echo "Ynm6NFdO3uRCgLC9A8KMkQ==" | SECRET_PASSWORD=12345 openssl enc -aes-256-cbc -pbkdf2 -S "deadbeaf00000bad" -md sha512 -pass env:SECRET_PASSWORD -d -a && echo "--"
 
 
-# https://boubakr92.wordpress.com/2012/12/14/numeral-systems-conversion-in-bash/
-
-toupper(){
-    __doc__="
-    toupper asdf
-    "
-    printf '%s\n' "$1" | awk '{ print toupper($0) }'
-}
-
-tolower(){
-    __doc__="
-    tolower FDS
-    "
-    printf '%s\n' "$1" | awk '{ print tolower($0) }'
-}
-
-convert_b64_to_hex(){
-    echo "$1" | base64 -d | xxd -p -u
-}
-
-convert_b64_to_ascii(){
-    echo "$1" | base64 -d
-}
-
-convert_b64_to_oct(){
-    local _hex
-    _hex=$(convert_b64_to_hex "$1")
-    convert_hex_to_oct "$_hex"
-}
-
-convert_ascii_to_b64(){
-    echo "$1" | base64
-}
-
-convert_ascii_to_hex(){
-    printf "%s" "$1" | xxd -p -u
-}
-
-convert_ascii_to_oct(){
-    local _hex
-    _hex=$(convert_ascii_to_hex "$1")
-    convert_hex_to_oct "$_hex"
-}
-
-convert_hex_to_oct(){
-    __doc__="
-    convert_hex_to_oct 7
-    convert_hex_to_oct FF
-    "
-    local _hex
-    _hex=$(toupper "$1")
-    echo "obase=8 ; ibase=16 ; $_hex" | bc
-}
-
-convert_hex_to_b64(){
-    echo "$1" | xxd -r -p | base64
-}
-
-convert_hex_to_ascii(){
-    echo "$1" | xxd -r -p 
-}
-
-convert_oct_to_hex(){
-    __doc__='
-    convert_oct_to_hex 15
-    convert_oct_to_hex 37
-    convert_hex_to_oct 1f
-    '
-    echo "obase=16 ; ibase=8 ; $1" | bc | awk '{ print tolower($0) }'
-}
-
-convert_oct_to_ascii() {
-    __doc__='
-    convert_oct_to_hex 46
-    convert_hex_to_ascii 26
-    convert_oct_to_ascii 46
-    convert_ascii_to_hex "&"
-    convert_ascii_to_oct "&"
-    '
-    local _hex
-    _hex=$(convert_oct_to_hex "$1")
-    convert_hex_to_ascii "$_hex"
-}
-
-convert_oct_to_b64() {
-    local _ascii
-    _ascii=$(convert_oct_to_ascii "$1")
-    convert_ascii_to_b64 "$_ascii"
-}
-
-# Tests
-TEST_B64="U2FsdGVkX1VV"
-TEST_ASCII="Salted_UU"
-TEST_HEX="53616C7465645F5555"
-
-echo "$TEST_ASCII" | hd
-
-convert_b64_to_oct "$TEST_B64" && true
-convert_b64_to_hex "$TEST_B64" && true
-convert_b64_to_ascii "$TEST_B64" && echo ""
-convert_ascii_to_b64 "$TEST_ASCII" && true
-
-convert_hex_to_b64 53616C7465645F5555
-convert_hex_to_oct 53616C7465645F5555
-convert_hex_to_b64 53616C7465645F5555
-convert_hex_to_ascii 53616C7465645F5555
-
-convert_oct_to_ascii "246605543506254427652525"
-convert_oct_to_b64 "246605543506254427652525"
-
-concat2(){
-    printf "%s%s" "$1" "$2"
-}
-
-echo "obase=64; ibase=8; AAAA" | bc
-
-
 # OpenSSL 1.x output
 SALTED_CIPHERTEXT_B64_ORIG="U2FsdGVkX1/erb6vAAALrWJ5ujRXTt7kQoCwvQPCjJE="
 # OpenSSL 3.x output
 UNSALTED_CIPHERTEXT_B64="Ynm6NFdO3uRCgLC9A8KMkQ=="
 
-echo "$SALTED_CIPHERTEXT_B64_ORIG" | hd -o
-echo "$UNSALTED_CIPHERTEXT_B64" | od
-
 # The prefix and salt 
 SALT_PREFIX_ASCII="Salted__"
-SALT_VALUE_HEX="DEADBEAF00000BAD"
+SALT_VALUE_HEX="deadbeaf00000bad"
 
-echo $SALT_PREFIX_ASCII | od -r
-
+# Concatenate to get the 1.x output
+# shellcheck disable=SC2059
+(printf "$SALT_PREFIX_ASCII" && printf "$SALT_VALUE_HEX" | xxd -r -p && echo "$UNSALTED_CIPHERTEXT_B64" | base64 -d ) | base64
 
 
 # Conversions (via OCT)
