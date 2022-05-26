@@ -1,3 +1,4 @@
+#!/bin/bash
 __notes__="
 TODO:
 
@@ -32,7 +33,7 @@ delete_remote_tags(){
 #    rob sedr "'$VERSION'" "'$NEXT_VERSION'" True
 #    echo "" >> CHANGELOG.md
 
-#    source $HOME/local/init/utils.sh
+#    source "$HOME"/local/init/utils.sh
 
 
 #    # New code to insert the new line in the right spot 
@@ -72,10 +73,10 @@ accept_latest_gitlab_dev_mr(){
     MODNAME=$1
     DEPLOY_REMOTE=$2
 
-    cd $HOME/code/$MODNAME
+    cd "$HOME/code/$MODNAME"
     MERGE_BRANCH=$(git branch --show-current)
-    GROUP_NAME=$(git remote get-url $DEPLOY_REMOTE | cut -d ":" -f 2 | cut -d "/" -f 1)
-    HOST=https://$(git remote get-url $DEPLOY_REMOTE | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
+    GROUP_NAME=$(git remote get-url "$DEPLOY_REMOTE" | cut -d ":" -f 2 | cut -d "/" -f 1)
+    HOST=https://$(git remote get-url "$DEPLOY_REMOTE" | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
 
     echo "
         MODNAME=$MODNAME
@@ -93,7 +94,7 @@ accept_latest_gitlab_dev_mr(){
     # You must have a way of loading an authentication token here
     # The function ``git_token_for`` should map a hostname to the 
     # authentication token used for that hostname
-    PRIVATE_GITLAB_TOKEN=$(git_token_for $HOST)
+    PRIVATE_GITLAB_TOKEN=$(git_token_for "$HOST")
 
     if [[ "$PRIVATE_GITLAB_TOKEN" == "ERROR" ]]; then
         echo "Failed to load authentication key"
@@ -102,22 +103,22 @@ accept_latest_gitlab_dev_mr(){
 
     TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
-    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups" > $TMP_DIR/all_group_info
-    GROUP_ID=$(cat $TMP_DIR/all_group_info | jq ". | map(select(.name==\"$GROUP_NAME\")) | .[0].id")
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups" > "$TMP_DIR/all_group_info"
+    GROUP_ID=$(cat "$TMP_DIR/all_group_info" | jq ". | map(select(.name==\"$GROUP_NAME\")) | .[0].id")
     echo "GROUP_ID = $GROUP_ID"
 
-    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID" > $TMP_DIR/group_info
-    PROJ_ID=$(cat $TMP_DIR/group_info | jq ".projects | map(select(.name==\"$MODNAME\")) | .[0].id")
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID" > "$TMP_DIR/group_info"
+    PROJ_ID=$(cat "$TMP_DIR/group_info" | jq ".projects | map(select(.name==\"$MODNAME\")) | .[0].id")
     echo "PROJ_ID = $PROJ_ID"
 
-    curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/?state=opened" > $TMP_DIR/open_mr_info
-    MERGE_IID=$(cat $TMP_DIR/open_mr_info | jq ". | map(select(.source_branch==\"$MERGE_BRANCH\")) | .[0].iid")
+    curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/?state=opened" > "$TMP_DIR/open_mr_info"
+    MERGE_IID=$(cat "$TMP_DIR/open_mr_info" | jq ". | map(select(.source_branch==\"$MERGE_BRANCH\")) | .[0].iid")
     echo "MERGE_IID = $MERGE_IID"
 
-    curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID" > $TMP_DIR/merge_info
-    cat $TMP_DIR/merge_info| jq .
-    CAN_MERGE=$(cat $TMP_DIR/merge_info| jq .user.can_merge | sed -e 's/^"//' -e 's/"$//')
-    MERGE_STATUS=$(cat $TMP_DIR/merge_info| jq .head_pipeline.status | sed -e 's/^"//' -e 's/"$//')
+    curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID" > "$TMP_DIR/merge_info"
+    cat "$TMP_DIR/merge_info"| jq .
+    CAN_MERGE=$(cat "$TMP_DIR/merge_info"| jq .user.can_merge | sed -e 's/^"//' -e 's/"$//')
+    MERGE_STATUS=$(cat "$TMP_DIR/merge_info"| jq .head_pipeline.status | sed -e 's/^"//' -e 's/"$//')
     echo "CAN_MERGE = $CAN_MERGE"
     echo "MERGE_STATUS = $MERGE_STATUS"
 
@@ -128,16 +129,18 @@ accept_latest_gitlab_dev_mr(){
         return 1
     fi
 
-    DRAFT_STATUS=$(cat $TMP_DIR/merge_info| jq .work_in_progress | sed -e 's/^"//' -e 's/"$//')
+    DRAFT_STATUS=$(cat "$TMP_DIR/merge_info"| jq .work_in_progress | sed -e 's/^"//' -e 's/"$//')
     echo "DRAFT_STATUS = $DRAFT_STATUS"
 
     if [[ "$DRAFT_STATUS" == "true" ]]; then
         # NOTE: QUICK ACTIONS ARE NOT REST API ACTIONS
         # https://docs.gitlab.com/ee/user/project/quick_actions.html#quick-actions-for-issues-merge-requests-and-epics
 
-        curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID" > $TMP_DIR/merge_info
-        OLD_TITLE=$(cat $TMP_DIR/merge_info| jq .title | sed -e 's/^"//' -e 's/"$//')
+        curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID" > "$TMP_DIR/merge_info"
+        OLD_TITLE=$(cat "$TMP_DIR/merge_info"| jq .title | sed -e 's/^"//' -e 's/"$//')
+        # shellcheck disable=SC2001
         NEW_TITLE=$(echo "$OLD_TITLE" | sed 's|Draft *:* *||gi')
+        #NEW_TITLE=${OLD_TITLE//s/Draft *:* */}
         echo "OLD_TITLE = $OLD_TITLE"
         echo "NEW_TITLE = $NEW_TITLE"
 
@@ -146,17 +149,17 @@ accept_latest_gitlab_dev_mr(){
         curl --request PUT \
             --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" \
             --data-urlencode "title=$NEW_TITLE" \
-            "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID" > $TMP_DIR/toggle_status
-        cat $TMP_DIR/toggle_status | jq .
+            "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID" > "$TMP_DIR/toggle_status"
+        cat "$TMP_DIR/toggle_status" | jq .
     fi
 
     # Click the accept button
-    curl --request PUT --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID/merge" > $TMP_DIR/status
-    cat $TMP_DIR/status | jq .
-    cat $TMP_DIR/status | jq .message
+    curl --request PUT --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID/merge" > "$TMP_DIR/status"
+    cat "$TMP_DIR/status" | jq .
+    cat "$TMP_DIR/status" | jq .message
 
     echo "accept_latest_gitlab_dev_mr finished."
-    rm -rf $TMP_DIR
+    rm -rf "$TMP_DIR"
 
 }
 
@@ -165,11 +168,11 @@ create_new_gitlab_dev_mr(){
     MODNAME=$1
     DEPLOY_REMOTE=$2
 
-    cd $HOME/code/$MODNAME
+    cd "$HOME/code/$MODNAME"
     MERGE_BRANCH=$(git branch --show-current)
     DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
-    GROUP_NAME=$(git remote get-url $DEPLOY_REMOTE | cut -d ":" -f 2 | cut -d "/" -f 1)
-    HOST=https://$(git remote get-url $DEPLOY_REMOTE | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
+    GROUP_NAME=$(git remote get-url "$DEPLOY_REMOTE" | cut -d ":" -f 2 | cut -d "/" -f 1)
+    HOST=https://$(git remote get-url "$DEPLOY_REMOTE" | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
 
     echo "
         MODNAME=$MODNAME
@@ -187,7 +190,7 @@ create_new_gitlab_dev_mr(){
     # You must have a way of loading an authentication token here
     # The function ``git_token_for`` should map a hostname to the 
     # authentication token used for that hostname
-    PRIVATE_GITLAB_TOKEN=$(git_token_for $HOST)
+    PRIVATE_GITLAB_TOKEN=$(git_token_for "$HOST")
 
     if [[ "$PRIVATE_GITLAB_TOKEN" == "ERROR" ]]; then
         echo "Failed to load authentication key"
@@ -196,17 +199,17 @@ create_new_gitlab_dev_mr(){
 
     TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
-    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups" > $TMP_DIR/all_group_info
-    GROUP_ID=$(cat $TMP_DIR/all_group_info | jq ". | map(select(.name==\"$GROUP_NAME\")) | .[0].id")
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups" > "$TMP_DIR/all_group_info"
+    GROUP_ID=$(cat "$TMP_DIR/all_group_info" | jq ". | map(select(.name==\"$GROUP_NAME\")) | .[0].id")
     echo "GROUP_ID = $GROUP_ID"
 
-    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID" > $TMP_DIR/group_info
-    PROJ_ID=$(cat $TMP_DIR/group_info | jq ".projects | map(select(.name==\"$MODNAME\")) | .[0].id")
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID" > "$TMP_DIR/group_info"
+    PROJ_ID=$(cat "$TMP_DIR/group_info" | jq ".projects | map(select(.name==\"$MODNAME\")) | .[0].id")
     echo "PROJ_ID = $PROJ_ID"
 
-    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/user" > $TMP_DIR/user_info
-    cat $TMP_DIR/user_info | jq .
-    SELF_USER_ID=$(cat $TMP_DIR/user_info| jq .id)
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/user" > "$TMP_DIR/user_info"
+    cat "$TMP_DIR/user_info" | jq .
+    SELF_USER_ID=$(cat "$TMP_DIR/user_info"| jq .id)
     echo "SELF_USER_ID = $SELF_USER_ID"
 
     # Create the new gitlab MR and assign yourself
@@ -222,20 +225,21 @@ create_new_gitlab_dev_mr(){
         --data-urlencode "target_branch=$DEFAULT_BRANCH" \
         --data-urlencode "description=auto created mr" \
         --data-urlencode "assignee_id=$SELF_USER_ID" \
-        "$HOST/api/v4/projects/$PROJ_ID/merge_requests" > $TMP_DIR/new_mr
-    cat $TMP_DIR/new_mr | jq .
+        "$HOST/api/v4/projects/$PROJ_ID/merge_requests" > "$TMP_DIR/new_mr"
+    cat "$TMP_DIR/new_mr" | jq .
 
+    # shellcheck disable=SC2050
     if [[ "false" == "true" ]]; then
         # Assign myself
         # shouldnt need to do this if we created the MR correctly
-        curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/?state=opened" > $TMP_DIR/open_mr_info
-        MERGE_IID=$(cat $TMP_DIR/new_mr | jq ".iid")
+        curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJ_ID/merge_requests/?state=opened" > "$TMP_DIR/open_mr_info"
+        MERGE_IID=$(cat "$TMP_DIR/new_mr" | jq ".iid")
         echo "MERGE_IID = $MERGE_IID"
         curl --request PUT \
             --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" \
             --data-urlencode "assignee_id=$SELF_USER_ID" \
-            "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID" > $TMP_DIR/update_mr
-        cat $TMP_DIR/update_mr | jq .
+            "$HOST/api/v4/projects/$PROJ_ID/merge_requests/$MERGE_IID" > "$TMP_DIR/update_mr"
+        cat "$TMP_DIR/update_mr" | jq .
     fi
 }
 
@@ -253,17 +257,19 @@ git_checkeven(){
     revA=$1
     revB=$2
 
+    # shellcheck disable=SC2086
     nA2B="$(git rev-list --count $revA..$revB)"
+    # shellcheck disable=SC2086
     nB2A="$(git rev-list --count $revB..$revA)"
 
-    if [ "$nA2B" -eq 0 -a "$nB2A" -eq 0 ]; then
-      printf "$revA is even with $revB\n"
+    if [ "$nA2B" -eq 0 ] && [ "$nB2A" -eq 0 ]; then
+      echo "$revA is even with $revB"
       return 0
     elif [ "$nA2B" -gt 0 ]; then
-      printf "$revA is $nA2B commits behind $revB\n"
+      echo "$revA is $nA2B commits behind $revB"
       return 1
     else
-      printf "$revA is $nB2A commits ahead of $revB\n"
+      echo "$revA is $nB2A commits ahead of $revB"
       return 2
     fi
 }
@@ -278,7 +284,7 @@ gitlab_update_master_to_main(){
     git push -u origin main
 
     # Remotely, go to settings
-    # https://gitlab.kitware.com/computer-vision/kwplot/-/settings/repository
+    # https://gitlab.kitware.com/computer-vision/ndsampler/-/settings/repository
     # Update the default branch
     # Update protected branches
 
@@ -295,7 +301,7 @@ update_default_branch(){
     DEPLOY_REMOTE = $DEPLOY_REMOTE
     "
 
-    cd $HOME/code/$MODNAME
+    cd "$HOME/code/$MODNAME"
     VERSION=$(python -c "import $MODNAME; print($MODNAME.__version__)")
     NEXT_VERSION=$(python -c "print('.'.join('$VERSION'.split('.')[0:2]) + '.' + str(int('$VERSION'.split('.')[2]) + 1))")
     DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
@@ -305,8 +311,8 @@ update_default_branch(){
     DEFAULT_BRANCH = $DEFAULT_BRANCH
     "
 
-    git fetch $DEPLOY_REMOTE
-    git_checkeven $DEPLOY_REMOTE/release $DEPLOY_REMOTE/$DEFAULT_BRANCH
+    git fetch "$DEPLOY_REMOTE"
+    git_checkeven "$DEPLOY_REMOTE/release" "$DEPLOY_REMOTE/$DEFAULT_BRANCH"
     RES=$?
     if [ "$RES" == "0" ]; then
         echo "WARNING: $DEFAULT_BRANCH is up to date with release, did you forget to merge the topic branch?"
@@ -314,8 +320,8 @@ update_default_branch(){
         echo "$DEFAULT_BRANCH is different than release, that is expected"
     fi
 
-    git checkout $DEFAULT_BRANCH || git checkout $DEPLOY_REMOTE/$DEFAULT_BRANCH -b $DEFAULT_BRANCH
-    git pull $DEPLOY_REMOTE $DEFAULT_BRANCH
+    git checkout "$DEFAULT_BRANCH" || git checkout "$DEPLOY_REMOTE/$DEFAULT_BRANCH" -b "$DEFAULT_BRANCH"
+    git pull "$DEPLOY_REMOTE" "$DEFAULT_BRANCH"
 
 }
 
@@ -336,7 +342,7 @@ finish_deployment(){
     "
 
 
-    cd $HOME/code/$MODNAME
+    cd "$HOME/code/$MODNAME"
     VERSION=$(python -c "import $MODNAME; print($MODNAME.__version__)")
     #TAG_NAME="${VERSION}"
     NEXT_VERSION=$(python -c "print('.'.join('$VERSION'.split('.')[0:2]) + '.' + str(int('$VERSION'.split('.')[2]) + 1))")
@@ -348,16 +354,16 @@ finish_deployment(){
     # Get default branch name (master/main)
     DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
     echo "DEFAULT_BRANCH = $DEFAULT_BRANCH"
-    git checkout $DEFAULT_BRANCH || git checkout $DEPLOY_REMOTE/$DEFAULT_BRANCH -b $DEFAULT_BRANCH
-    git fetch $DEPLOY_REMOTE
-    git pull $DEPLOY_REMOTE $DEFAULT_BRANCH
-    git push $DEPLOY_REMOTE $DEFAULT_BRANCH:release
+    git checkout "$DEFAULT_BRANCH" || git checkout "$DEPLOY_REMOTE/$DEFAULT_BRANCH" -b "$DEFAULT_BRANCH"
+    git fetch "$DEPLOY_REMOTE"
+    git pull "$DEPLOY_REMOTE" "$DEFAULT_BRANCH"
+    git push "$DEPLOY_REMOTE" "$DEFAULT_BRANCH:release"
     #git tag "${TAG_NAME}" "${TAG_NAME}"^{} -f -m "tarball tag ${VERSION}"
     #git tag "${TAG_NAME}" -f -m "tarball tag ${VERSION}"
     #git push --tags $DEPLOY_REMOTE 
 
     echo "NEXT_VERSION = $NEXT_VERSION"
-    git co -b dev/$NEXT_VERSION
+    git co -b "dev/$NEXT_VERSION"
 
     rob sedr "'$VERSION'" "'$NEXT_VERSION'" True
     rob sedr "'dev/$VERSION'" "'dev/$NEXT_VERSION'" True
@@ -383,11 +389,11 @@ finish_deployment(){
     "
 
     git commit -am "Start branch for $NEXT_VERSION"
-    git push $DEPLOY_REMOTE
+    git push "$DEPLOY_REMOTE"
 
 
     # Hack for netharn
-    sed -i "s|'name': '$MODNAME', 'branch': 'dev/$VERSION'|'name': '$MODNAME', 'branch': 'dev/$NEXT_VERSION'|g" $HOME/code/netharn/super_setup.py
+    sed -i "s|'name': '$MODNAME', 'branch': 'dev/$VERSION'|'name': '$MODNAME', 'branch': 'dev/$NEXT_VERSION'|g" "$HOME"/code/netharn/super_setup.py
 }
 
 
@@ -494,6 +500,14 @@ mypkgs(){
     source ~/misc/bump_versions.sh
     load_secrets
     MODNAME=ubelt
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    update_default_branch $MODNAME $DEPLOY_REMOTE
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=progiter
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     update_default_branch $MODNAME $DEPLOY_REMOTE

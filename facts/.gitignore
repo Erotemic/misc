@@ -1,0 +1,7 @@
+./images
+*.aux
+*.fls
+*.pdf
+*.tex
+*.fdb_latexmk
+internal.tmol

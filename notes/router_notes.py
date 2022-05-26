@@ -51,6 +51,8 @@ def router_notes():
     (2.5 * Gbps).to(Mbps)
     (2.5 * Gbps).to(Mbps)
 
+    # R7350
+
     router_wifi_rates = {
         'Nighthawk X6 - R8000': {
             'wifi': (3200 * Mbps).to(MBps),

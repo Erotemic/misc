@@ -108,6 +108,12 @@ RTX 3090 runs at 370W
 1 kWh cost $0.12
 
 
+TODO:
+    Discuss side channel and social engineering
+    Discuss two-factor authentication
+    Discuss password protection [12]_.
+
+
 References:
     [1] https://xkcd.com/936/
     [2] https://twitter.com/erotemic/status/1408852635093016582
@@ -121,6 +127,8 @@ References:
     [9] https://www.quora.com/How-many-servers-does-AWS-have#:~:text=Cloud%20hardware%20is%20very%20interesting,more%20than%201%2C000%2C000%20physical%20servers.
     [10] https://aws.amazon.com/ec2/instance-types/p3/
     [11] https://xkcd.com/538/
+
+    [12] https://monzo.com/blog/2021/11/18/protecting-our-most-sensitive-secrets
 
 Requirements:
     pip install ubelt
@@ -238,6 +246,18 @@ def build_threat_models():
                     'hashmode': 'VeraCrypt Streebog-512',
                     'notes': 'strongest',
                     'attempts_per_second': 46,
+                },
+
+                {
+                    'hashmode': 'HMAC-SHA256',
+                    'notes': 'weak',
+                    'attempts_per_second': 1898.6 * 1e6,
+                },
+
+                {
+                    'hashmode': 'sha256($pass.$salt)',
+                    'notes': 'weak',
+                    'attempts_per_second': 9746.6 * 1e6,
                 },
 
                 {
@@ -754,7 +774,7 @@ def main():
                 annot = piv.applymap(time_labelize)
                 sns.heatmap(piv, annot=annot, ax=ax, fmt='s',
                             norm=LogNorm(vmin=1, vmax=8640000000),
-                            annot_kws={'size': 16},
+                            annot_kws={'size': 12},
                             cbar_kws={'label': 'seconds', 'pad': 0.001})
 
                 # Find colorbar

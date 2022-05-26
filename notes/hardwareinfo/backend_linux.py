@@ -124,6 +124,10 @@ def parse_cpu_info(percore=False):
     Notes:
         * lscpu
     """
+    # ALSO
+    import cpuinfo
+    cpu_info = cpuinfo.get_cpu_info()
+
     import re
     info = ub.cmd('cat /proc/cpuinfo')
     cpu_lines = info['out'].split('\n\n')

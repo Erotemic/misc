@@ -15,6 +15,8 @@
         ~/code/kwarray/.gitlab-ci.yml
         ~/code/kwcoco/.gitlab-ci.yml
 
+        ~/code/ndsampler/.gitlab-ci.yml
+
 
         Enable the opencv-hack if needed, and turn on/off the desired versions
         of Python.
@@ -220,11 +222,12 @@ stages:
         - export GPG_EXECUTABLE=gpg
         - export GPG_KEYID=$(cat dev/public_gpg_key)
         - echo "GPG_KEYID = $GPG_KEYID"
-        # source repo-specific secrets
         # VARNAME_CI_SECRET points to a protected variable only available on main and release branch
         - source dev/secrets_configuration.sh
         - CI_SECRET=${!VARNAME_CI_SECRET}
         - PUSH_TOKEN=${!VARNAME_PUSH_TOKEN}
+        - TWINE_PASSWORD=${!VARNAME_TWINE_PASSWORD}
+        - TWINE_USERNAME=${!VARNAME_TWINE_USERNAME}
         - $GPG_EXECUTABLE --version
         - openssl version
         - $GPG_EXECUTABLE --list-keys
@@ -239,13 +242,12 @@ stages:
         - pip install six pyopenssl ndg-httpsclient pyasn1 -U 
         - pip install requests[security] twine 
         # Execute the publish script for real this time
-        - MB_PYTHON_TAG=$MB_PYTHON_TAG DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE CURRENT_BRANCH=release DEPLOY_BRANCH=release DO_TAG=True DO_UPLOAD=True ./publish.sh || echo "upload already exists"
+        - TWINE_REPOSITORY_URL=https://upload.pypi.org/legacy MB_PYTHON_TAG=$MB_PYTHON_TAG DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE CURRENT_BRANCH=release DEPLOY_BRANCH=release DO_TAG=True DO_UPLOAD=True ./publish.sh || echo "upload already exists"
         # Have the server git-tag the release and push the tags
         - VERSION=$(python -c "import setup; print(setup.VERSION)")
         # do sed twice to handle the case of https clone with and without a read token
         - | 
             URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g' | sed -e 's|git@||g' | sed -e 's|:|/|g')
-            git push --tags $DEPLOY_REMOTE
             echo "URL_HOST = $URL_HOST"
             # A git config user name and email is required. Set if needed.
             if [[ "$(git config user.email)" == "" ]]; then
@@ -253,6 +255,7 @@ stages:
                 git config user.name "Gitlab-CI"
             fi
             TAG_NAME="v${VERSION}"
+            echo "TAG_NAME = $TAG_NAME"
             if [ $(git tag -l "$TAG_NAME") ]; then
                 echo "Tag already exists"
             else
@@ -260,8 +263,7 @@ stages:
                 # git push origin :refs/tags/$TAG_NAME
                 # and then tag with -f
                 git tag $TAG_NAME -m "tarball tag $VERSION"
-                git tag $VERSION -m "tarball tag $VERSION"
-                git push --tags "https://${PUSH_TOKEN}@${URL_HOST}"
+                git push --tags "https://git-push-token:${PUSH_TOKEN}@${URL_HOST}"
             fi
 
             
@@ -529,43 +531,43 @@ test_minimal_strict/cp36-cp36m-linux:
 # Python 3.5 Jobs
 
 
-build/cp35-cp35m-linux:
-    <<: 
-        - *build_template
-    image:
-        *image_python35
+#build/cp35-cp35m-linux:
+#    <<: 
+#        - *build_template
+#    image:
+#        *image_python35
 
-test_full_loose/cp35-cp35m-linux:
-    <<: 
-        - *test_full_loose_template
-    image:
-        *image_python35
-    needs: 
-        -  build/cp35-cp35m-linux
+#test_full_loose/cp35-cp35m-linux:
+#    <<: 
+#        - *test_full_loose_template
+#    image:
+#        *image_python35
+#    needs: 
+#        -  build/cp35-cp35m-linux
 
-test_minimal_loose/cp35-cp35m-linux:
-    <<: 
-        - *test_minimal_loose_template
-    image:
-        *image_python35
-    needs: 
-        -  build/cp35-cp35m-linux
+#test_minimal_loose/cp35-cp35m-linux:
+#    <<: 
+#        - *test_minimal_loose_template
+#    image:
+#        *image_python35
+#    needs: 
+#        -  build/cp35-cp35m-linux
 
-test_full_strict/cp35-cp35m-linux:
-    <<: 
-        - *test_full_strict_template
-    image:
-        *image_python35
-    needs: 
-        -  build/cp35-cp35m-linux
+#test_full_strict/cp35-cp35m-linux:
+#    <<: 
+#        - *test_full_strict_template
+#    image:
+#        *image_python35
+#    needs: 
+#        -  build/cp35-cp35m-linux
 
-test_minimal_strict/cp35-cp35m-linux:
-    <<: 
-        - *test_minimal_strict_template
-    image:
-        *image_python35
-    needs: 
-        -  build/cp35-cp35m-linux
+#test_minimal_strict/cp35-cp35m-linux:
+#    <<: 
+#        - *test_minimal_strict_template
+#    image:
+#        *image_python35
+#    needs: 
+#        -  build/cp35-cp35m-linux
 
 
 
@@ -573,43 +575,43 @@ test_minimal_strict/cp35-cp35m-linux:
 # Python 2.7 Jobs
 
 
-build/cp27-cp27m-linux:
-    <<: 
-        - *build_template
-    image:
-        *image_python27
+#build/cp27-cp27m-linux:
+#    <<: 
+#        - *build_template
+#    image:
+#        *image_python27
 
-test_full_loose/cp27-cp27m-linux:
-    <<: 
-        - *test_full_loose_template
-    image:
-        *image_python27
-    needs: 
-        -  build/cp27-cp27m-linux
+#test_full_loose/cp27-cp27m-linux:
+#    <<: 
+#        - *test_full_loose_template
+#    image:
+#        *image_python27
+#    needs: 
+#        -  build/cp27-cp27m-linux
 
-test_minimal_loose/cp27-cp27m-linux:
-    <<: 
-        - *test_minimal_loose_template
-    image:
-        *image_python27
-    needs: 
-        -  build/cp27-cp27m-linux
+#test_minimal_loose/cp27-cp27m-linux:
+#    <<: 
+#        - *test_minimal_loose_template
+#    image:
+#        *image_python27
+#    needs: 
+#        -  build/cp27-cp27m-linux
 
-test_full_strict/cp27-cp27m-linux:
-    <<: 
-        - *test_full_strict_template
-    image:
-        *image_python27
-    needs: 
-        -  build/cp27-cp27m-linux
+#test_full_strict/cp27-cp27m-linux:
+#    <<: 
+#        - *test_full_strict_template
+#    image:
+#        *image_python27
+#    needs: 
+#        -  build/cp27-cp27m-linux
 
-test_minimal_strict/cp27-cp27m-linux:
-    <<: 
-        - *test_minimal_strict_template
-    image:
-        *image_python27
-    needs: 
-        -  build/cp27-cp27m-linux
+#test_minimal_strict/cp27-cp27m-linux:
+#    <<: 
+#        - *test_minimal_strict_template
+#    image:
+#        *image_python27
+#    needs: 
+#        -  build/cp27-cp27m-linux
 
 
 

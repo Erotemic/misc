@@ -1,0 +1,9 @@
+Research question:
+
+* Problem: Starting from a pretrained model is sometimes worse than starting from scratch. Why?
+
+* How can we train efficiently such that we don't have to keep starting from
+  scratch? We should alwasy be able to "recover" from learning a new task - or
+maybe from a bad loss function.
+
+* How do you train a network such that starting from pertrained one does not have a detrimental effect?

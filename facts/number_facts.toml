@@ -1,0 +1,69 @@
+title = "Number Facts"
+
+[[facts]]
+text = """
+
+- rational number - ℚ - is a number that can be expressed as a fraction of integers (p / q), where q ≠ 0.
+
+- irrational number - ℝ ∖ ℚ - is a real number that is not rational.
+
+- complex number - ℂ - is an ordered pair of real numbers (x, y) written as x + iy, where i² = -1. Often we consider a subset of the complex numbers where x and y are rational.
+
+- hyperbolic number - (i.e. split complex number) is an ordered pair of real numbers (x, y) written as x + jy, where j² = +1. 
+
+- quaternion - ℍ - are written as a + bi + cj + dk, where (a, b, c, and d) are reals or rationals and (i, j, k) are extended imaginary numbers such that i² = j² = k² = ijk = -1.
+
+- biquaternion - simlar to quaternions, but (a, b, c, and d) can now be complex numbers.
+
+Octernion - 𝕆 - In mathematics, the o̙̬̥̪͂͒͗̅̍͛͛̕̚͢c̸̡̥̜̣͔͛̐̓̽̾͟͜͝ṯ̶̨̰̠̩̤̱̜̍̈̓̂͑o̵͔̳̦̣̫̥̻͋̄͂̋̚͢͜͡͝͡n̶͇̥͓̯͉̥̮̲͊̋̏͐̽͐̌̽̽͢͞i̵̪̪̯̗̻̳̽̃͛̒̀̚ō̴̯̪̜̲̭̱̣̓̏͊͒̔̚͡n͖͎͈͍̬̮͇͆̿̂́̀͂͘͡s̶̺̳̝̲̗̣͒͊̀̅̓́͢͟ are a normed division algebra over the r̸̡̘͕̜͉͌̇͋͗̉͛͊è̷͙̣̟̲̣͎͕̳̓́͊̌͗̚͡a̶̡̘͎͕̱̔̿̽̈͟͟͠l̨̗̬̥̟̭͙̋͌̀͐̈̔̏͊ numbers, aa̡̜̼͎̞͚̲̻͕̐̐̋͂͆̃͞ k͈͉̫͇̜͗͊͊̀̈̒̑̓̂̑͜í̵̦͍̳̮̤̘͓͈̦̬̏͊̌̆̃̆͘͞ṋ̨͎̖̿̈́̐̋̈́̏̓̚͠ͅd̷̩͔̩̫̞͓͐͑̆̋̽̇̽̐̒͊ o͔̥̗̯͖̺͈̮̺̔̍̃̿̒͂͊͜f̴͓̱͚̙̟̔͐̈͗̊̊̐͘͢͞͡ ḩ̡̻̺̯͖̼̭̌̍̈̓̈́͋ͅy̧̪̹̫̲͛̇͊̒̓͘ͅp̵̞̱̰͓̮̰̮̂͂̅̈́̆̊̇͗͘̚͜ę̶̦̦͉̹̜̗͚̝̅͆͆́̎͜͠r̨͎̪̙̟͊̇͆̑̍c̸̠̻̬͈̱̳͈͔͓̏̉̈́͋͗͘̚͟͝ő̶̢̡̘̖̭̺̙̿͊̈̋̓̚͘̚͝m̶̢̧̠̮̳̻̙͉̎̾̂̄͟͜͡p̧͙̱̹͇̪̹͔̲̔̓̇̂̕͘͝l̵̛̺͖̭͇̼̝̼̦̆͑̌̈̕͜ĕ̷̼͈͉̺̙̯̈́̈̃̽͢͠͠͝͡x̸͈͔͎͓͎͚̻͈̼̄̈͒̈͗͢ ṋ̸̦͖̰̼̰͈͆́̀̈́͜͢u̢̮͖̭͖͙̜͚͊̉́̑̈͊͗͘͟͞m̖̬̰͖̗̩̘̀͂̓̄̿̐͜͟͠͝b̥̱͙̥̻͓͈̟̝̐̈́̽̐̂̿̿̓̈̕͜ȩ̧̙̮͔̹̦̰̮̽̇̉̿̽̓͆́̃̚r̶̨̛͔̘̹͉̳̘̥̖̭̍̑̂̉̚ s̸̡̬͎̠͖̬̖͎̒͆͋̅̊̕͟y̨̧̗̹̪͓̩͑̉̿͛͂͑͘ͅş͈͎̫̤̺͕̌̎̀̾͂͐͗͠ṭ̮̦̖͍̬̜̟̙̎̑̏̓̿͢è̸̼͉͎̦̮̼͙̥̙͌̓̐͘͠m̧̨̼̝̹̱͕̘̟̏̓̊̊͛̓̕̚̚͟.̴̡͓̤͇͒̆̂̋̇͊̒͟͟͝ T̵̘̜̲̞̤͍̃͆͆̐̉͗̀̚͝h̷̙̱̭̼́̂̋̋̀̂͐̀͟e̵̪̹͉̯̤͊̒̆́̾̌̀̔̽͋ !̧͇̜̜̭͉̑́̋̂͆̅̏̽̀͢͡@͇̥̫̱̪̺͂̆̽̍͐́͠͡L̵̨̛̛̘̤̥̏̂̽̓̚ͅJ̧̡̡͈̗̫̈́̅͂͐̀̑͌K̥̥͔̜͈͙̮͒͗̅͊̅͑̋ͅL̵̪̠͇̦̜̎̑̎̿͡͠#̡̗̭͈̩̦̦̲̃̅̂̇͘͝#̨̝̠̈́̉͋̎̿̅̊͘̚͢͢!̡̞̻̝͊͐̊̆͂̈̓͐̇͜͠!̛̖̣̱͛̇̊͂͂̓̍͢ͅ!̠͓̤̦̻̭̩̘͇̔̐̅͋̃
+
+Split Octernion - N̛̤͉̻̲̮̩̂͐̿̉́̿́͘͠O̪̮͎̲͂͊͆̏̍́͋͢͞͞N̴̨̻͇̪̜̝̥͙̬͑̋͑̄͗͆̈̊͠͝-͕͍̬͉̫̽̓̓̆́̓̕͡͡Z̸̧̖̤͈͚̟̬̀̃̓͑̄͋̇͋̄͋͟͢E̴̢̡͓̘̭͗͋́̀́̐̓̔͠R̡̠̰͕̗̹̊̿̏̐͟͟͡ͅǪ̵͍͉̦͈͕̰̺̩̺̌̌̈̆̑̍ ę̡̙̳̗̪͇̜̯͐̀̃̃̿ḻ̢̛͖̂͒̄̄̕͘͟͟͠͡͞e̛̬͖̳̘̫̩͆̈́̐͒̇͋͟͟͞ͅm̸̡͖͚̖̣͈̟̯̐͛̉̃́͛͟͠e̷̡̖̙̊̏̂̊̈͊͢͜͡͡ņ̲̥̰̞͒̎̈́̋̆͐̃̈́͘ͅͅẗ̶̞̯͉̯̿̉̂̏͑̒̔͜͞s̶̛̜͈̘̦̪̀͌͛̅̌͌͠ ẅ̖̰͓͈̖̘̥̒̾́͑͛͠͠ḩ̼͚̩̓͒̃͐͘͘̕̕͟į̶̱̯͍̘̪̙̯̭̖͊͐̑̿͂͡c̬͎̣̣͉͔̎͂͋͛̇̉͞h̨̞̜̣̳̤͖͙̏͗̓̓̉́͟ ạ̡̨͙͇̮̺̰̭̎͐͌̿͋̃̾̚͞ȓ̶̨̫̼̬͙͓̰͈͈͛̈́̃͠ȩ̴̡̛̣͕͖̊̓̐̓̇͂̾̎̄ n̸͇̲͈̹̺͖̣̥̈́͑̄̿͂́͋̉̕͢ó̸̰̻̤̹̟̦̀̅̀̂̏n̮̰̩̙͙̫̈̊̈́͛̀͟-̠̺̯̰̦͊͒̉̄̚͞I̵̡̧̛̲̳̫͓̬̰̾̽̋̇̅͂̕͝͞Ň̸̺͙̯̝͚̺͚̈́̓͊͌̍̓̋͋͢͞Ṽ̴̨̘̳͍̭̓̊̍̈́̀͘͠ͅȨ̱͕͓̲̟̹̦̄̒̅̆͐̑̆̈͝ͅR̴̨̭̳̯͚̰͕̤̦̥̓̂̂̋͋̄͋Ṱ̵̺͓̹̱̠̞͊̑̆̍̌͆̒̕͜͟À̵̞͚͍̹͙͛̓͐̈̉́̅B̦̥̻̗̣̆̊̽̅́̒̔͞L̸̡͇͚͓̱̼͊̓͛̋̊͟͝E͎̤̲̰̥̔͌̽̀̀̇̀͢͡͝ O̷̦̹͎̯͙̬͛̃̃̃͞H̷̰̹̜̪̏̄̀̍́͋͂̑͞ͅ G̰͚̯͙̃̊̊̉̑̎̕͠ͅŌ̷̝̹̳̳͎̪̂͗̈́̆̈́̿͢͠Ḑ̷̡̘̳̠̋̑͌̇̑̚͘ O̶͈͕͈͎̩̫͂͒̊͂̆͒͝H̷̢̢̪̭͆͒͐̄̔̕ͅ G̭͉̖̞̬̦͍̪͇̘̑̈̂̓̋̆̎͘͘͡O̞̤̥͖̫̰̫͍̙̒̀͆̑͂̾̅͝Ḑ̢͎͚͈̟̗̣̐͗͘̚͡ Ŏ̰̹͙͙̰̦̜͓͎͙̔͛̍̍͂̀͒H̴̡͙͓̺͓̰̖͇͗̂̆̊̽̂͘̕͜ͅ G̵̢̱̺̗̿̇͋͐́͗̚͢͠O̳͎̤̜̮͇̓̑̓͂̕͞ͅD̛̖̝̗̝͊̅͂͆͗͌͜͡͝͠
+
+Sedenions - 1̶̧̺̲̫͕̻̫̫͆ͫͫ̑̌̋͢6̷̡᷿͉̺̜̤͖̯᷂͎ͫ͐̽᷆ͮ͌ͮ̎̄͞-̵̰͆͛᷄ͥ͌̎͊̋᷃͗d̵̨̨̮̮̘͎̩̖̙͗̇ͥ︢͟i̴̮̙̺̭̯̗̮̱̰ͥͣͤ́͌︢͗̀̔m̵̦̖͉̠̘͖͇͐̉̾̓̔ͤ͐͡͝e̷̘̯̠͈͓̠̘͎̖̦ͪ᷇n̴̲̏͑̑ͥ̆͜͞s̵̛᷂͎̬͉͓̙̻̰ͤͯ᷄̿̄͢͜i̵̧͈̲̯̲͈᷂̮͖᷂᷆̈̎̃ͩ̈ȯ̵̜n̷᷂̝͎̘̺̘︠̈᷆a̵̧̛̫̘̺̔᷾ͨ͆ͭl̸͎̜̙̗̖̿́̓᷅̆̆︣ͫ͢͝ n̸̞͓᷂͔̆͆́︣̓̐̕o̴̡̱̙͐̔ͩͫ̕ń̸᷂͑ͦ̈̃︡͢͟c̷̦̜̘̺̦̟͈͑ͤ᷁ͨ͂̎͠o̴̲͕̠̺̪̖̙̿᷃̔︣ͬ᷀̉ͦͪ͢͡m̵̖̟̫̼̩᷊͒᷉̍͂͘m̵̢̹̠̽̔̍᷁︠́̌̀̓̆ų̸̛̺᷿̺̱̭͐ͭͫ͗̃͘t̴͇̲̓ͫ︢̓ͫ̉͆̌͜ą̵̻̹͕̮͆͌t̵᷂̖̜᷿̮̯͉͔̓̇͆̆ͫ͆̂̃̏̈ḭ̴̡̧̨̫̮̟̩̼̽v̸͔̜ͥ̎͟͝ḙ̵̜̪᷂̣͛͛̔́᷾ͭ͜ a̷̮̗̻̪͒᷁̐ͤ̐͗̈͟n̵̹͈̪᷂̗͇̉͛᷉̽̇̓̄ͥ́ͯd̵̨̛̯̙͚̗̞̠̫̭̫ͯ͒︡ͤ̏᷄᷾̾̈́ ṇ̴̡̡͉̻̳͎᷿ͭͬ᷃ͩͥ̀̋͘͟o̴̡̮͈̼ͯ̎ͫ͛ͪ᷁n̸͖̱᷊̫̳̐᷅̆̈́ͬ̾ͭ̋ͮͭa̵̙ͤ͐͆̀ͮ̈ͮͭs̷̡̪̬̪͖͖͖̏s̸͎̟̮̞᷊̓͆᷾̓̉͘o̵̦̹̼̩̘͐͛ͬ̀︡̽᷇͛̕͜͟͠c̸̮̠͚̄̃͜i̵̡͚̦͕̩̣̼͛̍ͥ͠a̷̗᷃̑͑͐ͫ̚t̸͈̟̝̮̯͖̎᷄ͣ̚í̵̺̺᷂͇̩̗̝̜̚v̵͕̰͚̦̞̭ͤͧ͢e̵͎͖︠́͒̏͗̆ ą̴̯̪᷿̟̹̬̳̙̻︠͑l̶̠̮͎̗͈̗̹ͦ̉᷃ͤ᷃︣͢͝g̴͈̙̙̺᷿̠᷄̽̍͟ë̷̱̙᷾̄ͪ͝b̵̨͚̣͇̯̆r̴̯͐͒͞a̵̛̘ o̸͖͇͇͓̬̖̗͂̽͗᷇ͩ̀͘̚͡͠v̵̡̡̻͈̝̭͋͐᷈̄̚͜ȩ̷̩͓͚͇̭͔͂᷀͗̈︢̿᷁͐̆r̶̰͎̜᷂͌᷆ t̷͖̜̲̟̼᷿̦ͦ᷅ͥḩ̷̖͓᷃̃̍ͩ́̕͜ȩ̴̧̼̬͉̗́̐͜ r̸̢̲̤̜̭̖̟̠̀̓ͫ͠é̶̟͉̬͈͈͎̰̜̦͜ą̸̠̼̖̝︣̉̑̈́̚͞l̷̠̠̜͓︢̿͐̽͆︠͟͞ n̴̗͗᷀̚͝͡ü̴̩̣̪̝᷾͛᷁ͧ̌̑̕͠m̴͇̞͎̠̟̟͔͕̝͆̔ͩ̆b̵̖̱̝̭̂̂̿ͥ︢̍̕e̷̡͚̩͎͖͇̺̟᷊ͭ᷇ͮ︡᷁᷀̏᷉r̵̖᷿̞̾s̷͎̰̣᷃̈́̾́͠
+
+Trigintaduonions - 𝕋 - 3̸̛͈̟̪̠̯̬̞͚̼͆̽᷄͆̑͒͑͟2̸̫̬︢̽ͫͦ-̷̨̟̰̦̞̤̠̠̭̘́ͧ͒̇́ͮ̇̿̚i̷̘͕̰̲͇̠͓᷄᷉̐᷅̾᷾̋͟o̵͕ͯͤ᷃̅᷈᷈̇͞ṋ̴͔̦̭͈̇︣᷾̂ͪ͟͠s̸̨̧͈̘͉̯̘ͧ̕ 3̸̢̱̭̹̯̩͓͛ͣ̑̔᷁̍︣͟͟2̵̗̆᷆ͨ́ͧ̇ͦ︠̕-̷̝͕̻̣᷉ͩͯ̎̋͛ͤi̵̢̹᷂͔̯̎͛︠͐᷾͆̕̚o̴̢͉̖̩̞̮̻̬̅ņ̷̡̳͚͕᷂͈̓̓ͮ︠ͭ͋ͪͦs̴̝̖̹̝͉̄ͣ᷆ 3̷᷊᷿᷿̲̼̺̜̖̍͐͛̾᷅̂2̴̧̖̫᷿̮᷊͖̰̈́̽͟-̶̹̙̩̇ͥ̍᷈ͣ̑̋į̷̡͉͖̮̭͎̪̣͓̋ó̵̡̧̗᷿̼̝̓ͤ͗͑ͣ̏ͩ̉͘͜n̵̠̲ͨͨ︢ͨ̇̈́̄᷾͞͡s̶̳̦̩͌ 3̸͈̲͇᷊͚̠̀̃᷀᷇̋᷁ͭ︠͘2̴̢͎̟͇᷊͔̮᷃-̶̯᷃ͦ̈́ͥ́͘̚í̸̖͎̮̦͒︡̆̀̿ͧͥò̷̺̈n̸̡̗̍̆︠̅ͩ̕s̸̘᷊̞᷀͋͂̍̆͛͘ 3̵̭͎̫͐̉2̸͎͕̻̤̪᷊͕̮ͭ᷄̓ͯ̇̐ͫ̚͟͡-̷̜ͣ̐͊̾͊͞i̵͚͚̠͇̋o̶᷿᷂̦᷿̐̌̿̾͗́ͨ͆͠n̸̮͇̳͉᷿͒͛ͥ︣̈͟s̷̰̦̘͐ͥ᷅ͥ͛︠͞ C̷̛̞̰̟̩̪͇̳͊̀͌̎̑̇̅̌̒a͔̭̜̥̯͎͕̺̽̿̍̓̔̔̾̒͠y̷̧̨͈̮͈̣̥͒̍͛̋̀ļ̛̤͚̯͖̟͔̓͊̊̄̓͋̕͝͠ę̷̨̮̲̲͎̯͚̝̲͌̅̍̐͒́͐͑̎y̢̡̛͇̦̳̼̜̭̐̓͗̀̎̿͑͠͞-̵̡̦̣̣̝̰̳̘̎͌͌̇͜͟͞D̹̟͇̜͍̥̮̠̋̔̂̎͡͞ì̛̭̬̮̦̱̮͚͋̉͌̎̽̃͝c̵̛̛͕̳̼͚͓̳͐̀̍̓̄̽̔̈ḱ̸͚̟̳̣̯͈͚̜̅͊́̊͛͒̕͟͞͝š̷̭͉̦̭́̀̿̎͐͟o̸̩̥͉͈̺̱̘̽̔̈͋͌̚͜͡ņ̸̢̣̙͎͇̣̼̰͑̊̇̓̆̿͊͟!̸͙̩̥̲͓͍̳̠͆̌̓̏͗̀̂̈́͠͝ͅ!̝̲̖̱̟́̾̂͋̓ W̶̡̧̧͙̞̙̽̌̔̐͑̈͊͜H̷̫͚͇͈̤̦͛̏̑̄̄͋͆̂̔͢͞Y̵̧̞͚̣͍̳͙͎͑͒̈́̂̈̕͢  C̷͇̭͚͚̻̜̘͚̲̍͋̃͂̿́͋̿á̢̢̤̲̜̥͗̊̐̀̋̾͜y̧̲̩̞̯͕̤̹̠̑̓̃͒̄̾l̡̨̞̭̆̀͊́̊͟͠͝͠e͔̮̙͙̤̰̗̣̽̋̎͘͝y̸̧̧̠̦͍̽̀̆̽́͡-̣̙͉̲̅̀̽̚͢͠͡D̷̦̤͓̰̬̯͍͔̼̯͗͛͐̐͘ȉ̶̢̨̬̘̪̇̊͌͛̐́͘̕ͅç͍̤̳͉͈̜͚͙͙̏́̅̈̈̍̀̑̚k͎̦͈͕͕̹͇̖̜̓̏̈́̅̾̈̏͋͌͢s̶̞̜͙̜̻̈́̓̋̐͒̅̄͐͘͞o̭̬̗͇̦̽̓̚͘̚͜͝ņ̢͍̙̣̻̬̖͓͛͌̿̅̌͜!̛͕͇̝̤̩͖͚̃̑͒̒̚͘̕̚!̸̨̛͖̳̼̺͓̺̀̑́̽͌̀͗̂͠ C͚̯͓̜̮̹̖̟̮̋̊̆̾͆͋͂̇a̷̠̱̠͓͙̱̩͇͙̒̇̐̀̈̌̿̉̀y̫̝̜͔̆̑̑́̆ͅl̬͖̩̺̥͕̂̈́̿̀̉͂̕ĕ̸̢̦͍͙̪̹̫̼͕̖̋̽͋͗͋̚͠y̵̢͈̞̹̜͂͊̔̾͛͟-̸͖͚͕͇̥̪̇̔͊͗͜͝D̤͙͎̘̠̼̩́̈́͛̋̎̈͛̀͞i̶̝̜͈̞̗̦͆̅̂͒̉͘c̩̺͚̝̣͆̾̒̊̔̍͗͜k̸̡̫̩̗̬̝̃̊̈̅͐͋s̳͈̜̤̦̊̂̾̉͐̕͟o̢̥̝̝̟̱͉̱̲̍̓͆̽͛͌̚ñ̴̦͙̳̝̬̙̟̉́̈̓͡!̸̪͔͛̅̎̃̊̀̿͂͟͢͞ͅ!̴̨͔͖̲͔̗͓̣̈́̔̏̿͜͞͡ 
+
+
+
+Algebraic - a number that is a root of a non-zero polynomial in one variable with rational coefficients.
+
+Transcendental - a non-algebraic real number
+
+Constructible - a number where there is a closed-form expression for r using only integers and the operations for addition, subtraction, multiplication, division, and square roots.
+
+Computable - the real numbers that can be computed to within any desired precision by a finite, terminating algorithm
+
+Definable - a definable real number is a real number that can be uniquely specified by its description
+
+Surreal -  a totally ordered proper class containing the real numbers as well as infinite and infinitesimal numbers
+
+Suprereal - introduced by H. Garth Dales and W. Hugh Woodin as a generalization of the hyperreal numbers
+
+Hyperreal - is a way of treating infinite and infinitesimal (infinitely small but non-zero) quantities
+
+"""
+
+references = """
+https://www.reddit.com/r/mathmemes/comments/rmqj4b/all_of_the_hypercomplex_numbers/
+https://en.wikipedia.org/wiki/Rational_number
+https://en.wikipedia.org/wiki/Irrational_number
+https://en.wikipedia.org/wiki/Complex_number
+https://en.wikipedia.org/wiki/Split-complex_number
+https://en.wikipedia.org/wiki/Quaternion
+
+https://en.wikipedia.org/wiki/Biquaternion
+https://en.wikipedia.org/wiki/Octonion
+https://en.wikipedia.org/wiki/Split-octonion
+https://en.wikipedia.org/wiki/Sedenion
+https://arxiv.org/abs/0907.2047
+
+
+https://en.wikipedia.org/wiki/Algebraic_number
+https://en.wikipedia.org/wiki/Constructible_number
+https://en.wikipedia.org/wiki/Definable_real_number
+https://en.wikipedia.org/wiki/Surreal_number
+https://en.wikipedia.org/wiki/Superreal_number
+https://en.wikipedia.org/wiki/Hyperreal_number
+
+"""
+

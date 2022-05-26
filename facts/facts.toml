@@ -1,0 +1,309 @@
+title = "Fact Database"
+
+[[facts]]
+text = """
+As of 2021, the estimated number of people to have ever lived is
+100,000,000,000.  This is calculated with a cutoff point of 50,000BCE of when
+modern humans arose and includes estimated infant mortalities.  The current
+number humans living is 7,900,000,000 people, which is 7.9% of the number of
+people who have ever lived.
+"""
+references = """
+https://www.youtube.com/watch?v=sPlHUXHVOHY
+https://en.wikipedia.org/wiki/Estimates_of_historical_world_population
+https://en.wikipedia.org/wiki/World_population
+"""
+
+
+[[facts]]
+text = """
+As of 2021, the current best estimated age of the universe is 13,787,000,000
+years.  This is based on studies of the cosmic microwave background radiation,
+the current observed expansion rate of space, and the age of the oldest
+observable stars. This estimate has an uncertainty of only ±20 million years.
+"""
+references = """
+https://www.youtube.com/watch?v=tCn96DbBnB4
+https://www.youtube.com/watch?v=Y6Vhh70Lw9w
+https://en.wikipedia.org/wiki/Age_of_the_universe
+"""
+
+
+[[facts]]
+text = """
+The Bekenstein bound states that the maximum amount of
+information/energy/matter that can exist in a region of space is surprisingly
+not related to it's volume, but instead to it's surface area. If this limit is
+exceeded, that region of space collapses into a black hole.
+"""
+references = """
+https://www.youtube.com/watch?v=XxVlGAFX7vA
+https://en.wikipedia.org/wiki/Bekenstein_bound
+"""
+
+
+[[facts]]
+text = """
+As of 2021, the best estimated age of the earth is 4,543,000,000 years.  This
+is known through a combination of radiometric dating of the oldest rocks on the
+Earth and radiometric dating of meteorites, which are known to have formed at
+the same time as the other bodies in the solar system.
+"""
+references = """
+https://www.youtube.com/watch?v=vAgiHreswj0
+https://en.wikipedia.org/wiki/Age_of_Earth
+"""
+
+
+
+[[facts]]
+text = """
+The English language is over 1,400 years old. Broadly speaking --- as languages
+are constantly in evolutionary flux --- we can say it started with Old English
+in ~400CE. It became Middle English in ~1000CE, Early Modern English in 1400CE,
+and Modern English in 1600CE.
+"""
+references = """
+https://www.youtube.com/watch?v=Y63dBBlHlSk
+https://en.wikipedia.org/wiki/English_language
+"""
+
+
+
+[[facts]]
+text = """
+As of 2021 our best estimates find that anatomically modern humans arose
+300,000 years ago. Behaviorally modern humans arose 50,000 years ago.
+Agriculture began about 12,000 years ago. Written history began 5,000 years
+ago.  Digital history began 70 years ago, and began to scale 34 years ago.
+"""
+references = """
+https://www.youtube.com/watch?v=b8sYfyQrs_Q
+https://en.wikipedia.org/wiki/Human_history
+https://en.wikipedia.org/wiki/Magnetic_tape
+"""
+
+
+[[facts]]
+text = """
+As of 2021, there are only 144 scientific writers from antiquity known by name.
+Of these, 29 are Greek: 
+Aristarchus, Autolycus, Philo of Byzantium, Biton, Apollonius,
+Archimedes, Euclid, Theodosius, Hypsicles, Athenaeus, Geminus, Hero, 
+Apollodorus, Theon of Smyrna, Cleomedes, Nicomachus, Ptolemy,
+Gaudentius, Anatolius, Aristides Quintilian, Porphyry, Diophantus,
+Alypius, Damianus, Pappus, Serenus, Theon of Alexandria, Anthemius,
+and Eutocius.
+"""
+references = """
+https://en.wikipedia.org/wiki/Greek_mathematics#CITEREFBoyer1991
+https://doi.org/10.1007/s00048-011-0057-2
+"""
+
+
+[[facts]]
+text = """
+As of 2021, the oldest known living things are a group of aerobic microbes
+discovered in 2020 under the seafloor of the South Pacific Gyre, and individual
+microbes are estimated to be over 100,000,000 years old.
+"""
+references = """
+https://www.youtube.com/watch?v=QhFhColZVgM
+https://en.wikipedia.org/wiki/List_of_longest-living_organisms#List_of_longest-living_organisms
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7387439/
+"""
+
+
+[[facts]]
+text = """
+Fermat's Last Theorem, first stated in 1637, says that there is no integer
+solution to \\[ a^n + b^n = c^n \\] when \\[ n > 2 \\]. Fermat casually wrote
+this in the margin of a book along with a note: “I have discovered a truly
+marvelous proof of this, which this margin is too narrow to contain”.  Proving
+this claim became a great unsolved problem until 1994, when Andrew Wiles used
+advanced maths --- that would have been unavailable in 1637 --- to prove it.
+Many believe Fermat never actually had a proof.
+"""
+references = """
+https://www.youtube.com/watch?v=qiNcEguuFSA
+https://en.wikipedia.org/wiki/Fermat%27s_Last_Theorem
+"""
+
+
+[[facts]]
+text = """
+When Coca-Cola first launched in 1886, it contained cocaine from the coca leaf
+and caffeine from the kola nut, hence the name. It originally contained ~9mg of
+cocaine (a typical recreational dose is ~50mg) and ~78mg of caffeine per cup (a
+cup of coffee contains ~100mg). In 1903 the cocaine was removed. 
+In 1911, the US Government sued to force
+Coca-Cola to remove caffeine (due to it being habit-forming), ultimately
+resulting in a settlement and a reduction to ~22mg caffeine per cup.
+"""
+references = """
+https://www.youtube.com/watch?v=2HZ_r66lKSo
+https://en.wikipedia.org/wiki/Coca-Cola
+"""
+
+
+[[facts]]
+text = """
+As of 2021, the most powerful centralized supercomputer in the world is Fugaku,
+located at the RIKEN Center in Japan. It operates at
+a staggering 442,000,000,000,000,000 numeric operations per second, which is
+~3x more powerful than the next fastest computer (Summit at Oak Ridge US
+National Lab). Fugaku was also the most efficient supercomputer in 2019, but
+has since fallen to 9th place. 
+"""
+references = """
+https://en.wikipedia.org/wiki/Fugaku_(supercomputer)
+https://en.wikipedia.org/wiki/TOP500
+https://en.wikipedia.org/wiki/Green500
+"""
+
+
+[[facts]]
+text = """
+In 1931, Kurt Gödel shook the foundations of mathematics. Gödel proved that
+within any sufficiently complex system of mathematics there are some statements that
+are true --- but unprovable. He proved that if mathematics is
+consistent (there are no logical contradictions) then it will be incomplete 
+(there is not a proof for every true statement). He then went on to show that
+any consistent system of mathematics cannot prove its own consistency. These
+are Gödel's Incompleteness Theorems.
+"""
+references = """
+https://www.youtube.com/watch?v=HeQX2HjkcNo
+https://en.wikipedia.org/wiki/G%C3%B6del%27s_incompleteness_theorems
+"""
+
+
+[[facts]]
+text = """
+In 2000, the Clay Institute launched the Millennium Prize, which awards $1
+million to anyone who can prove or disprove one of 7 unsolved conjectures in
+mathematics.
+These problems are: (1) The Yang–Mills and Mass Gap, (2) The Riemann
+Hypothesis, (3) The P vs NP Problem, (4) The Navier–Stokes Equation 
+(5) The Hodge Conjecture,
+(6) the Poincaré Conjecture, and 
+(7) the Birch and Swinnerton-Dyer Conjecture.
+As of 2021, only the Poincaré conjecture has been solved (the conjecture is true) in 2003
+by Grigori Perelman, who declined the prize money.
+"""
+references = """
+https://www.youtube.com/watch?v=ydKApyzwRBs
+https://en.wikipedia.org/wiki/Millennium_Prize_Problems
+https://www.claymath.org/millennium-problems
+"""
+
+
+[[facts]]
+text = """
+The speed of light is always constant. This is wildly different than the way
+speed works for everyday objects. If your friend shoots an arrow and you run
+after it, the arrow moves away from your friend faster than it moves away from
+you.  But if your friend shines a flashlight and you “run after the photons”,
+the photons move away from you both at the same speed. What changes is
+that the light appears slightly more blue to you. This is relativity and the
+redshift effect. It prevents information paradoxes from occurring.
+"""
+references = """
+https://www.youtube.com/watch?v=_pEiA0-r5A8
+https://en.wikipedia.org/wiki/Speed_of_light
+https://en.wikipedia.org/wiki/Redshift
+"""
+
+
+[[facts]]
+text = """
+The holes in flat blade electrical plugs are optional and are is intended for
+manufacturing purposes only. However, if they are included --- and they almost
+always are --- then they must be in a specific position as per NEMA standards.
+"""
+references = """
+https://www.youtube.com/watch?v=udNXMAflbU8
+https://electronics.stackexchange.com/questions/11495/nema-5-15p-blade-holes
+https://www.cnstrongpower.com/Clkj_Images/upfile/NEMA_Power_cord_drawings.pdf
+"""
+
+
+[[facts]]
+text = """
+The lava lamp was invented in 1963 and originally consisted of colored paraffin
+wax and tetrachloromethane in water andmineral oil. In 1970, the use of
+tetrachloromethane (and tetrachloroethylene) was discontinued due to toxicity,
+and in 2021 the exact formulation of commercial lava lamps is an undisclosed
+trade secret.  For a lava lamp to work it is important that the materials near
+perfectly balance the density of the wax and water, which is why the wax rises
+as it heats and sinks as it cools.
+"""
+references = """
+https://www.youtube.com/watch?v=16gB2BDXwTo
+https://en.wikipedia.org/wiki/Lava_lamp
+"""
+
+
+[[facts]]
+text = """
+The touch lamp was first patented in 1953, became commercially available in
+1955 and made use of vacuum tubes. The components used in these original lamps
+were expensive, which prevented them from gaining widespread popularity until
+the 1980's, when their cost dramatically dropped due to the advent of cheap
+integrated circuits. Touch lamps work by detecting changes in surface
+capacitance, which is the same principle by which smartphone touch screens in
+2021 operate.
+"""
+references = """
+https://www.youtube.com/watch?v=TbHBHhZOglw
+https://en.wikipedia.org/wiki/Touch-sensitive_lamp
+https://en.wikipedia.org/wiki/Touchscreen
+"""
+
+
+[[facts]]
+text = """
+In 2021, the tardigrade became the first multicellular organism to be quantum
+entangled. The tardigrade was frozen and entangled with two superconducting
+transmon qubits.  Quantum coupling and entanglement were
+verified by measuring resonance frequency shifts and quantum state tomography.
+The tardigrade survived the experiment.  The authors of this experiment previously won an Ig
+Nobel Prize for magnetizing a cockroach.
+"""
+references = """
+https://arxiv.org/pdf/2112.07978.pdf
+https://www.improbable.com/2021/12/16/ig-nobel-winners-leap-from-magnetized-cockroaches-to-entangled-tardigrades/
+"""
+
+
+[[facts]]
+test = """
+The Hubble telescope is able to see 400 million years after the Big Bang (2.9%
+of the age of the universe).  The James Webb Space Telescope is able to see 250
+million years after (1.8%). Unlike, Hubble it can see the first generation of
+stars.
+"""
+references = """
+https://www.vox.com/science-and-health/22664709/james-webb-space-telescope-launch-date-december-science-hubble#:~:text=Hubble%20has%20seen%20light%20dating,with%20the%20Webb%20Space%20Telescope.
+https://www.nasa.gov/content/discoveries-hubbles-deep-fields
+"""
+
+
+[[facts]]
+test = """
+TODO: acid rain fact. How we beat it.
+"""
+references = """
+https://www.youtube.com/watch?v=WIdWjqZsGgg
+https://www.youtube.com/watch?v=C0ZZSYsHkEw
+"""
+
+
+[[facts]]
+test = """
+TODO: It is difficult to remove caffeine from Red Bull without interacting with
+other ingredients. But it can be slightly decaffeinated.
+"""
+references = """
+https://www.youtube.com/watch?v=oY8tz1paj6o
+"""

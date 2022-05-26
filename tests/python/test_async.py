@@ -1,16 +1,22 @@
 """
 Benchmark asyncio versus concurrent.futures versus serial image loading
 
+Even with uvloop asyncio falls short
+
 Results:
-    Timed best=128.881 ms, mean=142.050 ± 4.8 ms for concurrent
-    Timed best=346.830 ms, mean=372.968 ± 11.7 ms for asyncio
-    Timed best=188.439 ms, mean=190.456 ± 0.8 ms for serial
+    Timed best=64.301 ms, mean=66.257 ± 1.6 ms for concurrent
+    Timed best=124.220 ms, mean=134.891 ± 7.6 ms for load_asyncio_pure_python
+    Timed best=110.672 ms, mean=115.680 ± 2.8 ms for load_asyncio_with_uvloop
+    Timed best=83.365 ms, mean=86.972 ± 3.3 ms for serial
 
 Requirements:
     timerit
     pooch
-    skimage
+    scikit-image
     aiofiles
+    uvloop
+
+    pip install aiofiles pooch scikit-image
 """
 import concurrent.futures
 import aiofiles
@@ -22,7 +28,7 @@ def load_datafile(count, fpath):
         return (count, file_.read()[0:10])
 
 
-async def aload_datafile(count, fpath):
+async def async_load_datafile(count, fpath):
     async with aiofiles.open(fpath, 'rb') as file_:
         return (count, (await file_.read())[0:10])
 
@@ -39,10 +45,10 @@ def load_concurrent(fpaths):
             yield f.result()
 
 
-async def _load_asyncio(fpaths):
+async def async_worker_load_files(fpaths):
     futures = []
     for count, fpath in enumerate(fpaths):
-        futures.append(aload_datafile(count, fpath))
+        futures.append(async_load_datafile(count, fpath))
 
     finished = asyncio.as_completed(futures)
     images = []
@@ -51,9 +57,24 @@ async def _load_asyncio(fpaths):
     return images
 
 
-def load_asyncio(fpaths):
+def load_asyncio_pure_python(fpaths):
     loop = asyncio.get_event_loop()
-    coroutine = _load_asyncio(fpaths)
+    # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
+    coroutine = async_worker_load_files(fpaths)
+    gathered = asyncio.gather(coroutine)
+    result, = loop.run_until_complete(gathered)
+    for item in result:
+        yield item
+
+
+def load_asyncio_with_uvloop(fpaths):
+    import uvloop
+    uvloop.install()
+    loop = asyncio.get_event_loop()
+    # loop = uvloop.new_event_loop()
+    # asyncio.set_event_loop(loop)
+    coroutine = async_worker_load_files(fpaths)
     gathered = asyncio.gather(coroutine)
     result, = loop.run_until_complete(gathered)
     for item in result:
@@ -80,17 +101,21 @@ def main():
         print('counts = {!r}'.format(counts))
         counts, images = zip(*list(load_concurrent(fpaths)))
         print('counts = {!r}'.format(counts))
-        counts, images = zip(*list(load_asyncio(fpaths)))
+        counts, images = zip(*list(load_asyncio_pure_python(fpaths)))
         print('counts = {!r}'.format(counts))
 
-    ti = timerit.Timerit(100, bestof=3, verbose=1)
+    ti = timerit.Timerit(50, bestof=3, verbose=1)
     for timer in ti.reset('concurrent'):
         with timer:
             list(load_concurrent(fpaths))
 
-    for timer in ti.reset('asyncio'):
+    for timer in ti.reset('load_asyncio_pure_python'):
         with timer:
-            list(load_asyncio(fpaths))
+            list(load_asyncio_pure_python(fpaths))
+
+    for timer in ti.reset('load_asyncio_with_uvloop'):
+        with timer:
+            list(load_asyncio_with_uvloop(fpaths))
 
     for timer in ti.reset('serial'):
         with timer:
