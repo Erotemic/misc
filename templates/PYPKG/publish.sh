@@ -1,5 +1,5 @@
 #!/bin/bash
-__heredoc__='''
+__doc__='''
 Script to publish a new version of this library on PyPI. 
 
 If your script has binary dependencies then we assume that you have built a
@@ -12,10 +12,55 @@ signing, but nothing will be uploaded to pypi unless the user explicitly sets
 DO_UPLOAD=True or answers yes to the prompts.
 
 Args:
-    # These environment variables must / should be set
-    TWINE_USERNAME : username for pypi
-    TWINE_PASSWORD : password for pypi
-    DO_GPG : defaults to True
+    TWINE_USERNAME (str) : 
+        username for pypi. This must be set if uploading to pypi.
+        Defaults to "".
+
+    TWINE_PASSWORD (str) : 
+        password for pypi. This must be set if uploading to pypi.
+        Defaults to "".
+
+    DO_GPG (bool) : 
+        If True, sign the packages with a GPG key specified by `GPG_KEYID`.
+        defaults to auto.
+
+    DO_UPLOAD (bool) : 
+        If True, upload the packages to the pypi server specified by
+        `TWINE_REPOSITORY_URL`.
+
+    DO_BUILD (bool) : 
+        If True, will execute the setup.py build script, which is
+        expected to use setuptools. In the future we may add support for other
+        build systems. If False, this script will expect the pre-built packages
+        to exist in "wheelhouse/{NAME}-{VERSION}-{SUFFIX}.{EXT}".
+
+        Defaults to "auto". 
+
+    DO_TAG (bool) : 
+        if True, will "git tag" the current HEAD with 
+
+    TWINE_REPOSITORY_URL (url) : 
+         The URL of the pypi server to upload to. 
+         Defaults to "auto", which if on the release branch, this will default
+         to the live pypi server `https://upload.pypi.org/legacy` otherwise
+         this will default to the test.pypi server:
+         `https://test.pypi.org/legacy`
+
+     GPG_KEYID (str) :
+        The keyid of the gpg key to sign with. (if DO_GPG=True). Defaults to
+        the local git config user.signingkey
+
+    DEPLOY_REMOTE (str) : 
+        The git remote to push any tags to. Defaults to "origin"
+
+    GPG_EXECUTABLE (path) : 
+        Path to the GPG executable. 
+        Defaults to "auto", which chooses "gpg2" if it exists, otherwise "gpg".
+
+    DEFAULT_MODE_LIST (str) :
+        TODO
+        comma separated list of "modes", which can be sdist, bdist, universal,
+        or native
 
 Requirements:
      twine >= 1.13.0
@@ -33,14 +78,13 @@ Notes:
     ~/misc/templates/PYPKG/publish.sh
 
 Usage:
+    load_secrets
+    # TODO: set a trap to unload secrets?
     cd <YOUR REPO>
-
     # Set your variables or load your secrets
     export TWINE_USERNAME=<pypi-username>
     export TWINE_PASSWORD=<pypi-password>
     TWINE_REPOSITORY_URL="https://test.pypi.org/legacy/" 
-
-    source $(secret_loader.sh)
 '''
 
 check_variable(){
@@ -71,16 +115,23 @@ normalize_boolean(){
     fi
 }
 
+
+####
+# Parameters
+###
+
 # Options
 DEPLOY_REMOTE=${DEPLOY_REMOTE:=origin}
 NAME=${NAME:=$(python -c "import setup; print(setup.NAME)")}
 VERSION=$(python -c "import setup; print(setup.VERSION)")
 
+# TODO: parameterize
 # The default should change depending on the application
+#DEFAULT_MODE_LIST=${DEFAULT_MODE_LIST:="auto"}
 #DEFAULT_MODE_LIST=("sdist" "bdist")
 #DEFAULT_MODE_LIST=("sdist" "native")
-DEFAULT_MODE_LIST=("sdist" "native")
-#DEFAULT_MODE_LIST=("sdist" "bdist")
+#DEFAULT_MODE_LIST=("sdist" "native")
+DEFAULT_MODE_LIST=("sdist" "bdist")
 
 check_variable DEPLOY_REMOTE
 
@@ -88,8 +139,18 @@ ARG_1=$1
 
 DO_UPLOAD=${DO_UPLOAD:=$ARG_1}
 DO_TAG=${DO_TAG:=$ARG_1}
+
 DO_GPG=${DO_GPG:="auto"}
+# Verify that we want to build
+if [ "$DO_GPG" == "auto" ]; then
+    DO_GPG="True"
+fi
+
 DO_BUILD=${DO_BUILD:="auto"}
+# Verify that we want to build
+if [ "$DO_BUILD" == "auto" ]; then
+    DO_BUILD="True"
+fi
 
 DO_GPG=$(normalize_boolean "$DO_GPG")
 DO_BUILD=$(normalize_boolean "$DO_BUILD")
@@ -99,24 +160,37 @@ DO_TAG=$(normalize_boolean "$DO_TAG")
 TWINE_USERNAME=${TWINE_USERNAME:=""}
 TWINE_PASSWORD=${TWINE_PASSWORD:=""}
 
-if [[ "$(cat .git/HEAD)" != "ref: refs/heads/release" ]]; then 
-    # If we are not on release, then default to the test pypi upload repo
-    TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL:="https://test.pypi.org/legacy/"}
-else
-    TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL:="https://upload.pypi.org/legacy/"}
+TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL:="auto"}
+if [ "$TWINE_REPOSITORY_URL" == "auto" ]; then
+    if [[ "$(cat .git/HEAD)" != "ref: refs/heads/release" ]]; then 
+        # If we are not on release, then default to the test pypi upload repo
+        TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL:="https://test.pypi.org/legacy/"}
+    else
+        TWINE_REPOSITORY_URL=${TWINE_REPOSITORY_URL:="https://upload.pypi.org/legacy/"}
+    fi
 fi
 
-if [[ "$(which gpg2)" != "" ]]; then
-    GPG_EXECUTABLE=${GPG_EXECUTABLE:=gpg2}
-else
-    GPG_EXECUTABLE=${GPG_EXECUTABLE:=gpg}
+GPG_EXECUTABLE=${GPG_EXECUTABLE:="auto"}
+if [ "$GPG_EXECUTABLE" == "auto" ]; then
+    if [[ "$(which gpg2)" != "" ]]; then
+        GPG_EXECUTABLE=${GPG_EXECUTABLE:=gpg2}
+    else
+        GPG_EXECUTABLE=${GPG_EXECUTABLE:=gpg}
+    fi
 fi
 
-GPG_KEYID=${GPG_KEYID:=$(git config --local user.signingkey)}
-GPG_KEYID=${GPG_KEYID:=$(git config --global user.signingkey)}
+GPG_KEYID=${GPG_KEYID:="auto"}
+if [[ "$GPG_KEYID" == "auto" ]]; then
+    GPG_KEYID=${GPG_KEYID:=$(git config --local user.signingkey)}
+    GPG_KEYID=${GPG_KEYID:=$(git config --global user.signingkey)}
+fi
+
+
+####
+# Logic
+###
 
 WAS_INTERACTION="False"
-
 
 echo "
 === PYPI BUILDING SCRIPT ==
@@ -154,14 +228,6 @@ else
 fi
 
 
-# Verify that we want to build
-if [ "$DO_BUILD" == "auto" ]; then
-    DO_BUILD="True"
-fi
-# Verify that we want to build
-if [ "$DO_GPG" == "auto" ]; then
-    DO_GPG="True"
-fi
 
 if [[ "$DO_BUILD" == "True" ]]; then
     echo "About to build wheels"
@@ -365,7 +431,7 @@ if [[ "$DO_UPLOAD" == "True" ]]; then
     """
 else
     echo """
-        DRY RUN ... Skiping upload
+        DRY RUN ... Skipping upload
 
         DEPLOY_REMOTE = '$DEPLOY_REMOTE'
         DO_UPLOAD = '$DO_UPLOAD'
