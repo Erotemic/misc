@@ -156,6 +156,10 @@ def build_password_strategy():
     Returns information - specifically the entropy - about possible schemes,
     patterns, or strategry we might use to construct a password. We will
     analyize the security of each against.
+
+    Example:
+        password_schemes = build_password_strategy()
+        print('password_schemes = {}'.format(ub.repr2(password_schemes, nl=1)))
     """
     # List different candidate patterns for remembering passwords
     password_schemes = []
@@ -169,7 +173,7 @@ def build_password_strategy():
     }
 
     if MODE == 'full':
-        # Google raondom passwords are 15 chars long
+        # Google random passwords are 15 chars long
         for num in [8, 15, 20]:
             base = sum(alphabets.values())
             password_schemes.append(
@@ -205,6 +209,13 @@ def build_password_strategy():
                 }
             )
 
+    naive_schemes = True
+    if naive_schemes:
+        password_schemes.append(naive_password_strategy())
+        password_schemes.append(naive_password_strategy(
+            required_caps=0, required_special=1, required_digits=0
+        ))
+
     password_schemes.append(
         {
             'name': 'XKCD-CHBS-{}-{}'.format(4, 2048),
@@ -222,6 +233,129 @@ def build_password_strategy():
     return password_schemes
 
 
+def naive_password_strategy(required_len=14, required_caps=1,
+                            required_special=1, required_digits=1):
+    """
+    Simulate a "bad" password that meets typical password requirements
+
+    Get a naive version of the N char min special char password One
+    common strategy for getting a 14 char pass is using 2 words or a word
+    and a date with misspellings, shuffled case, and a special char,
+    which is probably _, -, ., !, or @
+
+    Example:
+        scheme = naive_password_strategy()
+        print(f'scheme={scheme}')
+    """
+    # When people are forced to include a special character, this is the
+    # liklihood they choose one of the following:
+    # https://www.reddit.com/r/dataisbeautiful/comments/2vfgvh/most_frequentlyused_special_characters_in_10/
+    special_char_freq = {
+        '_': 0.332,
+        '.': 0.304,
+        '-': 0.086,
+        '!': 0.065,
+        '@': 0.052,
+        '*': 0.032,
+        '$': 0.019,
+        '&': 0.009,
+        '%': 0.007,
+    }
+    _total = sum(special_char_freq.values())
+    special_char_prob = ub.map_vals(lambda x: x / _total, special_char_freq)
+
+    # Only seach the most likely special chars
+    naive_special_chars = {
+        k: v for k, v in special_char_prob.items()
+        if v > 0.05
+    }
+
+    if 0:
+        import diceware
+        wlpath = diceware.wordlist.get_wordlist_path('en')
+        wlpath = diceware.wordlist.get_wordlist_path('en_securedrop')
+        wordlist = list(diceware.wordlist.WordList(wlpath))
+        word_lengths = sorted(map(len, wordlist))
+        word_length_hist = ub.dict_hist(word_lengths)
+    else:
+        # Number of common password words with a specific length
+        word_length_hist = {
+            1: 10,
+            2: 90,
+            3: 582,
+            4: 2279,
+            5: 3350,
+            6: 1313,
+            7: 539,
+            8: 22,
+            9: 5,
+            10: 2
+        }
+
+    # Also needs a number and special char
+    required_word_len = required_len - 2
+
+    # How many permutations of N words are there that get over the char limit?
+    total_passwords = 0
+    import itertools as it
+    import functools
+    import operator as op
+    possible_num_word = [1, 2, 3]
+    for num_words in possible_num_word:
+        for ts in it.product(*[word_length_hist.items()] * num_words):
+            ks = [k for k, v in ts]
+            vs = [v for k, v in ts]
+            # If the lengths are above, we can take any of these permutations
+            # (with replacement)
+            if sum(ks) > required_word_len:
+                # Compute the number of phrases, then augment this with the
+                # special properties.
+                num_phrases = functools.reduce(op.mul, vs)
+
+                # People might insert a special character at the start, middle,
+                # or end, or predictably replace a letter.
+                predictability_factor = 2
+                num_special_locs = (num_words + 1) * predictability_factor
+                special_factor = required_special * len(naive_special_chars) * num_special_locs
+
+                # People might insert a digit at start, middle, or end, or maybe
+                # inside of a word replacing a common letter.
+                num_digit_locs = num_words + 1
+                num_digits = 10 + 100  # usually a 1 or 2 digit number
+                digit_factor = required_digits * num_digits * num_digit_locs
+
+                # People might only shuffle the case of 1 or 2 letters.
+                # usually at the beginning of words
+                caps_factor = required_caps * num_words
+
+                total = (
+                    num_phrases *
+                    (1 + special_factor) *
+                    (1 + caps_factor) *
+                    (1 + digit_factor)
+                )
+                total_passwords += total
+
+    name_parts = ['naive', str(required_len)]
+    if required_caps:
+        name_parts.append('caps')
+
+    if required_digits:
+        name_parts.append('digit')
+
+    if required_special:
+        name_parts.append('special')
+
+    name = '-'.join(name_parts)
+
+    scheme = {
+        'name': name,
+        'num': 1,
+        'base': total_passwords,
+    }
+    return scheme
+
+
 def build_threat_models():
     """
     Returns the devices our adversaries might have, and the scales they might
@@ -234,12 +368,12 @@ def build_threat_models():
     hashmodes = []
     if MODE in {'full'}:
         hashmodes.extend([
-                {
-                    # This is actually the worst case (how fast to print to stdout)
-                    'hashmode': 'STDOUT',
-                    'notes': 'pathological',
-                    'attempts_per_second': 24549.4 * 1e9,
-                },
+                # {
+                #     # This is actually the worst case (how fast to print to stdout)
+                #     'hashmode': 'STDOUT',
+                #     'notes': 'pathological',
+                #     'attempts_per_second': 24549.4 * 1e9,
+                # },
 
                 {
                     # A "Stronger" modern (2021) scheme
@@ -280,27 +414,36 @@ def build_threat_models():
         ])
 
     hashmodes.extend([
-                {
-                    # Based on rtx3090 attacking eth wallet
-                    # This is a standin for a reasonably secure password hashmode
-                    'hashmode': 'ETH-PBKDF2-HMAC-SHA256',
-                    'notes': 'good',
-                    'attempts_per_second': 3934 * 1e3,
-                },
-                {
-                    # A "Strong" modern (2021) scheme
-                    'hashmode': 'VeraCrypt SHA512 + XTS 512 bit',
-                    'notes': 'very strong',
-                    'attempts_per_second': 2837,
-                },
-
-                {
-                    # This is a reasonable worst-case password hashmode
-                    'hashmode': 'Plaintext',
-                    'notes': 'weakest',
-                    'attempts_per_second': 121 * 1e9,
-                },
+            {
+                'hashmode': 'AES Crypt (SHA256), k=8191',
+                'notes': 'good',
+                'attempts_per_second': 922.9 * 1e3,
+            },
     ])
+
+    if 1:
+        hashmodes.extend([
+                    {
+                        # Based on rtx3090 attacking eth wallet
+                        # This is a standin for a reasonably secure password hashmode
+                        'hashmode': 'ETH-PBKDF2-HMAC-SHA256',
+                        'notes': 'good',
+                        'attempts_per_second': 3934 * 1e3,
+                    },
+                    {
+                        # A "Strong" modern (2021) scheme
+                        'hashmode': 'VeraCrypt SHA512 + XTS 512 bit',
+                        'notes': 'very strong',
+                        'attempts_per_second': 2837,
+                    },
+
+                    {
+                        # This is a reasonable worst-case password hashmode
+                        'hashmode': 'Plaintext',
+                        'notes': 'weakest',
+                        'attempts_per_second': 121 * 1e9,
+                    },
+        ])
 
     hashmodes = sorted(hashmodes, key=lambda x: x['attempts_per_second'])
 
@@ -774,7 +917,7 @@ def main():
                 annot = piv.applymap(time_labelize)
                 sns.heatmap(piv, annot=annot, ax=ax, fmt='s',
                             norm=LogNorm(vmin=1, vmax=8640000000),
-                            annot_kws={'size': 12},
+                            annot_kws={'size': 10},
                             cbar_kws={'label': 'seconds', 'pad': 0.001})
 
                 # Find colorbar
