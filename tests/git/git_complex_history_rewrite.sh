@@ -49,8 +49,11 @@ setup_toy_repo(){
     next_state_change
 
     git checkout main
-    git merge branch2 --no-ff -m "merge commit" 
-    git merge branch1 -s ours --commit --no-edit --no-ff -m "merge commit" 
+    git merge branch2 --no-ff -m "merge commit 1" 
+    git merge branch1 --no-ff -m "merge commit 2" 
+    # Resolve conflict
+    echo "state-8-5" > state
+    git add state && git commit -m "Resolved 8-5 merge"
 
     git checkout -b branch3
     next_state_change
@@ -61,7 +64,7 @@ setup_toy_repo(){
     next_state_change
 
     git checkout main
-    git merge --no-ff -m "merge commit - WANT TO SQUASH" branch3
+    git merge --no-ff -m "merge commit 3 - WANT TO SQUASH" branch3
     git tag "Point2"
 
     git checkout -b branch4 main
@@ -80,11 +83,15 @@ setup_toy_repo(){
     next_state_change
 
     git checkout branch5
-    git merge branch6 -s ours --commit --no-edit --no-ff -m "merge commit" 
+    git merge branch6 --no-ff -m "merge commit 4" 
+    echo "state-19-22" > state
+    git add state && git commit -m "Resolved 19-22 merge"
 
     git checkout main
-    git merge branch5 -s ours --commit --no-edit --no-ff -m "merge commit" 
-    git merge branch4 -s ours --commit --no-edit --no-ff -m "merge commit" 
+    git merge branch5 --no-ff -m "merge commit 5" 
+    git merge branch4 --no-ff -m "merge commit 6" 
+    echo "state-19-22-4" > state
+    git add state && git commit -m "Resolved 19-22-4 merge"
 
     git clone "$HOME/tmp/git-demos/messy-origin/.git" "$HOME/tmp/git-demos/messy-clone"
     cd "$HOME/tmp/git-demos/messy-clone"
@@ -96,9 +103,10 @@ make_squashed_head(){
     COMMIT_B="$2"
     MESSAGE="$3"
     #
-    git checkout "$COMMIT_A"
+    git checkout "$COMMIT_B"
     git reset --hard "$COMMIT_B"
     git reset --soft "$COMMIT_A"^
+    #git reset --mixed "$COMMIT_A"^
     git commit -m "$MESSAGE"
 }
 
@@ -118,26 +126,33 @@ squash_between(){
     git filter-repo --partial --refs "${COMMIT_B}^..HEAD"  --force
 }
 
-final_solution(){
+working_solution(){
     source ~/misc/tests/git/git_complex_history_rewrite.sh
     setup_toy_repo
     COMMIT_A=Point1
     COMMIT_B=Point2
     MESSAGE="Squash Point1-Point2"
+    squash_between  "$COMMIT_A" "$COMMIT_B" "$MESSAGE"
 
     # Test other commit ranges
     COMMIT_A=$(git log --fixed-strings --grep "Modify State 20"  --format=format:%H)
     COMMIT_B=$(git log --fixed-strings --grep "Modify State 22"  --format=format:%H)
-    MESSAGE="Squash"
-
-    COMMIT_A=$(git log --fixed-strings --grep "Modify State 10"  --format=format:%H)
-    COMMIT_B=$(git log --fixed-strings --grep "Modify State 12"  --format=format:%H)
-    MESSAGE="Squash"
+    MESSAGE="Squash-20-22"
     squash_between  "$COMMIT_A" "$COMMIT_B" "$MESSAGE"
 
-    echo "COMMIT_A = $COMMIT_A"
-    echo "COMMIT_B = $COMMIT_B"
-    MESSAGE="Squash"
+    COMMIT_A=$(git log --fixed-strings --grep "Modify State 6"  --format=format:%H)
+    COMMIT_B=$(git log --fixed-strings --grep "Modify State 8"  --format=format:%H)
+    MESSAGE="Squash-6-8"
+    squash_between  "$COMMIT_A" "$COMMIT_B" "$MESSAGE"
+
+    COMMIT_A=$(git log --fixed-strings --grep "Modify State 3"  --format=format:%H)
+    COMMIT_B=$(git log --fixed-strings --grep "Modify State 5"  --format=format:%H)
+    MESSAGE="Squash-3-5"
+    squash_between  "$COMMIT_A" "$COMMIT_B" "$MESSAGE"
+
+    COMMIT_A=$(git log --fixed-strings --grep "Modify State 17"  --format=format:%H)
+    COMMIT_B=$(git log --fixed-strings --grep "merge commit 5"  --format=format:%H)
+    MESSAGE="Squash-17-m5"
     squash_between  "$COMMIT_A" "$COMMIT_B" "$MESSAGE"
 }
 
