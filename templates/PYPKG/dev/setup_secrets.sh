@@ -1,3 +1,4 @@
+#!/bin/bash
 __doc__='
 ============================
 SETUP CI SECRET INSTRUCTIONS
@@ -155,11 +156,11 @@ upload_github_secrets(){
     unset GITHUB_TOKEN
     gh auth login
     source dev/secrets_configuration.sh
-    gh secret set $VARNAME_CI_SECRET -b"${!VARNAME_CI_SECRET}"
-    gh secret set $VARNAME_TWINE_USERNAME -b"${!VARNAME_TWINE_USERNAME}"
-    gh secret set $VARNAME_TWINE_PASSWORD -b"${!VARNAME_TWINE_PASSWORD}"
-    gh secret set $VARNAME_TEST_TWINE_PASSWORD -b"${!VARNAME_TEST_TWINE_PASSWORD}"
-    gh secret set $VARNAME_TEST_TWINE_USERNAME -b"${!VARNAME_TEST_TWINE_USERNAME}"
+    gh secret set "$VARNAME_CI_SECRET" -b"${!VARNAME_CI_SECRET}"
+    gh secret set "$VARNAME_TWINE_USERNAME" -b"${!VARNAME_TWINE_USERNAME}"
+    gh secret set "$VARNAME_TWINE_PASSWORD" -b"${!VARNAME_TWINE_PASSWORD}"
+    gh secret set "$VARNAME_TEST_TWINE_PASSWORD" -b"${!VARNAME_TEST_TWINE_PASSWORD}"
+    gh secret set "$VARNAME_TEST_TWINE_USERNAME" -b"${!VARNAME_TEST_TWINE_USERNAME}"
 
 }
 
@@ -177,23 +178,23 @@ upload_gitlab_secrets(){
     echo "GROUP_NAME = $GROUP_NAME"
     HOST=https://$(git remote get-url $REMOTE | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
     echo "HOST = $HOST"
-    PRIVATE_GITLAB_TOKEN=$(git_token_for $HOST)
+    PRIVATE_GITLAB_TOKEN=$(git_token_for "$HOST")
     if [[ "$PRIVATE_GITLAB_TOKEN" == "ERROR" ]]; then
         echo "Failed to load authentication key"
         return 1
     fi
 
     TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
-    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups" > $TMP_DIR/all_group_info
-    GROUP_ID=$(cat $TMP_DIR/all_group_info | jq ". | map(select(.name==\"$GROUP_NAME\")) | .[0].id")
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups" > "$TMP_DIR/all_group_info"
+    GROUP_ID=$(cat "$TMP_DIR/all_group_info" | jq ". | map(select(.name==\"$GROUP_NAME\")) | .[0].id")
     echo "GROUP_ID = $GROUP_ID"
 
-    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID" > $TMP_DIR/group_info
-    cat $TMP_DIR/group_info | jq
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID" > "$TMP_DIR/group_info"
+    cat "$TMP_DIR/group_info" | jq
 
     # Get group-level secret variables
-    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID/variables" > $TMP_DIR/group_vars
-    cat $TMP_DIR/group_vars | jq '.[] | .key'
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID/variables" > "$TMP_DIR/group_vars"
+    cat "$TMP_DIR/group_vars" | jq '.[] | .key'
 
     source dev/secrets_configuration.sh
     SECRET_VARNAME_ARR=(VARNAME_CI_SECRET VARNAME_TWINE_USERNAME VARNAME_TWINE_PASSWORD VARNAME_TEST_TWINE_PASSWORD VARNAME_TEST_TWINE_USERNAME VARNAME_PUSH_TOKEN)
@@ -202,7 +203,7 @@ upload_gitlab_secrets(){
         echo ""
         echo " ---- "
         LOCAL_VALUE=${!SECRET_VARNAME}
-        REMOTE_VALUE=$(cat $TMP_DIR/group_vars | jq -r ".[] | select(.key==\"$SECRET_VARNAME\") | .value")
+        REMOTE_VALUE=$(cat "$TMP_DIR/group_vars" | jq -r ".[] | select(.key==\"$SECRET_VARNAME\") | .value")
 
         # Print current local and remote value of a variable
         echo "SECRET_VARNAME_PTR = $SECRET_VARNAME_PTR"
@@ -230,7 +231,7 @@ upload_gitlab_secrets(){
             echo "Remote value agrees with local"
         fi
     done
-    rm $TMP_DIR/group_vars
+    rm "$TMP_DIR/group_vars"
 }
 
 
@@ -260,14 +261,14 @@ export_encrypted_code_signing_keys(){
     # Export plaintext gpg public keys, private sign key, and trust info
     mkdir -p dev
     gpg --armor --export-options export-backup --export-secret-subkeys "${GPG_SIGN_SUBKEY}!" > dev/ci_secret_gpg_subkeys.pgp
-    gpg --armor --export ${GPG_SIGN_SUBKEY} > dev/ci_public_gpg_key.pgp
+    gpg --armor --export "${GPG_SIGN_SUBKEY}" > dev/ci_public_gpg_key.pgp
     gpg --export-ownertrust > dev/gpg_owner_trust
 
     # Encrypt gpg keys and trust with CI secret
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_public_gpg_key.pgp > dev/ci_public_gpg_key.pgp.enc
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_secret_gpg_subkeys.pgp > dev/ci_secret_gpg_subkeys.pgp.enc
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
-    echo $MAIN_GPG_KEYID > dev/public_gpg_key
+    echo "$MAIN_GPG_KEYID" > dev/public_gpg_key
 
     # Test decrpyt
     GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | gpg --list-packets --verbose
@@ -289,9 +290,10 @@ export_encrypted_code_signing_keys(){
 
 
 _test_gnu(){
+    # shellcheck disable=SC2155
     export GNUPGHOME=$(mktemp -d -t)
-    ls -al $GNUPGHOME
-    chmod 700 -R $GNUPGHOME
+    ls -al "$GNUPGHOME"
+    chmod 700 -R "$GNUPGHOME"
 
     source dev/secrets_configuration.sh
 
