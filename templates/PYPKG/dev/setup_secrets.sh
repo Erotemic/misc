@@ -115,7 +115,10 @@ setup_package_environs(){
     non-secret variables are written to disk and loaded by the script, such
     that the specific repo only needs to modify that configuration file.
     "
+    echo "Choose an organization specific setting or make your own. This needs to be generalized more"
+}
 
+setup_package_environs_gitlab_kitware(){
     echo '
     export VARNAME_CI_SECRET="CI_KITWARE_SECRET"
     export VARNAME_TWINE_USERNAME="TWINE_USERNAME"
@@ -126,7 +129,9 @@ setup_package_environs(){
     export GPG_IDENTIFIER="=Erotemic-CI <erotemic@gmail.com>"
     ' | python -c "import sys; from textwrap import dedent; print(dedent(sys.stdin.read()).strip(chr(10)))" > dev/secrets_configuration.sh
     git add dev/secrets_configuration.sh
+}
 
+setup_package_environs_github_erotemic(){
     echo '
     export VARNAME_CI_SECRET="EROTEMIC_CI_SECRET"
     export VARNAME_TWINE_USERNAME="TWINE_USERNAME"
@@ -136,7 +141,9 @@ setup_package_environs(){
     export GPG_IDENTIFIER="=Erotemic-CI <erotemic@gmail.com>"
     ' | python -c "import sys; from textwrap import dedent; print(dedent(sys.stdin.read()).strip(chr(10)))" > dev/secrets_configuration.sh
     git add dev/secrets_configuration.sh
+}
 
+setup_package_environs_github_pyutils(){
     echo '
     export VARNAME_CI_SECRET="PYUTILS_CI_SECRET"
     export GPG_IDENTIFIER="=PyUtils-CI <openpyutils@gmail.com>"
@@ -165,19 +172,19 @@ upload_github_secrets(){
 }
 
 
-upload_gitlab_secrets(){
+upload_gitlab_group_secrets(){
     __doc__="
     Use the gitlab API to modify group-level secrets
     "
     # In Repo Directory
     load_secrets
     REMOTE=origin
-    MERGE_BRANCH=$(git branch --show-current)
-    echo "MERGE_BRANCH = $MERGE_BRANCH"
     GROUP_NAME=$(git remote get-url $REMOTE | cut -d ":" -f 2 | cut -d "/" -f 1)
-    echo "GROUP_NAME = $GROUP_NAME"
     HOST=https://$(git remote get-url $REMOTE | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
-    echo "HOST = $HOST"
+    echo "
+    * GROUP_NAME = $GROUP_NAME
+    * HOST = $HOST
+    "
     PRIVATE_GITLAB_TOKEN=$(git_token_for "$HOST")
     if [[ "$PRIVATE_GITLAB_TOKEN" == "ERROR" ]]; then
         echo "Failed to load authentication key"
@@ -186,7 +193,7 @@ upload_gitlab_secrets(){
 
     TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
     curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups" > "$TMP_DIR/all_group_info"
-    GROUP_ID=$(cat "$TMP_DIR/all_group_info" | jq ". | map(select(.name==\"$GROUP_NAME\")) | .[0].id")
+    GROUP_ID=$(cat "$TMP_DIR/all_group_info" | jq ". | map(select(.path==\"$GROUP_NAME\")) | .[0].id")
     echo "GROUP_ID = $GROUP_ID"
 
     curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID" > "$TMP_DIR/group_info"
@@ -195,6 +202,10 @@ upload_gitlab_secrets(){
     # Get group-level secret variables
     curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID/variables" > "$TMP_DIR/group_vars"
     cat "$TMP_DIR/group_vars" | jq '.[] | .key'
+
+    if [[ "$?" != "0" ]]; then
+        echo "Failed to access group level variables. Probably a permission issue"
+    fi
 
     source dev/secrets_configuration.sh
     SECRET_VARNAME_ARR=(VARNAME_CI_SECRET VARNAME_TWINE_USERNAME VARNAME_TWINE_PASSWORD VARNAME_TEST_TWINE_PASSWORD VARNAME_TEST_TWINE_USERNAME VARNAME_PUSH_TOKEN)
@@ -232,6 +243,92 @@ upload_gitlab_secrets(){
         fi
     done
     rm "$TMP_DIR/group_vars"
+}
+
+upload_gitlab_repo_secrets(){
+    __doc__="
+    Use the gitlab API to modify group-level secrets
+    "
+    # In Repo Directory
+    load_secrets
+    REMOTE=origin
+    GROUP_NAME=$(git remote get-url $REMOTE | cut -d ":" -f 2 | cut -d "/" -f 1)
+    PROJECT_NAME=$(git remote get-url $REMOTE | cut -d ":" -f 2 | cut -d "/" -f 2 | cut -d "." -f 1)
+    HOST=https://$(git remote get-url $REMOTE | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
+    echo "
+    * GROUP_NAME = $GROUP_NAME
+    * PROJECT_NAME = $PROJECT_NAME
+    * HOST = $HOST
+    "
+    PRIVATE_GITLAB_TOKEN=$(git_token_for "$HOST")
+    if [[ "$PRIVATE_GITLAB_TOKEN" == "ERROR" ]]; then
+        echo "Failed to load authentication key"
+        return 1
+    fi
+
+    TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups" > "$TMP_DIR/all_group_info"
+    GROUP_ID=$(cat "$TMP_DIR/all_group_info" | jq ". | map(select(.path==\"$GROUP_NAME\")) | .[0].id")
+    echo "GROUP_ID = $GROUP_ID"
+
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID" > "$TMP_DIR/group_info"
+    cat "$TMP_DIR/group_info" | jq
+
+    PROJECT_ID=$(cat "$TMP_DIR/group_info" | jq ".projects | map(select(.path==\"$PROJECT_NAME\")) | .[0].id")
+    echo "PROJECT_ID = $PROJECT_ID"
+
+    # Get group-level secret variables
+    curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJECT_ID/variables" > "$TMP_DIR/project_vars"
+    cat "$TMP_DIR/project_vars" | jq '.[] | .key'
+    if [[ "$?" != "0" ]]; then
+        echo "Failed to access project level variables. Probably a permission issue"
+    fi
+
+    LIVE_MODE=1
+    source dev/secrets_configuration.sh
+    SECRET_VARNAME_ARR=(VARNAME_CI_SECRET VARNAME_TWINE_USERNAME VARNAME_TWINE_PASSWORD VARNAME_TEST_TWINE_PASSWORD VARNAME_TEST_TWINE_USERNAME VARNAME_PUSH_TOKEN)
+    for SECRET_VARNAME_PTR in "${SECRET_VARNAME_ARR[@]}"; do
+        SECRET_VARNAME=${!SECRET_VARNAME_PTR}
+        echo ""
+        echo " ---- "
+        LOCAL_VALUE=${!SECRET_VARNAME}
+        REMOTE_VALUE=$(cat "$TMP_DIR/project_vars" | jq -r ".[] | select(.key==\"$SECRET_VARNAME\") | .value")
+
+        # Print current local and remote value of a variable
+        echo "SECRET_VARNAME_PTR = $SECRET_VARNAME_PTR"
+        echo "SECRET_VARNAME = $SECRET_VARNAME"
+        echo "(local)  $SECRET_VARNAME = $LOCAL_VALUE"
+        echo "(remote) $SECRET_VARNAME = $REMOTE_VALUE"
+
+        #curl --request GET --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJECT_ID/variables/SECRET_VARNAME" | jq -r .message
+        if [[ "$REMOTE_VALUE" == "" ]]; then
+            # New variable
+            echo "Remove variable does not exist, posting"
+            if [[ "$LIVE_MODE" == "1" ]]; then
+                curl --request POST --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJECT_ID/variables" \
+                        --form "key=${SECRET_VARNAME}" \
+                        --form "value=${LOCAL_VALUE}" \
+                        --form "protected=true" \
+                        --form "masked=true" \
+                        --form "environment_scope=*" \
+                        --form "variable_type=env_var" 
+            else
+                echo "dry run, not posting"
+            fi
+        elif [[ "$REMOTE_VALUE" != "$LOCAL_VALUE" ]]; then
+            echo "Remove variable does not agree, putting"
+            # Update variable value
+            if [[ "$LIVE_MODE" == "1" ]]; then
+                curl --request PUT --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/projects/$PROJECT_ID/variables/$SECRET_VARNAME" \
+                        --form "value=${LOCAL_VALUE}" 
+            else
+                echo "dry run, not putting"
+            fi
+        else
+            echo "Remote value agrees with local"
+        fi
+    done
+    rm "$TMP_DIR/project_vars"
 }
 
 

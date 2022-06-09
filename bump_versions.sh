@@ -200,11 +200,11 @@ create_new_gitlab_dev_mr(){
     TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
     curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups" > "$TMP_DIR/all_group_info"
-    GROUP_ID=$(cat "$TMP_DIR/all_group_info" | jq ". | map(select(.name==\"$GROUP_NAME\")) | .[0].id")
+    GROUP_ID=$(cat "$TMP_DIR/all_group_info" | jq ". | map(select(.path==\"$GROUP_NAME\")) | .[0].id")
     echo "GROUP_ID = $GROUP_ID"
 
     curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/groups/$GROUP_ID" > "$TMP_DIR/group_info"
-    PROJ_ID=$(cat "$TMP_DIR/group_info" | jq ".projects | map(select(.name==\"$MODNAME\")) | .[0].id")
+    PROJ_ID=$(cat "$TMP_DIR/group_info" | jq ".projects | map(select(.path==\"$MODNAME\")) | .[0].id")
     echo "PROJ_ID = $PROJ_ID"
 
     curl --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" "$HOST/api/v4/user" > "$TMP_DIR/user_info"
@@ -214,19 +214,21 @@ create_new_gitlab_dev_mr(){
 
     # Create the new gitlab MR and assign yourself
 
-    # TODO: fix these to not depend on context hacks
-    TITLE="Start branch for $NEXT_VERSION"
-    SOURCE_BRANCH=dev/$NEXT_VERSION
+    TITLE="Start branch for $MERGE_BRANCH"
+    echo "MERGE_BRANCH = $MERGE_BRANCH"
+    echo "DEFAULT_BRANCH = $DEFAULT_BRANCH"
 
     curl --request POST \
         --header "PRIVATE-TOKEN: $PRIVATE_GITLAB_TOKEN" \
         --data-urlencode "title=$TITLE" \
-        --data-urlencode "source_branch=$SOURCE_BRANCH" \
+        --data-urlencode "source_branch=$MERGE_BRANCH" \
         --data-urlencode "target_branch=$DEFAULT_BRANCH" \
         --data-urlencode "description=auto created mr" \
         --data-urlencode "assignee_id=$SELF_USER_ID" \
         "$HOST/api/v4/projects/$PROJ_ID/merge_requests" > "$TMP_DIR/new_mr"
     cat "$TMP_DIR/new_mr" | jq .
+    MR_URL=$(cat "$TMP_DIR/new_mr" | jq -r .web_url)
+    echo "MR_URL = $MR_URL"
 
     # shellcheck disable=SC2050
     if [[ "false" == "true" ]]; then
@@ -284,6 +286,13 @@ gitlab_update_master_to_main(){
     git push -u origin main
 
     # Remotely, go to settings
+    REMOTE=origin
+    GROUP_NAME=$(git remote get-url $REMOTE | cut -d ":" -f 2 | cut -d "/" -f 1)
+    PROJECT_NAME=$(git remote get-url $REMOTE | cut -d ":" -f 2 | cut -d "/" -f 2 | cut -d "." -f 1)
+    HOST=https://$(git remote get-url $REMOTE | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
+    REPO_URL=$HOST/$GROUP_NAME/$PROJECT_NAME
+    SETTINGS_URL=$REPO_URL/-/settings/repository
+    echo "SETTINGS_URL = $SETTINGS_URL"
     # https://gitlab.kitware.com/computer-vision/ndsampler/-/settings/repository
     # Update the default branch
     # Update protected branches
@@ -423,6 +432,7 @@ mypkgs(){
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
+    load_secrets
     MODNAME=scriptconfig
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
