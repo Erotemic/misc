@@ -2,6 +2,9 @@ __doc__='
 Requirements:
     pip install sphinx sphinx_rtd_theme
 
+TODO:
+    Port to ~/misc/templates/PYPKG/install_template.sh
+
 Usage:
     source ~/misc/make_new_python_package_repo.sh
 
