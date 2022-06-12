@@ -97,21 +97,3 @@ update_pypkg(){
 
     #>> $REPO_DPATH/docs/source/conf.py
 }
-
-
-print_pullreq_url(){
-    echo "CURRENT_BRANCH = $CURRENT_BRANCH"
-    DEPLOY_REMOTE=origin
-    CURRENT_REMOTE=$(git remote --show-current)
-    CURRENT_BRANCH=$(git branch --show-current)
-    GROUP_NAME=$(git remote get-url "$DEPLOY_REMOTE" | cut -d ":" -f 2 | cut -d "/" -f 1)
-    REPO_NAME=$(git remote get-url "$DEPLOY_REMOTE" | cut -d ":" -f 2 | cut -d "/" -f 2 | cut -d "." -f 1)
-    HOST=https://$(git remote get-url "$DEPLOY_REMOTE" | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
-    echo "REPO_NAME = $REPO_NAME"
-    echo "CURRENT_REMOTE = $CURRENT_REMOTE"
-    echo "CURRENT_BRANCH = $CURRENT_BRANCH"
-    echo "GROUP_NAME = $GROUP_NAME"
-    echo "HOST = $HOST"
-    REPO_URL="https://github.com/${GROUP_NAME}/$REPO_NAME"
-    echo "$REPO_URL/pull/"
-}

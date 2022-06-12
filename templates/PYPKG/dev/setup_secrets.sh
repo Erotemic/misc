@@ -53,7 +53,7 @@ GITLAB ACTION INSTRUCTIONS
     and Runners-> Available specific runners
 
     * Ensure that you are auto-cancel redundant pipelines.
-    Navigate to https://gitlab.kitware.com/utils/PYPKGS/-/settings/ci_cd and ensure "Auto-cancel redundant pipelines" is checked.
+    Navigate to https://gitlab.kitware.com/utils/PYPKG/-/settings/ci_cd and ensure "Auto-cancel redundant pipelines" is checked.
 
     More details are here https://docs.gitlab.com/ee/ci/pipelines/settings.html#auto-cancel-redundant-pipelines
 

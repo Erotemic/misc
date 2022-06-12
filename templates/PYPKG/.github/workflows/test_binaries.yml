@@ -17,20 +17,15 @@ jobs:
     strategy:
       matrix:
         #os: [ubuntu-latest]
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-        arch: [auto]
-        cibw_build: [cp36*, cp37*, cp38*, cp39*, cp310*]
+        #os: [ubuntu-latest, windows-latest, macOS-latest]
+        #arch: [auto]
+        #cibw_build: [cp36*, cp37*, cp38*, cp39*, cp310*]
         ##cibw_skip: ["*-win32 *muslinux*"]
         ## Add additional workers to reduce overall build time
-        #include: 
-        #  - {"os": "ubuntu-latest", "arch": "x86_64", "cibw_build": "cp36-manylinux_x86_64"}
-        #  - {"os": "ubuntu-latest", "arch": "x86_64", "cibw_build": "cp37-manylinux_x86_64"}
-        #  - {"os": "ubuntu-latest", "arch": "x86_64", "cibw_build": "cp38-manylinux_x86_64"}
-        #  - {"os": "ubuntu-latest", "arch": "x86_64", "cibw_build": "cp39-manylinux_x86_64"}
-        #  - {"os": "ubuntu-latest", "arch": "x86_64", "cibw_build": "cp36-manylinux_i686"}
-        #  - {"os": "ubuntu-latest", "arch": "x86_64", "cibw_build": "cp37-manylinux_i686"}
-        #  - {"os": "ubuntu-latest", "arch": "x86_64", "cibw_build": "cp38-manylinux_i686"}
-        #  - {"os": "ubuntu-latest", "arch": "x86_64", "cibw_build": "cp39-manylinux_i686"}
+        include: 
+          - {"os": "ubuntu-latest", "arch": "x86_64"}
+          #- {"os": "macOS-latest", "arch": "x86_64"} 
+          #- {"os": "windows-latest", "arch": "x86_64"}
           
         #  - os: windows-latest
         #    cibw_build: cp3*-win32
@@ -52,7 +47,6 @@ jobs:
           #  arch: aarch64
           #  cibw_build: cp310-*
 
-
     steps:
     - name: Checkout source
       uses: actions/checkout@v2
@@ -69,6 +63,12 @@ jobs:
       with:
         arch: x86
 
+    - name: Install Xcode 
+      if: matrix.os == 'macOS-latest' 
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+
     # Emulate aarch64 ppc64le s390x under linux
     - name: Set up QEMU
       if: runner.os == 'Linux' && matrix.arch != 'auto'
@@ -81,13 +81,14 @@ jobs:
       uses: pypa/cibuildwheel@v2.3.1
       with:
         output-dir: wheelhouse
+        config-file: pyproject.toml
       # to supply options, put them in 'env', like:
       env:
         CIBW_BUILD_VERBOSITY: 1
-        CIBW_SKIP: ${{ matrix.cibw_skip }}
-        CIBW_BUILD: ${{ matrix.cibw_build }}
-        CIBW_TEST_REQUIRES: -r requirements/tests.txt
-        CIBW_TEST_COMMAND: python {project}/run_tests.py
+        #CIBW_SKIP: ${{ matrix.cibw_skip }}
+        #CIBW_BUILD: ${{ matrix.cibw_build }}
+        #CIBW_TEST_REQUIRES: -r requirements/tests.txt
+        #CIBW_TEST_COMMAND: python {project}/run_tests.py
         # configure cibuildwheel to build native archs ('auto'), or emulated ones
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
 

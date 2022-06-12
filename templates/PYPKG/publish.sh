@@ -196,7 +196,11 @@ if [[ "$GPG_KEYID" == "auto" ]]; then
 fi
 
 
-DEFAULT_MODE="binary
+if [ -f CMakeLists.txt ] ; then
+    DEFAULT_MODE="binary"
+else
+    DEFAULT_MODE="pure"
+fi
 MODE=${MODE:=$DEFAULT_MODE}
 if [[ "$MODE" == "all" ]]; then
     MODE_LIST=("${DEFAULT_MODE_LIST[@]}")

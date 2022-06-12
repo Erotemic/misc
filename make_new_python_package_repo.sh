@@ -1,3 +1,4 @@
+#!/bin/bash
 __doc__='
 Requirements:
     pip install sphinx sphinx_rtd_theme
@@ -24,7 +25,7 @@ update_pypkg(){
     REPO_NAME=pyhesaff
     REPO_DPATH=$HOME/code/$REPO_NAME
 
-    cd $REPO_DPATH
+    cd "$REPO_DPATH"
     cp -r ~/misc/templates/PYPKG/.circleci .
 
     cp -rv ~/misc/templates/PYPKG/dev .
@@ -62,45 +63,45 @@ make_pypkg(){
     PKG_DPATH=$REPO_DPATH/$REPO_NAME
 
     echo "INITIALIZING $REPO_NAME in $REPO_DPATH"
-    mkdir -p $REPO_DPATH
-    mkdir -p $PKG_DPATH
+    mkdir -p "$REPO_DPATH"
+    mkdir -p "$PKG_DPATH"
 
     echo "MOVING TEMPLATE FILES"
 
-    cp ~/misc/templates/PYPKG/setup.py $REPO_DPATH
-    cp ~/misc/templates/PYPKG/.gitignore $REPO_DPATH
+    cp ~/misc/templates/PYPKG/setup.py "$REPO_DPATH"
+    cp ~/misc/templates/PYPKG/.gitignore "$REPO_DPATH"
 
-    cp -r ~/misc/templates/PYPKG/publish.sh $REPO_DPATH
-    cp ~/misc/templates/PYPKG/pytest.ini $REPO_DPATH
+    cp -r ~/misc/templates/PYPKG/publish.sh "$REPO_DPATH"
+    cp ~/misc/templates/PYPKG/pytest.ini "$REPO_DPATH"
 
-    cp ~/misc/templates/PYPKG/.travis.yml $REPO_DPATH
-    cp ~/misc/templates/PYPKG/.gitlab-ci.yml $REPO_DPATH
-    cp ~/misc/templates/PYPKG/appveyor.yml $REPO_DPATH
-    cp -r ~/misc/templates/PYPKG/.circleci $REPO_DPATH
+    cp ~/misc/templates/PYPKG/.travis.yml "$REPO_DPATH"
+    cp ~/misc/templates/PYPKG/.gitlab-ci.yml "$REPO_DPATH"
+    cp ~/misc/templates/PYPKG/appveyor.yml "$REPO_DPATH"
+    cp -r ~/misc/templates/PYPKG/.circleci "$REPO_DPATH"
 
-    cp ~/misc/templates/PYPKG/.coveragerc $REPO_DPATH
-    cp ~/misc/templates/PYPKG/run_tests.py $REPO_DPATH
-    cp ~/misc/templates/PYPKG/run_doctests.sh $REPO_DPATH
+    cp ~/misc/templates/PYPKG/.coveragerc "$REPO_DPATH"
+    cp ~/misc/templates/PYPKG/run_tests.py "$REPO_DPATH"
+    cp ~/misc/templates/PYPKG/run_doctests.sh "$REPO_DPATH"
 
-    cp ~/misc/templates/PYPKG/README.rst $REPO_DPATH
+    cp ~/misc/templates/PYPKG/README.rst "$REPO_DPATH"
 
-    source $HOME/local/init/utils.sh
+    source "$HOME/local/init/utils.sh"
 
-    mkdir -p $REPO_DPATH/requirements
+    mkdir -p "$REPO_DPATH/requirements"
     echo "$(codeblock "
     pytest >= 3.3.1
     coverage >= 4.3.4
     xdoctest >= 0.3.0
     pytest-cov
-    ")" >  $REPO_DPATH/requirements/tests.txt
+    ")" >  "$REPO_DPATH/requirements/tests.txt"
 
     echo "$(codeblock "
     ubelt
-    ")" >  $REPO_DPATH/requirements/runtime.txt
+    ")" >  "$REPO_DPATH/requirements/runtime.txt"
     
     echo "$(codeblock "
     numpy
-    ")" >  $REPO_DPATH/requirements/optional.txt
+    ")" >  "$REPO_DPATH/requirements/optional.txt"
 
     #echo "$(codeblock "
     #scikit-build
@@ -114,7 +115,7 @@ make_pypkg(){
     -r requirements/runtime.txt
     -r requirements/optional.txt
     -r requirements/tests.txt
-    ")" >  $REPO_DPATH/requirements.txt
+    ")" >  "$REPO_DPATH/requirements.txt"
     #-r requirements/build.txt
 
     
@@ -126,14 +127,14 @@ make_pypkg(){
 
     # Install in developer mode
     pip install -e .
-    ")" >  $REPO_DPATH/run_developer_setup.sh
-    chmod +x $REPO_DPATH/run_developer_setup.sh
+    ")" >  "$REPO_DPATH/run_developer_setup.sh"
+    chmod +x "$REPO_DPATH/run_developer_setup.sh"
 
 
     echo "$(codeblock "
     [build-system]
     requires = [\"setuptools\", \"wheel\"]
-    ")" >  $REPO_DPATH/pyproject.toml
+    ")" >  "$REPO_DPATH/pyproject.toml"
 
     
     echo "CREATING PACKAGE STRUCTURE"
@@ -148,11 +149,11 @@ make_pypkg(){
      
     ### Added
     * Initial version
-    ")" >  $REPO_DPATH/CHANGELOG.md
+    ")" >  "$REPO_DPATH/CHANGELOG.md"
 
-    echo "__version__ = '0.0.1'" > $PKG_DPATH/__init__.py
+    echo "__version__ = '0.0.1'" > "$PKG_DPATH/__init__.py"
 
-    cd $REPO_DPATH
+    cd "$REPO_DPATH"
 
     echo "REPLACING PACKAGE NAME REFERENCES"
     # shellcheck disable=SC2038
@@ -173,13 +174,13 @@ make_pypkg(){
     sed -i "s/<AUTHOR_EMAIL>/${AUTHOR_EMAIL}/g" setup.py
 
     echo "FIXING PERMISSIONS"
-    chmod +x $REPO_DPATH/setup.py
-    chmod +x $REPO_DPATH/run_developer_setup.sh
-    chmod +x $REPO_DPATH/run_doctests.py
-    chmod +x $REPO_DPATH/run_tests.py
+    chmod +x "$REPO_DPATH/setup.py"
+    chmod +x "$REPO_DPATH/run_developer_setup.sh"
+    chmod +x "$REPO_DPATH/run_doctests.py"
+    chmod +x "$REPO_DPATH/run_tests.py"
 
 
-    init_pypkg_docs $REPO_NAME
+    init_pypkg_docs "$REPO_NAME"
     
     
     echo "FINISHED"
@@ -194,9 +195,9 @@ init_pypkg_docs(){
     PKG_DPATH=$REPO_DPATH/$REPO_NAME
 
     echo "MAKING DOCS"
-    rm -rf $REPO_DPATH/docs
+    rm -rf "$REPO_DPATH/docs"
 
-    mkdir -p $REPO_DPATH/docs
+    mkdir -p "$REPO_DPATH/docs"
 
     echo "$(codeblock "
     sphinx
@@ -207,32 +208,32 @@ init_pypkg_docs(){
     six
     Pygments
     ubelt
-    ")" >  $REPO_DPATH/docs/requirements.txt
+    ")" > "$REPO_DPATH/docs/requirements.txt"
 
-    pip install -r $REPO_DPATH/docs/requirements.txt
+    pip install -r "$REPO_DPATH/docs/requirements.txt"
 
     AUTHOR=$(git config --global user.name)
     sphinx-quickstart -q --sep \
-        --project=$REPO_NAME \
+        --project="$REPO_NAME" \
         --author="$AUTHOR" \
         --ext-autodoc \
         --ext-viewcode \
         --ext-intersphinx \
         --ext-todo \
         --extensions=sphinx.ext.napoleon,sphinx.ext.autosummary \
-        $REPO_DPATH/docs
+        "$REPO_DPATH/docs"
 
     # Make conf.py use the read-the-docs theme
-    sed -i "s/html_theme = 'alabaster'/import sphinx_rtd_theme  # NOQA\nhtml_theme = 'sphinx_rtd_theme'\nhtml_theme_path = [sphinx_rtd_theme.get_html_theme_path()]/g" $REPO_DPATH/docs/source/conf.py
+    sed -i "s/html_theme = 'alabaster'/import sphinx_rtd_theme  # NOQA\nhtml_theme = 'sphinx_rtd_theme'\nhtml_theme_path = [sphinx_rtd_theme.get_html_theme_path()]/g" "$REPO_DPATH/docs/source/conf.py"
 
     # Make conf.py automatically read version info from the package
-    sed -i "s/version = ''/import $REPO_NAME\nversion = '.'.join($REPO_NAME.__version__.split('.')[0:2])/g" $REPO_DPATH/docs/source/conf.py
+    sed -i "s/version = ''/import $REPO_NAME\nversion = '.'.join($REPO_NAME.__version__.split('.')[0:2])/g" "$REPO_DPATH/docs/source/conf.py"
 
 
     # NOTE: this still isnt working 100% with read-the-docs. 
     # I dont like having to run this manually. It can create stale files and
     # it is difficult to clean / redo.
-    sphinx-apidoc -f -o $REPO_DPATH/docs/source $PKG_DPATH --separate
+    sphinx-apidoc -f -o "$REPO_DPATH/docs/source" "$PKG_DPATH" --separate
 
     echo "$(codeblock "
 
@@ -251,12 +252,12 @@ init_pypkg_docs(){
 
     master_doc = 'index' 
     
-    ")" >> $REPO_DPATH/docs/source/conf.py
+    ")" >> "$REPO_DPATH/docs/source/conf.py"
 
-    REPO_URL=$(cd $REPO_DPATH && git remote -v | grep origin | cut  -f2 | cut -d' ' -f1)
+    REPO_URL=$(cd "$REPO_DPATH" && git remote -v | grep origin | cut  -f2 | cut -d' ' -f1)
     echo "REPO_URL = $REPO_URL"
     
-    (cd $REPO_DPATH/docs && PYTHONPATH="$REPO_DPATH:$PYTHONPATH" make html)
+    (cd "$REPO_DPATH/docs" && PYTHONPATH="$REPO_DPATH:$PYTHONPATH" make html)
 
     echo "You will likely need to manually edit: $REPO_DPATH/docs/source/index.rst"
 
