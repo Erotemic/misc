@@ -155,6 +155,7 @@ make_pypkg(){
     cd $REPO_DPATH
 
     echo "REPLACING PACKAGE NAME REFERENCES"
+    # shellcheck disable=SC2038
     find . -iname '*.yml' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
     find . -iname '*.sh' | xargs sed -i "s/PYPKG/$REPO_NAME/g"
     find . -iname '*.py' | xargs sed -i "s/PYPKG/$REPO_NAME/g"

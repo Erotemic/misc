@@ -196,9 +196,14 @@ if [[ "$GPG_KEYID" == "auto" ]]; then
 fi
 
 
-MODE=${MODE:=all}
+DEFAULT_MODE="binary
+MODE=${MODE:=$DEFAULT_MODE}
 if [[ "$MODE" == "all" ]]; then
     MODE_LIST=("${DEFAULT_MODE_LIST[@]}")
+elif [[ "$MODE" == "pure" ]]; then
+    MODE_LIST=("sdist" "naitive")
+elif [[ "$MODE" == "binary" ]]; then
+    MODE_LIST=("sdist" "bdist")
 else
     MODE_LIST=("$MODE")
 fi
