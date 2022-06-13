@@ -2,6 +2,7 @@
 __doc__="""
 SeeAlso:
     ~/code/pyflann_ibeis/pyproject.toml
+    python ~/misc/templates/PYPKG/build_wheels.sh
     ~/code/pyflann_ibeis/dev/docker/make_base_image.py 
 """
 cibuildwheel --config-file pyproject.toml --platform linux --arch x86_64

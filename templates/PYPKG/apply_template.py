@@ -10,7 +10,15 @@ ComamndLine:
 
 
 ExampleUsage:
+    # Update my repos
     python ~/misc/templates/PYPKG/apply_template.py --repodir=$HOME/code/pyflann_ibeis --tags="erotemic,github,binpy"
+
+    # Create this repo
+    python ~/misc/templates/PYPKG/apply_template.py --repo_name=PYPKG --repodir=$HOME/code/xcookie --tags="erotemic,github,purepy"
+
+    python ~/code/xcookie/xcookie/main.py
+
+    /PYPKG/apply_template.py --repo_name=PYPKG --repodir=$HOME/code/xcookie --tags="erotemic,github,purepy"
 """
 import toml
 import shutil
@@ -19,15 +27,112 @@ import tempfile
 import scriptconfig as scfg
 
 
-def prompt():
-    # config['dry'] = True
-    # search_replace.sed(**config)
-    from rich.prompt import Confirm
-    flag = Confirm.ask('Do you want to execute this sed?')
-    if flag:
-        pass
-        # config['dry'] = False
-        # search_replace.sed(**config)
+class TemplateConfig(scfg.Config):
+    default = {
+        'repodir': scfg.Value(
+            None, help='path to the new or existing repo', required=True),
+
+        'repo_name': scfg.Value(None, help='repo name'),
+
+        'setup_secrets': scfg.Value(False),
+
+        'tags': scfg.Value([], nargs='*', help=ub.paragraph(
+            '''
+            Tags modify what parts of the template are used.
+            Valid tags are:
+                "binpy" - do we build binpy wheels?
+                "graphics" - do we need opencv / opencv-headless?
+                "erotemic" - this is an erotemic repo
+                "kitware" - this is an kitware repo
+                "pyutils" - this is an pyutils repo
+                "purepy" - this is a pure python repo
+            ''')),
+    }
+    def normalize(self):
+        if self['tags']:
+            if isinstance(self['tags'], str):
+                self['tags'] = [self['tags']]
+            new = []
+            for t in self['tags']:
+                new.extend([p.strip() for p in t.split(',')])
+            self['tags'] = new
+
+    @classmethod
+    def main(cls, cmdline=0, **kwargs):
+        """
+        Ignore:
+            repodir = ub.Path('~/code/pyflann_ibeis').expand()
+            kwargs = {
+                'repodir': repodir,
+                'tags': ['binpy', 'erotemic', 'github'],
+            }
+            cmdline = 0
+
+        Example:
+            repodir = ub.Path.appdir('pypkg/demo/my_new_repo')
+            import sys, ubelt
+            sys.path.append(ubelt.expandpath('~/misc/templates/PYPKG'))
+            from apply_template import *  # NOQA
+            kwargs = {
+                'repodir': repodir,
+            }
+            cmdline = 0
+        """
+        import ubelt as ub
+        config = TemplateConfig(cmdline=cmdline, data=kwargs)
+        repo_dpath = ub.Path(config['repodir'])
+        repo_dpath.ensuredir()
+
+        IS_NEW_REPO = 0
+
+        create_new_repo_info = ub.codeblock(
+            '''
+            # TODO:
+            # At least instructions on how to create a new repo, or maybe an
+            # API call
+            https://github.com/new
+
+            git init
+            ''')
+        print(create_new_repo_info)
+
+        if IS_NEW_REPO:
+            # TODO: git init
+            # TODO: github or gitlab register
+            pass
+
+        self = TemplateApplier(config)
+        self.setup().gather_tasks()
+
+        self.setup().apply()
+
+        if config['setup_secrets']:
+            setup_secrets_fpath = self.repo_dpath / 'dev/setup_secrets.sh'
+            if 'erotemic' in self.config['tags']:
+                environ_export = 'setup_package_environs_github_erotemic'
+                upload_secret_cmd = 'upload_github_secrets'
+            elif 'pyutils' in self.config['tags']:
+                environ_export = 'setup_package_environs_github_pyutils'
+                upload_secret_cmd = 'upload_github_secrets'
+            elif 'kitware' in self.config['tags']:
+                environ_export = 'setup_package_environs_gitlab_kitware'
+                upload_secret_cmd = 'upload_gitlab_repo_secrets'
+            else:
+                raise Exception
+
+            import cmd_queue
+            script = cmd_queue.Queue.create()
+            script.submit(ub.codeblock(
+                f'''
+                cd {self.repo_dpath}
+                source {setup_secrets_fpath}
+                {environ_export}
+                load_secrets
+                export_encrypted_code_signing_keys
+                git commit -am "Updated secrets"
+                {upload_secret_cmd}
+                '''))
+            script.rprint()
 
 
 class TemplateApplier:
@@ -68,6 +173,7 @@ class TemplateApplier:
             {'template': 0, 'overwrite': 0, 'fname': 'requirements/tests.txt'},
 
             {'template': 1, 'overwrite': 1, 'fname': 'run_doctests.sh'},
+            {'template': 1, 'overwrite': 1, 'fname': 'build_wheels.sh'},
             {'template': 1, 'overwrite': 1, 'fname': 'run_tests.py'},
             {'template': 1, 'overwrite': 0, 'fname': 'setup.py'},
         ]
@@ -112,7 +218,9 @@ class TemplateApplier:
     def __init__(self, config):
         self.config = config
         self.repo_dpath = ub.Path(self.config['repodir'])
-        self.repo_name = self.repo_dpath.name
+        if self.config['repo_name'] is None:
+            self.config['repo_name'] = self.repo_dpath.name
+        self.repo_name = self.config['repo_name']
         self._tmpdir = tempfile.TemporaryDirectory(prefix=self.repo_name)
 
         self.template_infos = None
@@ -190,11 +298,16 @@ class TemplateApplier:
 
     def apply(self):
         stats, tasks = self.gather_tasks()
-        if stats['clean'] or stats['dirty']:
+
+        copy_tasks = tasks['copy']
+        if copy_tasks:
             from rich.prompt import Confirm
-            flag = Confirm.ask('Do you want to overwrite / copy files?')
+            flag = Confirm.ask('Do you want to apply this patch?')
             if flag:
-                for src, dst in tasks['copy']:
+                dirs = {d.parent for s, d in copy_tasks}
+                for d in dirs:
+                    d.ensuredir()
+                for src, dst in copy_tasks:
                     shutil.copy2(src, dst)
 
     # def build_requirements(self):
@@ -285,94 +398,6 @@ class TemplateApplier:
 
         text = toml.dumps(pyproj_config)
         return text
-
-
-class TemplateConfig(scfg.Config):
-    default = {
-        'repodir': scfg.Value(
-            None, help='path to the new or existing repo', required=True),
-
-        'setup_secrets': scfg.Value(False),
-
-        'tags': scfg.Value([], nargs='*', help=ub.paragraph(
-            '''
-            Tags modify what parts of the template are used.
-            Valid tags are:
-                "binpy" - do we build binpy wheels?
-                "graphics" - do we need opencv / opencv-headless?
-                "erotemic" - this is an erotemic repo
-                "kitware" - this is an kitware repo
-                "pyutils" - this is an pyutils repo
-                "purepy" - this is a pure python repo
-            ''')),
-    }
-    def normalize(self):
-        if self['tags']:
-            if isinstance(self['tags'], str):
-                self['tags'] = [self['tags']]
-            new = []
-            for t in self['tags']:
-                new.extend([p.strip() for p in t.split(',')])
-            self['tags'] = new
-
-    @classmethod
-    def main(cls, cmdline=0, **kwargs):
-        """
-        Ignore:
-            repodir = ub.Path('~/code/pyflann_ibeis').expand()
-            kwargs = {
-                'repodir': repodir,
-                'tags': ['binpy', 'erotemic', 'github'],
-            }
-            cmdline = 0
-
-        Example:
-            repodir = ub.Path.appdir('pypkg/demo/my_new_repo')
-            import sys, ubelt
-            sys.path.append(ubelt.expandpath('~/misc/templates/PYPKG'))
-            from apply_template import *  # NOQA
-            kwargs = {
-                'repodir': repodir,
-            }
-            cmdline = 0
-        """
-        import ubelt as ub
-        config = TemplateConfig(cmdline=cmdline, data=kwargs)
-        repo_dpath = ub.Path(config['repodir'])
-        repo_dpath.ensuredir()
-
-        self = TemplateApplier(config)
-        self.setup().gather_tasks()
-
-        self.setup().apply()
-
-        if config['setup_secrets']:
-            setup_secrets_fpath = self.repo_dpath / 'dev/setup_secrets.sh'
-            if 'erotemic' in self.config['tags']:
-                environ_export = 'setup_package_environs_github_erotemic'
-                upload_secret_cmd = 'upload_github_secrets'
-            elif 'pyutils' in self.config['tags']:
-                environ_export = 'setup_package_environs_github_pyutils'
-                upload_secret_cmd = 'upload_github_secrets'
-            elif 'kitware' in self.config['tags']:
-                environ_export = 'setup_package_environs_gitlab_kitware'
-                upload_secret_cmd = 'upload_gitlab_repo_secrets'
-            else:
-                raise Exception
-
-            import cmd_queue
-            script = cmd_queue.Queue.create()
-            script.submit(ub.codeblock(
-                f'''
-                cd {self.repo_dpath}
-                source {setup_secrets_fpath}
-                {environ_export}
-                load_secrets
-                export_encrypted_code_signing_keys
-                git commit -am "Updated secrets"
-                {upload_secret_cmd}
-                '''))
-            script.rprint()
 
 
 if __name__ == '__main__':
