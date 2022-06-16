@@ -263,5 +263,3 @@ all_keyword_func(){
     KEY2=${2:-${KEY2:-"None"}}
     KEY3=${3:-${KEY3:-"None"}}
 }
-
-
