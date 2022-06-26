@@ -35,6 +35,16 @@ NDArray[Shape['*, ...'], Any]  # Any shape, any dims
 NDArray[Shape['*, *'], Any]  # 2 dims of any size
 
 NDArray[Shape['2, 2'], Any]
+t = NDArray[Shape['*, *'], Any]
+
+t = NDArray[Shape['N, M, * ...'], Any]
+a = np.random.rand(3, 5, 7)
+isinstance(a, t)
+
+
+
+
+NDArray[Shape['2, 2'], Any]
 
 ARR_T1 = NDArray[Shape['2, 2'], DType]
 ARR_T2 = NDArray[Shape['Any, ...'], DType]
@@ -96,3 +106,40 @@ class Child2(Parent1):
     @classmethod
     def random(cls, n, *, rng: int = 3):
         return
+
+
+import lark
+SHAPE_GRAMMAR = (
+    '''
+    // https://github.com/ramonhagenaars/nptyping/blob/master/USERDOCS.md#Shape-expressions
+    ?start: shape_expression
+
+    shape_expression     :  dimensions | dimensions "," ellipsis
+    dimensions           :  dimension | dimension "," dimensions
+    dimension            :  unlabeled_dimension | labeled_dimension
+    labeled_dimension    :  unlabeled_dimension " " label
+    unlabeled_dimension  :  number | variable | wildcard | dimension_breakdown
+    wildcard             :  "*"
+    dimension_breakdown  :  "[" labels "]"
+    labels               :  label | label "," labels
+    label                :  lletter | lletter word
+    variable             :  uletter | uletter word
+    word                 :  letter | word underscore | word number
+    letter               :  lletter | uletter
+    uletter              :  "A"|"B"|"C"|"D"|"E"|"F"|"G"|"H"|"I"|"J"|"K"|"L"|"M"|"N"|"O"|"P"|"Q"|"R"|"S"|"T"|"U"|"V"|"W"|"X"|"Y"|"Z"
+    lletter              :  "a"|"b"|"c"|"d"|"e"|"f"|"g"|"h"|"i"|"j"|"k"|"l"|"m"|"n"|"o"|"p"|"q"|"r"|"s"|"t"|"u"|"v"|"w"|"x"|"y"|"z"
+    number               :  digit | number digit
+    digit                :  "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
+    underscore           :  "_"
+    ellipsis             :  "..."
+    ''')
+# shape_parser = lark.Lark(SHAPE_GRAMMAR,  start='start', parser='lalr')
+shape_parser = lark.Lark(SHAPE_GRAMMAR,  start='start', parser='earley')
+print(shape_parser.parse('3').pretty())
+print(shape_parser.parse('N,M').pretty())
+print(shape_parser.parse('N,3').pretty())
+print(shape_parser.parse('*,*').pretty())
+print(shape_parser.parse('2,...').pretty())
+print(shape_parser.parse('*,...').pretty())
+print(shape_parser.parse('1,3,4,5,...').pretty())
+print(shape_parser.parse('*,*,...').pretty())
