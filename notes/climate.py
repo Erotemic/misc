@@ -72,7 +72,10 @@ if ONLINE_MODE:
         'consumption_co2',
     ]
 
-    header_info_fpath = ub.grabdata('https://github.com/owid/co2-data/raw/master/owid-co2-codebook.csv')
+    # header_info_fpath = ub.grabdata('https://github.com/owid/co2-data/raw/master/owid-co2-codebook.csv')
+    from datetime import timedelta
+    header_info_fpath = ub.grabdata('https://github.com/owid/co2-data/blob/master/owid-co2-codebook.csv', expires=timedelta(days=30))
+    # header_info_fpath = ub.grabdata('https://nyc3.digitaloceanspaces.com/owid-public/data/co2/owid-co2-data.csv')
     header_info = pd.read_csv(header_info_fpath).set_index('column').drop('source', axis=1)
     column_descriptions = header_info.loc[columns_of_interest]
 
@@ -88,7 +91,8 @@ if ONLINE_MODE:
     # Annual production-based emissions of carbon dioxide (CO2), measured in
     # million tonnes. This is based on territorial emissions, which do not
     # account for emissions embedded in traded goods.
-    owid_co2_data_fpath = ub.grabdata('https://github.com/owid/co2-data/raw/master/owid-co2-data.json')
+    # owid_co2_data_fpath = ub.grabdata('https://github.com/owid/co2-data/raw/master/owid-co2-data.json')
+    owid_co2_data_fpath = ub.grabdata('https://nyc3.digitaloceanspaces.com/owid-public/data/co2/owid-co2-data.json', expires=timedelta(days=30))
     with open(owid_co2_data_fpath, 'r') as file:
         co2_data = json.load(file)
     us_co2_data = co2_data['United States']['data']
@@ -104,7 +108,7 @@ if ONLINE_MODE:
     if 0:
         import kwplot
         sns = kwplot.autosns()
-        sns.lineplot(data=us_data, x='year', y='co2')
+        sns.lineplot(data=_raw_us_data, x='year', y='co2')
 
     us_emissions_2018 = us_data['co2'].loc[2018]
     us_population_2018 = us_data['population'].loc[2018]
@@ -157,27 +161,42 @@ print('extra_cost_per_kwh = {!r}'.format(extra_cost_per_kwh))
 # dateutil.relativedelta
 
 life_start = parser.parse('1989')
-current_date = datetime.datetime.now()
+current_date = datetime.datetime.now().date()
 
-years_alive = (current_date.year - life_start.year) * reg.year
 
 if ONLINE_MODE:
     per_cap_extrap = us_data[['co2_per_capita', 'year']]
     num_missing_years = current_date.year - per_cap_extrap.year.max().m
     rolling_mean = us_data.co2_per_capita.apply(lambda x: x.m).rolling(5).mean()
     extrap_value = rolling_mean.iloc[-1] * us_data.co2_per_capita.iloc[-1].u
+
     extrap_rows = []
-    for extrap_year in range(per_cap_extrap.year.max().m, per_cap_extrap.year.max().m + 1):
+    for extrap_year in range(per_cap_extrap.year.max().m + 1, per_cap_extrap.year.max().m + num_missing_years + 1):
         row = {}
         row['year'] = extrap_year
         row['co2_per_capita'] = extrap_value
         extrap_rows.append(row)
-    per_cap_extrap = pd.concat([per_cap_extrap, pd.DataFrame(extrap_rows).set_index('year', drop=0)])
-    personal_carbon_used = per_cap_extrap.loc[life_start.year:]['co2_per_capita'].sum()
+
+    extrap_df = pd.DataFrame(extrap_rows).set_index('year', drop=0)
+    extrap_df['is_extrap'] = True
+    per_cap_extrap = pd.concat([per_cap_extrap, extrap_df])
+
+    personal_timeline = per_cap_extrap.loc[life_start.year:]
+    personal_carbon_used = personal_timeline['co2_per_capita'].sum()
+
+    if 0:
+        import kwplot
+        sns = kwplot.autosns()
+        magnitudes = personal_timeline.applymap(lambda x: x.m if hasattr(x, 'm') else x)
+        ax = sns.lineplot(data=magnitudes, x='year', y='co2_per_capita')
+        ax.set_title('Personal estimated emissions each year')
 else:
+    years_alive = (current_date.year - life_start.year) * reg.year
     personal_carbon_used = us_person_anual_footprint * years_alive * reg.us_person
 
 rows = [
+    {'date': '2022-07-05', 'amount':  300.00 * reg.dollars, 'organization': 'cotap'},
+    {'date': '2022-07-05', 'amount':   40.00 * reg.dollars, 'organization': 'cotap', 'towards': 'flight&vacation'},
     {'date': '2021-12-27', 'amount': 2000.00 * reg.dollars, 'organization': 'cotap'},
     {'date': '2021-12-27', 'amount':  340.00 * reg.dollars, 'organization': 'cotap'},
     {'date': '2021-07-05', 'amount':   99.80 * reg.dollars, 'organization': 'terrapass'},
@@ -186,11 +205,16 @@ rows = [
 for row in rows:
     tonnes_offset = row['amount'] / co2_offset_costs[row['organization']]
     row['offset'] = tonnes_offset
+    if 'towards' not in row:
+        row['towards'] = 'general'
 
-personal_offsets = pd.DataFrame(rows)
-print(personal_offsets)
+# Skip any dontation that is directly offsetting a direct emission
+all_offsets = pd.DataFrame(rows)
+print(all_offsets)
 
-personal_carbon_offset = personal_offsets.offset.sum()
+general_offsets = all_offsets[all_offsets['towards'] == 'general']
+
+personal_carbon_offset = general_offsets.offset.sum()
 personal_carbon_footprint = personal_carbon_used - personal_carbon_offset
 
 print('personal_carbon_used      = {!r}'.format(ub.repr2(personal_carbon_used, precision=2)))
