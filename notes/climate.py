@@ -15,6 +15,7 @@ import ubelt as ub
 from dateutil import parser
 import datetime
 import json
+import numpy as np
 import pandas as pd
 
 
@@ -60,7 +61,8 @@ twh = reg.Unit('terawatt/hour')
 
 cents = 0.01 * reg.dollar
 
-ONLINE_MODE = True
+ONLINE_MODE = 1
+
 if ONLINE_MODE:
     columns_of_interest = [
         'co2',
@@ -194,6 +196,13 @@ else:
     years_alive = (current_date.year - life_start.year) * reg.year
     personal_carbon_used = us_person_anual_footprint * years_alive * reg.us_person
 
+    offline_rows = [
+        {'co2_per_capita': us_person_anual_footprint * reg.year, 'year': year * reg.year, 'is_extrap': True}
+        for year in range(life_start.year, current_date.year + 1)]
+    personal_timeline = pd.DataFrame(offline_rows).set_index('year', drop=False)
+
+personal_timeline = personal_timeline.sort_index()
+
 rows = [
     {'date': '2022-07-05', 'amount':  300.00 * reg.dollars, 'organization': 'cotap'},
     {'date': '2022-07-05', 'amount':   40.00 * reg.dollars, 'organization': 'cotap', 'towards': 'flight&vacation'},
@@ -216,6 +225,12 @@ general_offsets = all_offsets[all_offsets['towards'] == 'general']
 
 personal_carbon_offset = general_offsets.offset.sum()
 personal_carbon_footprint = personal_carbon_used - personal_carbon_offset
+
+unaccounted_for = np.maximum(personal_timeline['co2_per_capita'][::-1].cumsum()[::-1] - (personal_carbon_offset / reg.us_person), 0)
+unaccounted_for = np.minimum(unaccounted_for, personal_timeline['co2_per_capita'].apply(lambda x: x.m))
+
+personal_timeline['unaccounted'] = unaccounted_for
+print(personal_timeline)
 
 print('personal_carbon_used      = {!r}'.format(ub.repr2(personal_carbon_used, precision=2)))
 print('personal_carbon_offset    = {!r}'.format(ub.repr2(personal_carbon_offset, precision=2)))
