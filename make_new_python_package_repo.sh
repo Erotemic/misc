@@ -6,6 +6,9 @@ Requirements:
 TODO:
     Port to ~/misc/templates/PYPKG/install_template.sh
 
+    This has been ported to xcookie, this file can be removed or rewritten to
+    use xcookie if we still want to keep wip refs.
+
 Usage:
     source ~/misc/make_new_python_package_repo.sh
 
@@ -283,7 +286,6 @@ init_pypkg_docs(){
     * :ref:`genindex`
     * :ref:`modindex`
     * :ref:`search`
-
     "
 
     cp ~/misc/templates/PYPKG/.readthedocs.yml $REPO_DPATH

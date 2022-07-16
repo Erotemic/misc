@@ -1,5 +1,16 @@
 #!/bin/bash
-# https://boubakr92.wordpress.com/2012/12/14/numeral-systems-conversion-in-bash/
+__doc__="
+
+Notable tools:
+   xxd
+   hd
+   od
+   base64
+
+References:
+    https://boubakr92.wordpress.com/2012/12/14/numeral-systems-conversion-in-bash/
+
+"
 
 
 toupper(){

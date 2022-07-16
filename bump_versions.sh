@@ -259,8 +259,16 @@ git_checkeven(){
     revA=$1
     revB=$2
 
+    # TODO: verify that the remote exists
+    #if ! git rev-parse --quiet --verify "$revA" ; then
+    #    echo "revA = $revA does not exist"
+    #fi
+    #if ! git rev-parse --quiet --verify "$revB" ; then
+    #    echo "revB = $revB does not exist"
+    #fi
+
     # shellcheck disable=SC2086
-    nA2B="$(git rev-list --count $revA..$revB)"
+    nA2B="$(git rev-list --count $revA..$revB -- )"
     # shellcheck disable=SC2086
     nB2A="$(git rev-list --count $revB..$revA)"
 
@@ -464,6 +472,16 @@ mypkgs(){
     source ~/misc/bump_versions.sh
     load_secrets
     MODNAME=kwimage
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE 
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=kwimage_ext
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
