@@ -312,7 +312,7 @@ update_default_branch(){
     DEPLOY_REMOTE=$2
     # -----
     echo "
-    Ensure you've merged the topic-branch into master
+    Ensure you've merged the topic-branch into the default branch (main/master)
 
     MODNAME = $MODNAME
     DEPLOY_REMOTE = $DEPLOY_REMOTE

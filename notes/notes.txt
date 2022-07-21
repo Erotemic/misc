@@ -7,3 +7,15 @@ Research question:
 maybe from a bad loss function.
 
 * How do you train a network such that starting from pertrained one does not have a detrimental effect?
+
+
+https://youtu.be/5TFDG-y-EHs?t=226
+
+http://sigbovik.org/2019/proceedings.pdf 
+http://tom7.org/nand/nand.pdf
+
+import math
+math.exp(1) ** (1j * math.pi) + 1 ** (math.nan * math.inf)
+
+# (math.exp(1) ** (1j * math.pi)) ** -math.inf
+# (1 + math.nan) ** 0
