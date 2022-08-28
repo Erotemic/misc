@@ -1,3 +1,11 @@
+#!/bin/bash
+__doc__="
+
+How to read smartctl output:
+
+    https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
+"
+
 sudo smartctl --all /dev/sda 
 sudo smartctl --all /dev/sdb
 sudo smartctl --all /dev/sdc 
@@ -5,11 +13,24 @@ sudo smartctl --all /dev/sdd
 
 sudo smartctl --all /dev/nvme0n1
 
+
+sudo smartctl -t short /dev/sda 
+sudo smartctl -t short /dev/sdb 
+sudo smartctl -t short /dev/sdc 
+sudo smartctl -t short /dev/sdd 
+
+
+#Issue 2022-08-28
+#        NAME                                                 STATE     READ WRITE CKSUM
+#        data                                                 DEGRADED     0     0     0
+#          mirror-0                                           DEGRADED     0     0     0
+#            wwn-0x5000c5009399acab                           DEGRADED    89     0   245  too many errors  (repairing)
+#            wwn-0x5000c500a4d78d92                           ONLINE       0     0     0
+
+
 lsblk
 
-'
-
-
+_='
     GOT:
 
         2021-07-09 19:49:14,771 ERROR: unexpected error - [Errno 5] Input/output error
