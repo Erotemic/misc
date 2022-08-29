@@ -19,16 +19,12 @@ The initial default value of attributes is 100 but can vary between manufacturer
 def smart_table():
     import pandas as pd
     from pySMART import SMARTCTL
-    from pySMART import Device, DeviceList
+    from pySMART import DeviceList
     import ubelt as ub
     SMARTCTL.sudo = True
 
-    devices = [
-        Device('/dev/sda'),
-        Device('/dev/sdb'),
-        Device('/dev/sdc'),
-        Device('/dev/sdd'),
-    ]
+    devices = DeviceList()
+
     attr_rows = []
     dev_rows = []
     test_rows = []
@@ -90,8 +86,14 @@ def smart_table():
     print(msg_df.to_string())
     print('')
     print('[green] --- Device Attributes ---')
-    for _, group in attrs_df.groupby('name'):
+    for _, group in attrs_df.groupby(['num', 'name']):
         print(group.to_string())
+        value_failed = group['value'].astype(int) < group['thresh'].astype(int)
+        worst_failed = group['worst'].astype(int) < group['thresh'].astype(int)
+        any_failed = worst_failed | value_failed
+        if any_failed.any():
+            print('[red] !!! ATTENTION REQUIRED !!!')
+            print(any_failed)
 
     devs = DeviceList()
     for dev in devs.devices:

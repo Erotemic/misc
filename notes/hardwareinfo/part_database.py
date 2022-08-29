@@ -1,4 +1,7 @@
 """
+An attempt at maintaining structured information about hardware I've bought,
+used, or have been interested in.
+
 References:
     https://www.cpu-world.com/cgi-bin/CPUID.pl
     https://www.techpowerup.com/cpu-specs/
@@ -35,6 +38,7 @@ MHz = ureg.Unit('megahertz')
 GHz = ureg.Unit('gigahertz')
 Hz = ureg.Unit('hertz')
 MB = ureg.Unit('megabyte')
+TB = ureg.Unit('terabyte')
 inches = ureg.Unit('inches')
 degrees = ureg.Unit('degrees')
 watts = ureg.Unit('watts')
@@ -53,9 +57,9 @@ class Currency:
 
     def __repr__(self):
         if self.date:
-            return '{} @ {}'.format(self.amount, self.date)
+            return f'{self.amount} @ {self.date}'
         else:
-            return '{}'.format(self.amount)
+            return f'{self.amount}'
 
     __str__ = __repr__
 
@@ -241,8 +245,24 @@ items = [
             'https://uk.pcmag.com/chipsets-processors/20823/asus-p8p67-pro',
             'https://web.archive.org/web/20201026195622/https://uk.pcmag.com/chipsets-processors/20823/asus-p8p67-pro',
         ]
+    },
 
-    }
+    {
+        'name': 'Seagate BarraCuda Pro SATA HDD 10TB 7200RPM 6Gb/s 256MB Cache 3.5-Inch Internal Hard Drive',
+        'type': 'hdd',
+        'model': 'ST10000DM0004',
+        'brand': 'seagate',
+        'form': 3.5 * inches,
+        'hdi': 'SATA',
+        'capacity': 10 * TB,
+        'msrp': Currency(254.99 * dollars) @ '2022',
+        'sales': [
+            {'price': Currency(185.00 * dollars) @ '2022', 'condition': 'renewed', 'seller': 'oceanside store'},
+        ],
+        'references': [
+            'https://www.amazon.com/dp/B07MWCVMXJ?ref=ppx_yo2ov_dt_b_product_details&th=1',
+        ]
+    },
 
 
 ]

@@ -28,6 +28,38 @@ sudo smartctl -t short /dev/sdd
 #            wwn-0x5000c500a4d78d92                           ONLINE       0     0     0
 
 
+# https://unix.stackexchange.com/questions/61818/smartctl-retest-bad-sectors
+
+
+#[102757.667209] ata3.00: configured for UDMA/133
+#[102757.667242] sd 2:0:0:0: [sda] tag#5 FAILED Result: hostbyte=DID_OK driverbyte=DRIVER_OK cmd_age=0s
+#[102757.667249] sd 2:0:0:0: [sda] tag#5 Sense Key : Illegal Request [current] 
+#[102757.667254] sd 2:0:0:0: [sda] tag#5 Add. Sense: Unaligned write command
+#[102757.667259] sd 2:0:0:0: [sda] tag#5 CDB: Read(16) 88 00 00 00 00 04 0a 18 92 38 00 00 01 00 00 00
+#[102757.667262] blk_update_request: I/O error, dev sda, sector 17349251640 op 0x0:(READ) flags 0x700 phys_seg 2 prio class 0
+#[102757.667279] zio pool=data vdev=/dev/disk/by-id/wwn-0x5000c5009399acab-part1 error=5 type=1 offset=8882815791104 size=131072 flags=1808b0
+#[102757.667310] sd 2:0:0:0: [sda] tag#9 FAILED Result: hostbyte=DID_OK driverbyte=DRIVER_OK cmd_age=0s
+#[102757.667313] sd 2:0:0:0: [sda] tag#9 Sense Key : Illegal Request [current] 
+#[102757.667318] sd 2:0:0:0: [sda] tag#9 Add. Sense: Unaligned write command
+#[102757.667321] sd 2:0:0:0: [sda] tag#9 CDB: Read(16) 88 00 00 00 00 04 0a 18 82 38 00 00 08 00 00 00
+#[102757.667324] blk_update_request: I/O error, dev sda, sector 17349247544 op 0x0:(READ) flags 0x700 phys_seg 16 prio class 0
+#[102757.667334] zio pool=data vdev=/dev/disk/by-id/wwn-0x5000c5009399acab-part1 error=5 type=1 offset=8882813693952 size=1048576 flags=40080cb0
+#[102757.667352] sd 2:0:0:0: [sda] tag#30 FAILED Result: hostbyte=DID_OK driverbyte=DRIVER_OK cmd_age=0s
+#[102757.667356] sd 2:0:0:0: [sda] tag#30 Sense Key : Illegal Request [current] 
+#[102757.667360] sd 2:0:0:0: [sda] tag#30 Add. Sense: Unaligned write command
+#[102757.667363] sd 2:0:0:0: [sda] tag#30 CDB: Read(16) 88 00 00 00 00 04 0a 18 8a 38 00 00 08 00 00 00
+#[102757.667366] blk_update_request: I/O error, dev sda, sector 17349249592 op 0x0:(READ) flags 0x700 phys_seg 16 prio class 0
+#[102757.667372] zio pool=data vdev=/dev/disk/by-id/wwn-0x5000c5009399acab-part1 error=5 type=1 offset=8882814742528 size=1048576 flags=40080cb0
+#[102757.667383] ata3: EH complete
+
+
+sudo hdparm --read-sector 17349251640 /dev/sda
+sudo hdparm --read-sector 17349247544 /dev/sda
+sudo hdparm --read-sector 17349249592 /dev/sda1
+
+sudo smartctl -t long /dev/sda 
+
+
 lsblk
 
 _='

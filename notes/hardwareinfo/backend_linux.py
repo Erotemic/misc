@@ -211,7 +211,82 @@ def printer_info():
 def diskinfo():
     """
     sudo lshw -class disk
+
+    lsblk --scsi --output NAME,KNAME,LABEL,MOUNTPOINT,UUID,PARTTYPE,PARTUUID,MODEL,TYPE,SIZE,STATE
+    lsblk --scsi --output NAME,KNAME,LABEL,SERIAL,UUID,PARTTYPE,PARTUUID,MODEL,TYPE,SIZE,STATE --json
     """
+    import json
+    if 0:
+        helpstr = ub.cmd('lsblk --help')['out'].split('Available output columns:')[1]
+        parsing = [line.strip().partition(' ') for line in helpstr.strip().split('\n')[1:-2]]
+        coldesc = {p[0].strip().lower(): p[-1].strip() for p in parsing}
+        print('coldesc = {}'.format(ub.repr2(coldesc, nl=1, sort=0)))
+    coldesc = {
+        'kname': 'internal kernel device name',
+        'path': 'path to the device node',
+        'maj:min': 'major:minor device number',
+        'fsavail': 'filesystem size available',
+        'fssize': 'filesystem size',
+        'fstype': 'filesystem type',
+        'fsused': 'filesystem size used',
+        'fsuse%': 'filesystem use percentage',
+        'fsroots': 'mounted filesystem roots',
+        'fsver': 'filesystem version',
+        'mountpoint': 'where the device is mounted',
+        'mountpoints': 'all locations where device is mounted',
+        'label': 'filesystem LABEL',
+        'uuid': 'filesystem UUID',
+        'ptuuid': 'partition table identifier (usually UUID)',
+        'pttype': 'partition table type',
+        'parttype': 'partition type code or UUID',
+        'parttypename': 'partition type name',
+        'partlabel': 'partition LABEL',
+        'partuuid': 'partition UUID',
+        'partflags': 'partition flags',
+        'ra': 'read-ahead of the device',
+        'ro': 'read-only device',
+        'rm': 'removable device',
+        'hotplug': 'removable or hotplug device (usb, pcmcia, ...)',
+        'model': 'device identifier',
+        'serial': 'disk serial number',
+        'size': 'size of the device',
+        'state': 'state of the device',
+        'owner': 'user name',
+        'group': 'group name',
+        'mode': 'device node permissions',
+        'alignment': 'alignment offset',
+        'min-io': 'minimum I/O size',
+        'opt-io': 'optimal I/O size',
+        'phy-sec': 'physical sector size',
+        'log-sec': 'logical sector size',
+        'rota': 'rotational device',
+        'sched': 'I/O scheduler name',
+        'rq-size': 'request queue size',
+        'type': 'device type',
+        'disc-aln': 'discard alignment offset',
+        'disc-gran': 'discard granularity',
+        'disc-max': 'discard max bytes',
+        'disc-zero': 'discard zeroes data',
+        'wsame': 'write same max bytes',
+        'wwn': 'unique storage identifier',
+        'rand': 'adds randomness',
+        'pkname': 'internal parent kernel device name',
+        'hctl': 'Host:Channel:Target:Lun for SCSI',
+        'tran': 'device transport type',
+        'subsystems': 'de-duplicated chain of subsystems',
+        'rev': 'device revision',
+        'vendor': 'device vendor',
+        'zoned': 'zone model',
+        'dax': 'dax-capable device',
+    }
+    colnames = list(coldesc.keys())
+    out = ub.cmd(f'lsblk --all --json --output={",".join(colnames)}')['out']
+    data = json.loads(out)
+    cols = ['kname', 'model', 'serial', 'size', 'type']
+    import pandas as pd
+    df = pd.DataFrame(data['blockdevices'])
+    df = df[df['type'] == 'disk']
+    print(df[cols])
 
 
 # def current_specs():
