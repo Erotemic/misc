@@ -99,7 +99,7 @@ def radiation_measurement_analysis():
     ]
 
     rows = dist0_rows + background_rows
-    # rows += guess_rows
+    rows += guess_rows
 
     import pandas as pd
     import numpy as np
@@ -186,19 +186,14 @@ def radiation_measurement_analysis():
     # Because we know the radiation should follow an inverse square law wrt to
     # distance, we can fit a polynomial of degree 2 (parabola) to interpolate /
     # extrapolate the **inverse** values.
-    from numpy.polynomial import Polynomial
     x = stats_table2['distance'].values
     y = stats_table2['rad_mean'].values
 
-    def func(x, a, b, c):
-        return np.polyval([a, b, c], x)
+    # Model the squared falloff directly
+    def invsquare(x, a, b):
+        return a / (x ** 2) + b
     # Use curve_fit to constrain the first coefficient to be zero
-    coef = scipy.optimize.curve_fit(func, x, 1 / y, bounds=([-np.inf, 0, -np.inf], [np.inf, 1e-7, np.inf]))[0]
-    inv_poly1 = Polynomial(coef)
-    # w = stats_table2['weight'].values
-
-    # inv_poly1 = Polynomial.fit(x, 1 / y, deg=2, w=w)
-    # inv_poly1 = Polynomial.fit(x, 1 / y, deg=2)
+    coef = scipy.optimize.curve_fit(invsquare, x, y)[0]
 
     # Also fit one to the raw weighted points as a sanity check
     # inv_poly2 = Polynomial.fit(table['distance'], 1 / table['rad'], w=table['weight'], deg=2)
@@ -219,7 +214,7 @@ def radiation_measurement_analysis():
     max_meters = 10
 
     extrap_x = np.linspace(0, max_meters, 1000)
-    extrap_y1 = 1 / inv_poly1(extrap_x)
+    extrap_y1 = invsquare(extrap_x, *coef)
     # extrap_y2 = 1 / inv_poly2(extrap_x)
 
     ax.plot(stats_table2['distance'].values, stats_table2['rad_mean'].values, 'rx')
