@@ -4,6 +4,13 @@ __doc__="
 How to read smartctl output:
 
     https://en.wikipedia.org/wiki/S.M.A.R.T.#Known_ATA_S.M.A.R.T._attributes
+
+References:
+    https://superuser.com/questions/1315167/zfs-scrub-finds-checksum-errors-but-badblocks-and-smartctl-do-not
+    https://unix.stackexchange.com/questions/61818/smartctl-retest-bad-sectors
+    https://wiki.archlinux.org/title/badblocks
+    https://superuser.com/questions/1315167/zfs-scrub-finds-checksum-errors-but-badblocks-and-smartctl-do-not
+    https://www.reddit.com/r/zfs/comments/kcqmp0/too_many_read_and_checksum_errors_but_smart_tests/
 "
 
 sudo smartctl --all /dev/sda 
@@ -58,6 +65,19 @@ sudo hdparm --read-sector 17349247544 /dev/sda
 sudo hdparm --read-sector 17349249592 /dev/sda1
 
 sudo smartctl -t long /dev/sda 
+
+
+run_badblocks_online(){
+    __doc__="
+    Runs badblocks on a device with options for it in non-destructive mode. 
+    "
+    DEV=/dev/sda
+    # Parse out the correct blocksize for the disk in question.
+    BLOCK_SIZE=$(lsblk -o NAME,PHY-SeC,type $DEV --json | jq -r '.blockdevices[0]["phy-sec"]')
+    echo "BLOCK_SIZE = $BLOCK_SIZE"
+    BLOCKS_PER_TEST=1024
+    badblocks -nsv -b "$BLOCK_SIZE" -c "$BLOCKS_PER_TEST" "$DEV"
+}
 
 
 lsblk
