@@ -93,9 +93,9 @@ def radiation_measurement_analysis():
 
     guess_dist = ureg.parse_expression('0.3 m')  # estimate of how far away we are wrt background
     guess_rows = [
-        dict(vid=3, distance=guess_dist, rad=0.040 * mrem_h, capture_time=0.0 * s),
+        dict(vid=3, distance=guess_dist, rad=0.030 * mrem_h, capture_time=0.0 * s),
         dict(vid=3, distance=guess_dist, rad=0.041 * mrem_h, capture_time=2.0 * s),
-        dict(vid=3, distance=guess_dist, rad=0.041 * mrem_h, capture_time=3.0 * s),
+        dict(vid=3, distance=guess_dist, rad=0.051 * mrem_h, capture_time=3.0 * s),
     ]
 
     rows = dist0_rows + background_rows
@@ -136,7 +136,7 @@ def radiation_measurement_analysis():
     stats_table = pd.DataFrame(average_rad_rows)
 
     # -------------------
-    ADD_DUMMY_VALUES = 1
+    ADD_DUMMY_VALUES = 0
     if ADD_DUMMY_VALUES:
         # Hack: because we don't have enough samples we can fudge the value
         # knowning that the value should be the background radiation in the
@@ -152,6 +152,7 @@ def radiation_measurement_analysis():
                 'vid': -idx,
                 'distance': bg_row['distance'] + idx,
                 'rad_mean': bg_row['rad_mean'],
+                'rad_std': 0.01,
             }
             dummy_measurements.append(dummy_row)
 
@@ -162,6 +163,7 @@ def radiation_measurement_analysis():
             'vid': -1,
             'distance': fg_row['distance'] / 2,
             'rad_mean': rad_bg + (rad_above_bg * 4),
+            'rad_std': 0.5,
         }
         dummy_measurements.append(dummy_row)
 
@@ -188,12 +190,13 @@ def radiation_measurement_analysis():
     # extrapolate the **inverse** values.
     x = stats_table2['distance'].values
     y = stats_table2['rad_mean'].values
+    s = stats_table2['rad_std'].values
 
     # Model the squared falloff directly
-    def invsquare(x, a, b):
-        return a / (x ** 2) + b
+    def invsquare(x, a):
+        return a * (1 / (0.01 + x ** 2)) + bg_row['rad_mean']
     # Use curve_fit to constrain the first coefficient to be zero
-    coef = scipy.optimize.curve_fit(invsquare, x, y)[0]
+    coef = scipy.optimize.curve_fit(invsquare, x, y, sigma=s, method='trf')[0]
 
     # Also fit one to the raw weighted points as a sanity check
     # inv_poly2 = Polynomial.fit(table['distance'], 1 / table['rad'], w=table['weight'], deg=2)
@@ -220,5 +223,6 @@ def radiation_measurement_analysis():
     ax.plot(stats_table2['distance'].values, stats_table2['rad_mean'].values, 'rx')
     ax.plot(stats_table['distance'].values, stats_table['rad_mean'].values, 'bo')
     ax.plot(extrap_x, extrap_y1, '--')
-    ax.set_ylim(0, 1)
+    ax.set_ylim(0.001, 0.1)
+    ax.set_yscale('log')
     # ax.plot(extrap_x, extrap_y2, '--')

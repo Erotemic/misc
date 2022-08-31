@@ -76,7 +76,8 @@ run_badblocks_online(){
     BLOCK_SIZE=$(lsblk -o NAME,PHY-SeC,type $DEV --json | jq -r '.blockdevices[0]["phy-sec"]')
     echo "BLOCK_SIZE = $BLOCK_SIZE"
     BLOCKS_PER_TEST=1024
-    badblocks -nsv -b "$BLOCK_SIZE" -c "$BLOCKS_PER_TEST" "$DEV"
+    #sudo badblocks -nsv -b "$BLOCK_SIZE" -c "$BLOCKS_PER_TEST" "$DEV"
+    sudo badblocks -sv -b "$BLOCK_SIZE" -c "$BLOCKS_PER_TEST" "$DEV"
 }
 
 
