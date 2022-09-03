@@ -260,8 +260,10 @@ def radiation_measurement_analysis():
         ax.set_yscale('log')
         # ax.plot(extrap_x, extrap_y2, '--')
 
+
+   ### Theoretical radiation level falloffs
    #https://www.nde-ed.org/NDEEngineering/RadiationSafety/safe_use/distance.xhtml
-   import sympy as sym
+   import sympy as sym  # NOQA
    D2, D1, R2, R1 = sym.symbols('D2, D1, R2, R1')
    lhs = sym.sqrt(R1 * D1 ** 2 / R2)
    rhs = D2
@@ -273,10 +275,9 @@ def radiation_measurement_analysis():
        R1: 0.060,
        D2: 0.500,
    }), R2)
-
-
    D1 ** 2 * R1 / D2 ** 2
 
+   ### Plot theoretical radiation falloff for different samples
    import kwplot
    sns = kwplot.autosns()
    plt = kwplot.autoplt()
