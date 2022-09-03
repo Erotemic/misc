@@ -14,6 +14,8 @@ ureg = pint.UnitRegistry()
 # sun, food, radon, and the environment
 ave_american_radiation = 0.034 * ureg.parse_units('mrem') / ureg.hour
 
+620 * ureg.parse_units('mrem') / ureg.year
+z.to(ureg.parse_units('mrem/hour'))
 
 Autunite_2mm = 0.01 * ureg.parse_units('mrem') / ureg.hour
 
@@ -52,7 +54,7 @@ def radiation_measurement_analysis():
     s = ureg.parse_units('seconds')
 
     # Measurements of background radiation
-    bg_dist = ureg.parse_expression('3 m')  # estimate of how far away we are wrt background
+    bg_dist = ureg.parse_expression('10 m')  # estimate of how far away we are wrt background
     background_rows = [
         dict(vid=1, distance=bg_dist, rad=0.023 * mrem_h, capture_time=0.0 * s),
         dict(vid=1, distance=bg_dist, rad=0.022 * mrem_h, capture_time=0.0 * s),
@@ -91,15 +93,41 @@ def radiation_measurement_analysis():
         dict(vid=2, distance=esp_dist, rad=0.063 * mrem_h, capture_time=30.0 * s),
     ]
 
-    guess_dist = ureg.parse_expression('0.3 m')  # estimate of how far away we are wrt background
-    guess_rows = [
-        dict(vid=3, distance=guess_dist, rad=0.030 * mrem_h, capture_time=0.0 * s),
-        dict(vid=3, distance=guess_dist, rad=0.041 * mrem_h, capture_time=2.0 * s),
-        dict(vid=3, distance=guess_dist, rad=0.051 * mrem_h, capture_time=3.0 * s),
+    dist0_v2_rows = [
+        dict(vid=3, distance=esp_dist, rad=0.012 * mrem_h, capture_time=0.0 * s),
+        dict(vid=3, distance=esp_dist, rad=0.011 * mrem_h, capture_time=1.0 * s),
+        dict(vid=3, distance=esp_dist, rad=0.013 * mrem_h, capture_time=8.0 * s),
+        dict(vid=3, distance=esp_dist, rad=0.013 * mrem_h, capture_time=9.0 * s),
     ]
 
-    rows = dist0_rows + background_rows
-    rows += guess_rows
+    close_rows = [
+        dict(vid=4, distance=0.5 * m, rad=0.013 * mrem_h, capture_time=0.0 * s),
+        dict(vid=4, distance=0.5 * m, rad=0.014 * mrem_h, capture_time=5.0 * s),
+        dict(vid=4, distance=0.5 * m, rad=0.012 * mrem_h, capture_time=7.0 * s),
+        dict(vid=4, distance=0.5 * m, rad=0.011 * mrem_h, capture_time=15.0 * s),
+        dict(vid=4, distance=0.5 * m, rad=0.012 * mrem_h, capture_time=16.0 * s),
+    ]
+
+    mid_rows = [
+        dict(vid=5, distance=1.0 * m, rad=0.014 * mrem_h, capture_time=0.0 * s),
+        dict(vid=5, distance=1.0 * m, rad=0.015 * mrem_h, capture_time=5.0 * s),
+        dict(vid=5, distance=1.0 * m, rad=0.013 * mrem_h, capture_time=10.0 * s),
+    ]
+
+    far_rows = [
+        dict(vid=6, distance=2.0 * m, rad=0.023 * mrem_h, capture_time=0.0 * s),
+        dict(vid=6, distance=2.0 * m, rad=0.025 * mrem_h, capture_time=0.1 * s),
+    ]
+
+    # guess_dist = ureg.parse_expression('0.3 m')  # estimate of how far away we are wrt background
+    # guess_rows = [
+    #     dict(vid=9, distance=guess_dist, rad=0.030 * mrem_h, capture_time=0.0 * s),
+    #     dict(vid=9, distance=guess_dist, rad=0.041 * mrem_h, capture_time=2.0 * s),
+    #     dict(vid=9, distance=guess_dist, rad=0.051 * mrem_h, capture_time=3.0 * s),
+    # ]
+
+    rows = dist0_rows + background_rows + dist0_v2_rows + close_rows + mid_rows + far_rows
+    # rows += guess_rows
 
     import pandas as pd
     import numpy as np
@@ -135,15 +163,15 @@ def radiation_measurement_analysis():
         })
     stats_table = pd.DataFrame(average_rad_rows)
 
+    bg_row = stats_table.loc[stats_table['distance'].argmax()]
+    fg_row = stats_table.loc[stats_table['distance'].argmin()]
+
     # -------------------
     ADD_DUMMY_VALUES = 0
     if ADD_DUMMY_VALUES:
         # Hack: because we don't have enough samples we can fudge the value
         # knowning that the value should be the background radiation in the
         # limit.
-
-        bg_row = stats_table.loc[stats_table['distance'].argmax()]
-        fg_row = stats_table.loc[stats_table['distance'].argmin()]
 
         dummy_measurements = []
         extra_support = 1
@@ -193,10 +221,15 @@ def radiation_measurement_analysis():
     s = stats_table2['rad_std'].values
 
     # Model the squared falloff directly
-    def invsquare(x, a):
-        return a * (1 / (0.01 + x ** 2)) + bg_row['rad_mean']
+    def invsquare(x, a, b):
+        return a * (1 / (0.01 + x ** 2)) + b
+    # bg_row['rad_mean']
     # Use curve_fit to constrain the first coefficient to be zero
-    coef = scipy.optimize.curve_fit(invsquare, x, y, sigma=s, method='trf')[0]
+    try:
+        coef = scipy.optimize.curve_fit(invsquare, x, y, sigma=s, method='trf')[0]
+    except Exception as ex:
+        coef = None
+        print(f'ex={ex}')
 
     # Also fit one to the raw weighted points as a sanity check
     # inv_poly2 = Polynomial.fit(table['distance'], 1 / table['rad'], w=table['weight'], deg=2)
@@ -217,12 +250,64 @@ def radiation_measurement_analysis():
     max_meters = 10
 
     extrap_x = np.linspace(0, max_meters, 1000)
-    extrap_y1 = invsquare(extrap_x, *coef)
-    # extrap_y2 = 1 / inv_poly2(extrap_x)
+    if coef is not None:
+        extrap_y1 = invsquare(extrap_x, *coef)
+        # extrap_y2 = 1 / inv_poly2(extrap_x)
+        ax.plot(stats_table2['distance'].values, stats_table2['rad_mean'].values, 'rx')
+        ax.plot(stats_table['distance'].values, stats_table['rad_mean'].values, 'bo')
+        ax.plot(extrap_x, extrap_y1, '--')
+        ax.set_ylim(0.001, 0.1)
+        ax.set_yscale('log')
+        # ax.plot(extrap_x, extrap_y2, '--')
 
-    ax.plot(stats_table2['distance'].values, stats_table2['rad_mean'].values, 'rx')
-    ax.plot(stats_table['distance'].values, stats_table['rad_mean'].values, 'bo')
-    ax.plot(extrap_x, extrap_y1, '--')
-    ax.set_ylim(0.001, 0.1)
-    ax.set_yscale('log')
-    # ax.plot(extrap_x, extrap_y2, '--')
+   #https://www.nde-ed.org/NDEEngineering/RadiationSafety/safe_use/distance.xhtml
+   import sympy as sym
+   D2, D1, R2, R1 = sym.symbols('D2, D1, R2, R1')
+   lhs = sym.sqrt(R1 * D1 ** 2 / R2)
+   rhs = D2
+   expr = sym.Eq(rhs, lhs)
+   R2_expr = sym.solve(expr, R2)[0]
+
+   sym.solve(expr.subs({
+       D1: 0.0127,
+       R1: 0.060,
+       D2: 0.500,
+   }), R2)
+
+
+   D1 ** 2 * R1 / D2 ** 2
+
+   import kwplot
+   sns = kwplot.autosns()
+   plt = kwplot.autoplt()
+   ax = plt.gca()
+   ax.cla()
+
+   # Some samples are hotter than others
+   initial_distance = 0.0127
+   initial_radiation_candidates = [0.065, 0.025, 0.015]
+   max_distance = 1  # meters
+   for initial_radiation in initial_radiation_candidates:
+       # Distance from source
+       distance = np.linspace(initial_distance, max_distance, 1000)
+
+       # Use theoretical inverse square law to calcluate radiation at a second
+       # distance given an initial radiation and distance
+       rad = initial_distance ** 2 * initial_radiation / distance ** 2
+
+       ax.plot(distance, rad, label='Additional radiation of table emitting %.3f mrem/h' % (initial_radiation,))
+
+       ax.set_xlabel('distance (meters)')
+       ax.set_ylabel('dose (mrem / h)')
+
+   ax.plot(distance, [ave_american_radiation.m] * len(distance), label='Average american background radiation')
+   ax.legend()
+   # ax.set_xscale('log')
+   ax.set_yscale('log')
+
+
+   # R1 = 0.012
+   # D1 = 2
+   # R1 = 0.025
+   # D2 = 0.01
+   # (D1 ** 2) * R1 / (D2 ** 2)
