@@ -98,3 +98,11 @@ def smart_table():
     devs = DeviceList()
     for dev in devs.devices:
         pass
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/misc/notes/hardwareinfo/debug_disk.py
+    """
+    smart_table()
