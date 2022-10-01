@@ -529,6 +529,16 @@ mypkgs(){
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
     create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE 
 
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=delayed_image
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE 
+
 
     ### GITHUB PROJECTS
 
