@@ -94,7 +94,7 @@ def smart_table():
     print(big_table.to_string())
 
     for _, group in attrs_df.groupby(['num', 'name']):
-        print(group.to_string())
+        # print(group.to_string())
         value_failed = group['value'].astype(int) < group['thresh'].astype(int)
         worst_failed = group['worst'].astype(int) < group['thresh'].astype(int)
         any_failed = worst_failed | value_failed
