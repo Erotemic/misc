@@ -2,6 +2,9 @@
 https://github.com/Erotemic/py-SMART/tree/dev/sudo_in_smartctl
 pip install pySMART
 
+pip install git+https://github.com/truenas/py-SMART
+
+
 
 Each drive manufacturer defines a set of attributes,[21][22] and sets threshold values beyond which attributes should not pass under normal operation.
 
@@ -86,6 +89,10 @@ def smart_table():
     print(msg_df.to_string())
     print('')
     print('[green] --- Device Attributes ---')
+
+    big_table = attrs_df.set_index(['name', 'num', 'dev']).sort_values('num')
+    print(big_table.to_string())
+
     for _, group in attrs_df.groupby(['num', 'name']):
         print(group.to_string())
         value_failed = group['value'].astype(int) < group['thresh'].astype(int)

@@ -22,6 +22,44 @@ boinc_cli_demo(){
     ls /var/lib/boinc-client -al
 }
 
+change_data_dir(){
+    # https://boinc.berkeley.edu/forum_thread.php?id=9633#:~:text=Move%20data%20directory.,you%20moved%20the%20data%20directory.
+
+    # Stop the client
+    sudo service boinc-client stop
+
+    NEW_DATA_DPATH=/data/service/boinc-client
+    mkdir -p "$NEW_DATA_DPATH"
+    echo "$NEW_DATA_DPATH"
+
+    # Copy to the new data dir
+    sudo rsync -avrpRP /var/lib/./boinc-client /data/service/
+
+    sudo mv /var/lib/boinc-client /var/lib/boinc-client-old
+    sudo ln -s "$NEW_DATA_DPATH" /var/lib/boinc-client
+
+    cat /etc/boinc-client/config.properties  | grep data_dir
+    cat /etc/default/boinc-client | grep BOINC_DIR -C 10
+    cat /usr/lib/systemd/system/boinc-client.service | grep WorkingDirectory -C 10
+
+    # Ehhh, this is a pain, try a symlink instead
+    # Change directory in the config files (Doesnt seem to do anything?)
+    #sudo sed -i "s|BOINC_DIR=.*|BOINC_DIR=\"$NEW_DATA_DPATH\"|g" /etc/default/boinc-client
+    #sudo_writeto /etc/boinc-client/config.properties "data_dir=$NEW_DATA_DPATH"
+    # Change data dir in the service file
+    #sudo sed -i "s|WorkingDirectory=.*|WorkingDirectory=$NEW_DATA_DPATH|g" /usr/lib/systemd/system/boinc-client.service
+
+    # Fix permissions
+    sudo chown boinc:boinc -R "$NEW_DATA_DPATH"
+
+    # Restart the client
+    sudo service boinc-client start
+    sudo service boinc-client status
+
+    sudo systemctl daemon-reload
+
+}
+
 
 world_community_grid(){
     ___doc__="
