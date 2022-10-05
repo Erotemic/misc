@@ -90,7 +90,7 @@ def smart_table():
     print('')
     print('[green] --- Device Attributes ---')
 
-    big_table = attrs_df.set_index(['name', 'num', 'dev']).sort_values('num')
+    big_table = attrs_df.set_index(['name', 'num', 'dev']).sort_values(['num', 'name', 'dev'])
     print(big_table.to_string())
 
     for _, group in attrs_df.groupby(['num', 'name']):
@@ -105,6 +105,74 @@ def smart_table():
     devs = DeviceList()
     for dev in devs.devices:
         pass
+
+
+def fio_test():
+    """
+    apt install fio
+    /usr/bin/fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=test --bs=4k --iodepth=64 --size=4G --readwrite=randrw --rwmixread=75
+    """
+    # file_system_infos = []
+    # dpaths = []  # from file_system_infos
+    import ubelt as ub
+    dpaths = [
+        (ub.Path.home() / 'tmp').ensuredir(),
+        ub.Path('/data/tmp').ensuredir(),
+        # ub.Path('/media/joncrall/flash1/tmp').mkdir(exist_ok=True) or ub.Path('/media/joncrall/flash1/tmp')
+    ]
+    jobs = ub.JobPool(mode='thread', max_workers=4)
+    command = '/usr/bin/fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=test --bs=4k --iodepth=64 --size=4G --readwrite=randrw --rwmixread=75'
+    outs = {}
+    for dpath in dpaths:
+        job = jobs.submit(ub.cmd, command, cwd=dpath, verbose=0)
+        job.dpath = dpath
+    for job in jobs.as_completed(desc='collect jobs'):
+        outs[job.dpath] = job.result()
+
+    import parse
+    pat = ub.codeblock(
+        '''
+        test: {gnum}: {opts}
+        {fio_version}
+        {logs}
+
+        test: {grop_info}: {test_info}
+          read: {readunit}, {read_info}
+           bw {rbwunit}: {read_bw}
+           iops        : {read_iops}
+          write: {writeunit}, {write_info}
+           bw {wbwunit}: {write_bw}
+           iops        : {write_iops}
+          cpu          : {cpu}
+          IO depths    : {depths}
+             submit    : {submit}
+             complete  : {complete}
+             issued rwts: {issued_rwts}
+             latency   : {latency}
+
+        Run status {group_run_status_info}:
+           READ: {READ_STAT}
+          WRITE: {WRITE_STAT}
+        ''')
+    parser = parse.Parser(pat)
+
+    rows = []
+    for dpath, info in outs.items():
+        out = info['out'].strip()
+        print('')
+        print(info['out'])
+        print('')
+        result = parser.parse(out)
+        row = {
+            'r_bw': result.named['READ_STAT'].split(',')[0].split('=')[1].split(' ')[0],
+            'w_bw': result.named['WRITE_STAT'].split(',')[0].split('=')[1].split(' ')[0],
+            'dpath': dpath,
+        }
+        rows.append(row)
+    import pandas as pd
+    df = pd.DataFrame(rows)
+    import rich
+    rich.print(df.to_string())
 
 
 if __name__ == '__main__':
