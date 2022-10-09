@@ -109,75 +109,102 @@ def smart_table():
 
 def fio_test():
     """
-    apt install fio
+    sudo apt install fio
     /usr/bin/fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=test --bs=4k --iodepth=64 --size=4G --readwrite=randrw --rwmixread=75
+
+    https://docs.rocketpool.net/guides/node/local/prepare-pi.html#mounting-and-enabling-automount
+
+    What you care about are the lines starting with read: and write: under the test: line.
+
+    Your read should have IOPS of at least 15k and bandwidth (BW) of at least 60 MiB/s.
+    Your write should have IOPS of at least 5000 and bandwidth of at least 20 MiB/s.
+
     """
     # file_system_infos = []
     # dpaths = []  # from file_system_infos
     import ubelt as ub
     dpaths = [
         (ub.Path.home() / 'tmp').ensuredir(),
+        ub.Path('/media/joncrall/flash1/tmp').mkdir(exist_ok=True) or ub.Path('/media/joncrall/flash1/tmp'),
         ub.Path('/data/tmp').ensuredir(),
-        # ub.Path('/media/joncrall/flash1/tmp').mkdir(exist_ok=True) or ub.Path('/media/joncrall/flash1/tmp')
     ]
-    jobs = ub.JobPool(mode='thread', max_workers=4)
+    jobs = ub.JobPool(mode='thread', max_workers=0)
     command = '/usr/bin/fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=test --bs=4k --iodepth=64 --size=4G --readwrite=randrw --rwmixread=75'
     outs = {}
     for dpath in dpaths:
-        job = jobs.submit(ub.cmd, command, cwd=dpath, verbose=0)
+        job = jobs.submit(ub.cmd, command, cwd=dpath, verbose=2)
         job.dpath = dpath
     for job in jobs.as_completed(desc='collect jobs'):
         outs[job.dpath] = job.result()
 
-    import parse
-    pat = ub.codeblock(
-        '''
-        test: {gnum}: {opts}
-        {fio_version}
-        {logs}
+        import parse
+        pat = ub.codeblock(
+            '''
+            test: {gnum}: {opts}
+            {fio_version}
+            {logs}
 
-        test: {grop_info}: {test_info}
-          read: {readunit}, {read_info}
-           bw {rbwunit}: {read_bw}
-           iops        : {read_iops}
-          write: {writeunit}, {write_info}
-           bw {wbwunit}: {write_bw}
-           iops        : {write_iops}
-          cpu          : {cpu}
-          IO depths    : {depths}
-             submit    : {submit}
-             complete  : {complete}
-             issued rwts: {issued_rwts}
-             latency   : {latency}
+            test: {grop_info}: {test_info}
+              read: {READ_IOPS}, {READ_INFO}
+               bw {rbwunit}: {read_bw}
+               iops        : {read_iops}
+              write: {WRITE_IOPS}, {WRITE_INFO}
+               bw {wbwunit}: {write_bw}
+               iops        : {write_iops}
+              cpu          : {cpu}
+              IO depths    : {depths}
+                 submit    : {submit}
+                 complete  : {complete}
+                 issued rwts: {issued_rwts}
+                 latency   : {latency}
 
-        Run status {group_run_status_info}:
-           READ: {READ_STAT}
-          WRITE: {WRITE_STAT}
-        ''')
-    parser = parse.Parser(pat)
+            Run status {group_run_status_info}:
+               READ: {READ_STAT}
+              WRITE: {WRITE_STAT}
+            ''')
+        parser = parse.Parser(pat)
 
-    rows = []
-    for dpath, info in outs.items():
-        out = info['out'].strip()
-        print('')
-        print(info['out'])
-        print('')
-        result = parser.parse(out)
-        row = {
-            'r_bw': result.named['READ_STAT'].split(',')[0].split('=')[1].split(' ')[0],
-            'w_bw': result.named['WRITE_STAT'].split(',')[0].split('=')[1].split(' ')[0],
-            'dpath': dpath,
+        rows = []
+        for dpath, info in outs.items():
+            out = info['out'].strip()
+            print('')
+            print(info['out'])
+            print('')
+
+            result = parser.parse(out)
+            result.named['READ_INFO'].split(' ')
+            result.named['READ_IOPS'].split(' ')
+            write_iops = result.named['WRITE_IOPS'].split('=')[1]
+            read_iops = result.named['READ_IOPS'].split('=')[1]
+
+            row = {
+                'r_iops': read_iops,
+                'r_bw': result.named['READ_STAT'].split(',')[0].split('=')[1].split(' ')[0],
+                'w_iops': write_iops,
+                'w_bw': result.named['WRITE_STAT'].split(',')[0].split('=')[1].split(' ')[0],
+                'dpath': dpath,
+            }
+            rows.append(row)
+        import pandas as pd
+        df = pd.DataFrame(rows)
+        import rich
+        rich.print(df.to_string())
+
+        target = {
+            'r_iops': '15.0k',
+            'r_bw':  '60.0MiB/s',
+            'w_iops': '5000',
+            'w_bw':  '20.0MiB/s',
         }
-        rows.append(row)
-    import pandas as pd
-    df = pd.DataFrame(rows)
-    import rich
-    rich.print(df.to_string())
+        print('target')
+        rich.print(pd.DataFrame([target]))
 
 
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/misc/notes/hardwareinfo/debug_disk.py
+        python ~/misc/notes/hardwareinfo/debug_disk.py smart_table
+        python ~/misc/notes/hardwareinfo/debug_disk.py fio_test
     """
-    smart_table()
+    import fire
+    fire.Fire()
