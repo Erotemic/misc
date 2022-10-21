@@ -1090,7 +1090,7 @@ def main():
                 print(f'Save: {fname}')
                 ax.figure.savefig(fname)
 
-        if 1:
+        if 0:
             # For each hashmode plot (scheme versus adversary scale)
             for hashmode in ub.ProgIter(hashmodes, desc='plotting'):
                 subdf = df
