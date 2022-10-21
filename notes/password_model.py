@@ -910,8 +910,8 @@ def main():
     }
 
     rows = []
-    for device, scheme, scale in it.product(devices, password_schemes, scales):
-        for benchmark in device['benchmarks']:
+    for device_info, scheme, scale in it.product(devices, password_schemes, scales):
+        for benchmark in device_info['benchmarks']:
 
             states = Fraction(scheme['states'])
             num_devices = Fraction(scale['num_devices'])
@@ -923,7 +923,7 @@ def main():
             seconds = states / Fraction(attempts_per_second)
 
             hours = seconds / Fraction(3600)
-            device_kilowatts = Fraction(device['watts']) / Fraction(1000)
+            device_kilowatts = Fraction(device_info['watts']) / Fraction(1000)
             device_dollars_per_hour = device_kilowatts * dollars_per_kwh
             dollars_per_device = device_dollars_per_hour * hours
             dollars = dollars_per_device * num_devices
@@ -937,7 +937,7 @@ def main():
                 'hashmode': benchmark['hashmode'],
                 'hashmode_attempts_per_second': int(hashmode_attempts_per_second),
 
-                'device': device['name'],
+                'device': device_info['name'],
                 'scale': scale['name'],
                 'num_devices': scale['num_devices'],
 
@@ -953,15 +953,15 @@ def main():
     df = pd.DataFrame(rows)
     df = df.sort_values('entropy')
 
-    # chosen_device = 'RTX_3090'
-    chosen_device = ub.argval('--device', 'RTX_4090')
-    df = df[df['device'] == chosen_device]
+    # device = 'RTX_3090'
+    device = ub.argval('--device', 'RTX_4090')
+    df = df[df['device'] == device]
     df['time'] = df['seconds'].apply(humanize_seconds)
     df['cost'] = df['dollars'].apply(partial(humanize_dollars, colored=1))
     df['entropy'] = df['entropy'].round(2)
     df['num_devices'] = df['num_devices'].apply(int)
 
-    hashmodes = sorted([d['hashmode'] for d in device['benchmarks']])
+    hashmodes = sorted([d['hashmode'] for d in device_info['benchmarks']])
 
     # https://github.com/pandas-dev/pandas/issues/18066
     monkeypatch_pandas_colored_stdout()
@@ -969,7 +969,7 @@ def main():
     # Output our assumptions
     print('\n---')
     print('Assumptions:')
-    device_info = ub.group_items(devices, lambda x: x['name'])[chosen_device][0]
+    device_info = ub.group_items(devices, lambda x: x['name'])[device][0]
     print('estimates = {!r}'.format(estimates))
     print('device_info = {}'.format(ub.repr2(device_info, nl=2)))
 
@@ -1039,7 +1039,7 @@ def main():
             piv = piv.sort_index(axis=1, ascending=False)
 
             # https://stackoverflow.com/questions/64234474/cust-y-lbls-seaborn
-            ax: mpl.axes.Axes = plt.subplots(figsize=(15, 10))[1]
+            ax: mpl.axes.Axes = plt.subplots(figsize=(18 * 1.2, 10 * 1.2))[1]
 
             annot = piv.applymap(dollar_labelize)
             piv = piv.applymap(float)
@@ -1077,16 +1077,17 @@ def main():
             ax.set_xlabel('Hashmode', labelpad=16)
 
             if use_latex:
-                title = '{{\\Huge Password Cost Security}}'
+                title = f'{{\\Huge Password Cost Security: {device}}}'
                 ax.set_title(title)
             else:
-                ax.set_title('Password Cost Security')
+                ax.set_title(f'Password Cost Security: {device}')
 
             ax.figure.subplots_adjust(
                 bottom=0.1, left=0.20, right=1.0, top=0.90, wspace=0.001)
 
             if ub.argflag('--save'):
-                fname = 'passwd_cost_security.png'
+                fname = f'passwd_cost_security_{device}.png'
+                print(f'Save: {fname}')
                 ax.figure.savefig(fname)
 
         if 1:
@@ -1103,7 +1104,8 @@ def main():
                 piv = piv.applymap(float)
 
                 # https://stackoverflow.com/questions/64234474/cust-y-lbls-seaborn
-                ax: mpl.axes.Axes = plt.subplots(figsize=(15, 10))[1]
+                # ax: mpl.axes.Axes = plt.subplots(figsize=(15, 10))[1]
+                ax: mpl.axes.Axes = plt.subplots(figsize=(15 * 1.2, 10 * 1.2))[1]
 
                 annot = piv.applymap(time_labelize)
                 sns.heatmap(piv, annot=annot, ax=ax, fmt='s',
@@ -1144,16 +1146,17 @@ def main():
                     notes = ' (' + hashmode_to_notes[hashmode] + ')'
 
                 if use_latex:
-                    title = '{{\\Huge Password Time Security}}\nhashmode={}{}'.format(hashmode, notes)
+                    title = f'{{\\Huge Password Time Security: {device}}}\nhashmode={hashmode}{notes}'
                     ax.set_title(title)
                 else:
-                    ax.set_title('Password Time Security\n(hashmode={}{})'.format(hashmode, notes))
+                    ax.set_title(f'Password Time Security: {device}\n(hashmode={hashmode}{notes})')
 
                 ax.figure.subplots_adjust(
                     bottom=0.1, left=0.20, right=1.0, top=0.90, wspace=0.001)
 
                 if ub.argflag('--save'):
-                    fname = 'passwd_robustness_{}.png'.format(hashmode)
+                    fname = f'passwd_robustness_{hashmode}_{device}.png'
+                    print(f'Save: {fname}')
                     ax.figure.savefig(fname)
         plt.show()
 
@@ -1161,8 +1164,8 @@ def main():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/misc/notes/password_model.py --device=RTX_3090
-        python ~/misc/notes/password_model.py --device=RTX_4090
+        python ~/misc/notes/password_model.py --device=RTX_3090 --save --show
+        python ~/misc/notes/password_model.py --device=RTX_4090 --save --show
 
         python ~/misc/notes/password_model.py --show
         python ~/misc/notes/password_model.py --show --MODE=small
