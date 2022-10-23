@@ -1039,7 +1039,7 @@ def main():
             piv = piv.sort_index(axis=1, ascending=False)
 
             # https://stackoverflow.com/questions/64234474/cust-y-lbls-seaborn
-            ax: mpl.axes.Axes = plt.subplots(figsize=(18 * 1.2, 10 * 1.2))[1]
+            ax: mpl.axes.Axes = plt.subplots(figsize=(20 * 1.2, 10 * 1.2))[1]
 
             annot = piv.applymap(dollar_labelize)
             piv = piv.applymap(float)
@@ -1083,12 +1083,18 @@ def main():
                 ax.set_title(f'Password Cost Security: {device}')
 
             ax.figure.subplots_adjust(
-                bottom=0.1, left=0.20, right=1.0, top=0.90, wspace=0.001)
+                # bottom=0.1, left=0.20, right=1.0, top=0.90, wspace=0.001)
+                bottom=0.1, left=0.10, right=1.0, top=0.90, wspace=0.001)
 
             if ub.argflag('--save'):
                 fname = f'passwd_cost_security_{device}.png'
                 print(f'Save: {fname}')
                 ax.figure.savefig(fname)
+                try:
+                    import kwplot
+                    cropwhite_ondisk(fname)
+                except Exception:
+                    ...
 
         if 0:
             # For each hashmode plot (scheme versus adversary scale)
@@ -1159,6 +1165,14 @@ def main():
                     print(f'Save: {fname}')
                     ax.figure.savefig(fname)
         plt.show()
+
+
+def cropwhite_ondisk(fpath):
+    import kwimage
+    from kwplot.mpl_make import crop_border_by_color
+    imdata = kwimage.imread(fpath)
+    imdata = crop_border_by_color(imdata)
+    kwimage.imwrite(fpath, imdata)
 
 
 if __name__ == '__main__':
