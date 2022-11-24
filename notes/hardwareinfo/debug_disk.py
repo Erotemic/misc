@@ -125,10 +125,18 @@ def fio_test():
     import ubelt as ub
     dpaths = [
         (ub.Path.home() / 'tmp').ensuredir(),
-        ub.Path('/media/joncrall/flash1/tmp').mkdir(exist_ok=True) or ub.Path('/media/joncrall/flash1/tmp'),
-        ub.Path('/data/tmp').ensuredir(),
+        # ub.Path('/media/joncrall/flash1/tmp').mkdir(exist_ok=True) or ub.Path('/media/joncrall/flash1/tmp'),
+        # ub.Path('/data/tmp').ensuredir(),
+        ub.Path('/mnt/ramdisk/')
     ]
     jobs = ub.JobPool(mode='thread', max_workers=0)
+
+    """
+
+    /usr/bin/fio --randrepeat=1 --ioengine=libaio --gtod_reduce=1 --name=test --filename=test --bs=4k --iodepth=64 --size=4G --readwrite=randrw --rwmixread=75
+
+    """
+
     command = '/usr/bin/fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=test --bs=4k --iodepth=64 --size=4G --readwrite=randrw --rwmixread=75'
     outs = {}
     for dpath in dpaths:
@@ -204,6 +212,7 @@ if __name__ == '__main__':
     """
     CommandLine:
         python ~/misc/notes/hardwareinfo/debug_disk.py smart_table
+        python ~/misc/notes/hardwareinfo/debug_disk.py fio_test
         python ~/misc/notes/hardwareinfo/debug_disk.py fio_test
     """
     import fire
