@@ -19,3 +19,30 @@
 #         for action in dest_to_actions[rmkey]:
 #             print('action = {!r}'.format(action))
 #             grp._actions.remove(action)
+
+
+
+def main():
+    # import argparse
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--foo',  nargs='*')
+    # args = parser.parse_known_args()[0]
+    # import ubelt as ub
+    # print('args.__dict__ = {}'.format(ub.repr2(args.__dict__, nl=1)))
+
+    import ubelt as ub
+    import scriptconfig as scfg
+    class MyConfig(scfg.DataConfig):
+        foo = scfg.Value(None, nargs='*')
+    config = MyConfig.cli(argv=['--foo=-bar,none'], strict=True)
+    print('config = {}'.format(ub.repr2(config, nl=1)))
+
+
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/misc/tests/python/test_argparse.py --foo -bar,none
+    """
+    main()
