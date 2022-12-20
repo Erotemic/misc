@@ -129,11 +129,13 @@ def ram_info():
     num_empty = 0
     total_bytes = 0
     ram_sizestrs = []
+    filled_entries = []
     for entry in dmi_entries:
         sizestr = entry.get('size', 'error')
         if 'no module' in sizestr.lower():
             num_empty += 1
         else:
+            filled_entries.append(entry)
             mag, unit = sizestr.split(' ')
             if sizestr.endswith('MB'):
                 total_bytes += int(mag) * 2 ** 20
@@ -142,6 +144,14 @@ def ram_info():
             else:
                 raise NotImplementedError
             ram_sizestrs.append(sizestr)
+
+    try:
+        import pandas as pd
+        df = pd.DataFrame(filled_entries)
+        import rich
+        rich.print(df.T.to_string())
+    except Exception:
+        ...
 
     total_gb = total_bytes / (2 ** 30)
 
