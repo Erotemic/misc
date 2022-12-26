@@ -41,16 +41,21 @@ def draw_circuit(circuit):
     imdata = np.asarray(pil_img)
     return imdata
 
+from qutip.qip.operations import cnot
+from qutip.qip.circuit import QubitCircuit
+
 
 # This circuit creates the "Bell State"
 # which maximally entangles two input qubits.
 num_qubits = 2
-bell_circuit = qutip.QubitCircuit(num_qubits, input_states=["e1", "e2", "c1", "c2"], num_cbits=2)
+bell_circuit = QubitCircuit(num_qubits, input_states=["e1", "e2", "c1", "c2"], num_cbits=2)
 bell_circuit.add_gate("SNOT", targets=0)  # snot is Hadamard
 bell_circuit.add_gate("CNOT", controls=[0], targets=[1])
 bell_circuit.add_measurement("M0", targets=[0], classical_store=0)
 bell_circuit.add_measurement("M1", targets=[1], classical_store=1)
 
+
+circuit = bell_circuit
 kwplot.imshow(draw_circuit(bell_circuit))
 
 
@@ -102,7 +107,7 @@ oort = 1 / np.sqrt(2)
 qutip.basis(dimensions=2, n=0)
 
 
-rando_circuit = qutip.QubitCircuit(num_qubits, num_cbits=2, input_states=["a", "b", "c1", "c2"])
+rando_circuit = .QubitCircuit(num_qubits, num_cbits=2, input_states=["a", "b", "c1", "c2"])
 rando_circuit.add_gate("RX", arg_value=0.5, targets=[0])
 rando_circuit.add_gate("RY", arg_value=0.5, targets=[1])
 # rando_circuit.add_gate("SNOT", targets=0)  # SNOT is Hadamard
