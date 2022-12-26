@@ -265,8 +265,8 @@ ptable = table.copy()
 ptable['name'] = ptable['coarse'].apply(norm_name)
 ptable = ptable.set_index('name', drop=0)
 
-
-if 0:
+SIMPLE = 1
+if SIMPLE:
     # Simplify the problem
     ptable = ptable[(ptable['stage'] == 'BoB') |
                     (ptable['stage'] == 'WF') |
@@ -294,6 +294,7 @@ star_stages = [s for s in ptable[ptable['reward'] == 'star']['name']]
 # times = pulp.LpVariable.dicts(name='times', indices=ptable['name'],
 #                               lowBound=0, upBound=1, cat=pulp.LpInteger)
 
+
 import pulp  # NOQA
 prob = pulp.LpProblem("M64", pulp.LpMinimize)
 
@@ -303,21 +304,23 @@ complete_flags = pulp.LpVariable.dicts(name='got', indices=ptable['name'],
 
 # Make a variable indicating if we can get to the start of a stage
 can_get_to = pulp.LpVariable.dicts(name='can_get', indices=ptable['name'],
-                                     upBound=1, cat=pulp.LpInteger)
+                                   lowBound=0, upBound=1, cat=pulp.LpInteger)
 
 # Make a variable indicating how many stars we are missing to get to a stage
-num_missing = pulp.LpVariable.dicts(name='num_missing', indices=ptable['name'],
+abundence = pulp.LpVariable.dicts(name='abundence', indices=ptable['name'],
                                     lowBound=0, upBound=1, cat=pulp.LpInteger)
+has_basement_key = pulp.LpVariable('has_basement_key', lowBound=0, upBound=1, cat=pulp.LpInteger)
+has_tower_key = pulp.LpVariable('has_tower_key', lowBound=0, upBound=1, cat=pulp.LpInteger)
+has_jumbo_star = pulp.LpVariable('has_jumbo_star', lowBound=0, upBound=1, cat=pulp.LpInteger)
 
 # A subset of complete_flags stages give stars
 star_flags = ub.udict(complete_flags) & star_stages
-
-time_cost_parts = []
 
 # Indicates how many stars we have
 num_stars = sum(star_flags.values())
 
 # For every stage we could complete
+time_cost_parts = []
 for name in complete_flags:
     # It costs time to complete a coarse
     time_cost_parts.append(
@@ -325,9 +328,11 @@ for name in complete_flags:
     )
 
     # You can only get the star if requirements are met
-    row = ptable.loc[name]
+    row = ptable.loc[name].to_dict()
     reqcode = row['requires'].split(';')
     requires = [r for r in reqcode if r]
+    print(f'name={name}')
+    print(f'requires={requires}')
     for r in requires:
         if 'star' in r:
             required_stars = int(r.split(' ')[0])
@@ -341,31 +346,60 @@ for name in complete_flags:
             # negative. So when num_stars - required_stars is negative, we
             # need to force the varaiable to be 0 or less.
             # Use a temporary variable that can be negative, 0 or 1
-            num_missing[name] = required_stars - num_stars
+            abundence[name] = num_stars - required_stars
             # We can complete a stage when num missing is 0 or less
             # Negate, so we can see how many extra stars we have (abundence)
-            abundence = -num_missing[name]
             # Add 1, so when the abundence is 0 or more we know we can complete
-            prob.add(can_get_to[name] <= abundence + 1)
+            prob.add(can_get_to[name] <= (abundence[name] + 1))
             prob.add(can_get_to[name] >= 0)
+        if 'basement_key' == r:
+            prob.add(can_get_to[name] <= has_basement_key)
+        if 'tower_key' == r:
+            prob.add(can_get_to[name] <= has_tower_key)
 
     # Can only complete a coarse if you are able to get to it.
     prob.add(complete_flags[name] <= can_get_to[name])
 
-# We must do these levels
-# TODO: jumbo star constraint instead
-prob.add(complete_flags['bowser_in_the_dark_world_battle'] >= 1)
-prob.add(complete_flags['bowser_in_the_fire_sea_battle'] >= 1)
-prob.add(complete_flags['bowser_in_the_sky_battle'] >= 1)
+prob.add(has_basement_key >= complete_flags['bowser_in_the_dark_world_battle'])
+
+# We get the keys when we complete bowser
+if SIMPLE:
+    # prob.add(complete_flags['bowser_in_the_dark_world_battle'] >= 1)
+    ...
+else:
+    prob.add(has_tower_key >= complete_flags['bowser_in_the_fire_sea_battle'])
+    prob.add(has_jumbo_star >= complete_flags['bowser_in_the_sky_battle'])
+
+    # We must do these levels
+    # TODO: jumbo star constraint instead
+    # prob.add(complete_flags['bowser_in_the_dark_world_battle'] >= 1)
+    # prob.add(complete_flags['bowser_in_the_fire_sea_battle'] >= 1)
+    # prob.add(complete_flags['bowser_in_the_sky_battle'] >= 1)
+    # prob.add(has_jumbo_star  >= 1)
 
 # Minimize total time
 total_time = sum(time_cost_parts)
-prob.objective = total_time
+prob.setObjective(total_time)
+
+
+# Not sure what is broken ...
 
 #pulp.CPLEX().solve(prob)
 pulp.PULP_CBC_CMD().solve(prob)
+
+
+can_get_to_soln = {k: v.value() for k, v in can_get_to.items()}
+abundence_soln = {k: v.value() for k, v in abundence.items()}
+print('can_get_to_soln = {}'.format(ub.repr2(can_get_to_soln, nl=1)))
+print('abundence_soln = {}'.format(ub.repr2(abundence_soln, nl=1)))
 
 # Read solution
 solution = {k: v.value() for k, v in complete_flags.items()}
 print('solution = {}'.format(ub.urepr(solution, nl=1, align=':')))
 print([k for k, v in solution.items() if v > 0])
+
+num_stars_soln = num_stars.value()
+print(f'num_stars_soln={num_stars_soln}')
+
+total_time_soln = total_time.value()
+print(f'total_time_soln={total_time_soln}')
