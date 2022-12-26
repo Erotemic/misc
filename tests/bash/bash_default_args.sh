@@ -22,3 +22,15 @@ echo "===================="
 echo "ARG_VAR1 = $ARG_VAR1"
 echo "ARG_VAR2 = $ARG_VAR2"
 echo "===================="
+
+
+fob_list = []
+list_len = 0
+val = 1
+last = 0
+old = 0
+while list_len < length:
+    fob_list.append(val)
+    old = val
+    val += last
+    last = old

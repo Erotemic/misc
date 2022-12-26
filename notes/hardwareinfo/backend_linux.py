@@ -69,7 +69,7 @@ def motherboard_info():
     """
     REQUIRES SUDO
 
-    xdoctest -m ~/misc/notes/buildapc.py motherboard_info
+    xdoctest -m ~/misc/notes/hardwareinfo/backend_linux.py motherboard_info
     """
     import re
     info = ub.cmd('sudo dmidecode -t 9')
@@ -105,8 +105,62 @@ def motherboard_info():
 
 
 def ram_info():
+    import re
     info = ub.cmd('sudo dmidecode --type 17')
     print(info['out'])
+    dmi_entries = []
+    chunks = info['out'].split('\n\n')
+    for chunk in chunks:
+        item = {}
+        for line in chunk.split('\n'):
+            # doesn't get all data correctly (e.g. characteristics)
+            parts = re.split('\t*:', line, maxsplit=1)
+            if len(parts) == 2:
+                key, val = parts
+                key = key.strip()
+                val = val.strip()
+                if key in item:
+                    raise KeyError(f'key={key} already exists')
+                item[key] = val
+        if item:
+            item = ub.map_keys(slugify_key, item)
+            dmi_entries.append(item)
+
+    num_empty = 0
+    total_bytes = 0
+    ram_sizestrs = []
+    filled_entries = []
+    for entry in dmi_entries:
+        sizestr = entry.get('size', 'error')
+        if 'no module' in sizestr.lower():
+            num_empty += 1
+        else:
+            filled_entries.append(entry)
+            mag, unit = sizestr.split(' ')
+            if sizestr.endswith('MB'):
+                total_bytes += int(mag) * 2 ** 20
+            elif sizestr.endswith('GB'):
+                total_bytes += int(mag) * 2 ** 30
+            else:
+                raise NotImplementedError
+            ram_sizestrs.append(sizestr)
+
+    try:
+        import pandas as pd
+        df = pd.DataFrame(filled_entries)
+        import rich
+        rich.print(df.T.to_string())
+    except Exception:
+        ...
+
+    total_gb = total_bytes / (2 ** 30)
+
+    print(ub.dict_hist(ram_sizestrs))
+    num_slots = len(dmi_entries)
+    print(f'Total RAM size: {total_gb} GB')
+    print(f'Number of RAM slots: {num_slots}')
+    print(f'Number of empty slots: {num_empty}')
+    print(f'Installed slot sizes: {ram_sizestrs}')
 
 
 def parse_cpu_info(percore=False):

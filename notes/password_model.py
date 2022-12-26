@@ -364,88 +364,270 @@ def build_threat_models():
     # Enumerate how fast certain devices can make attempts on particular
     # password schemes
     # https://gist.github.com/Chick3nman/e4fcee00cb6d82874dace72106d73fef#file-rtx_3090_v6-1-1-benchmark-L1006
+    # https://gist.github.com/Chick3nman/32e662a5bb63bc4f51b847bb422222fd#file-RTX_4090_v6.2.6.Benchmark
 
-    hashmodes = []
-    if MODE in {'full'}:
-        hashmodes.extend([
-                # {
-                #     # This is actually the worst case (how fast to print to stdout)
-                #     'hashmode': 'STDOUT',
-                #     'notes': 'pathological',
-                #     'attempts_per_second': 24549.4 * 1e9,
-                # },
+    if 0:
+        # For developer hard codeing
+        raw_hashcat_benchmarks = {
+            'RTX_3090': 'https://gist.githubusercontent.com/Chick3nman/e4fcee00cb6d82874dace72106d73fef/raw/11ec7cf3c8c2627bf8b6a20673f2d571caa0bef9/RTX_3090_v6.1.1.Benchmark',
+            'RTX_4090': 'https://gist.githubusercontent.com/Chick3nman/32e662a5bb63bc4f51b847bb422222fd/raw/265c25315440e0219e9c0406a56369ccaf640ac6/RTX_4090_v6.2.6.Benchmark',
+        }
+        parsed = {}
+        for k, url in raw_hashcat_benchmarks.items():
 
-                {
-                    # A "Stronger" modern (2021) scheme
-                    'hashmode': 'VeraCrypt Streebog-512',
-                    'notes': 'strongest',
-                    'attempts_per_second': 46,
-                },
+            import parse
+            header_parser1 = parse.Parser('Hashmode: {index} - {name}')
+            header_parser2 = parse.Parser('* Hash-Mode {index} {name}')
+            speed_parser = parse.Parser('Speed.#{test_num:d}{dots}: {rate} ({total}) @ {context}')
+            fpath = ub.grabdata(url)
 
-                {
-                    'hashmode': 'HMAC-SHA256',
-                    'notes': 'weak',
-                    'attempts_per_second': 1898.6 * 1e6,
-                },
+            entries = []
+            lines = ub.Path(fpath).read_text().split('\n')
+            part = None
+            for line in lines:
+                if line.startswith('Hashmode:') or line.startswith('* Hash-Mode'):
+                    if part:
+                        entries.append(part)
+                    if line.startswith('Hashmode:'):
+                        info = header_parser1.parse(line).named
+                    if line.startswith('* Hash-Mode'):
+                        info = header_parser2.parse(line).named
+                    info['name'] = info['name'].strip()
+                    info['name'] = info['name'].replace(']', ')')
+                    info['name'] = info['name'].replace('[', '(')
+                    iter_part = ''
+                    if 'Iterations' in info['name']:
+                        name, iter_part = info['name'].split('(Iterations')
+                    else:
+                        name = info['name']
+                    name = name.strip()
+                    if not name.startswith('('):
+                        name = '(' + name + ')'
+                    if iter_part:
+                        name = name + ' (Iterations' + iter_part
+                    info['name'] = name
+                    part = {'header': info}
+                if part is not None:
+                    if line.startswith('Speed.'):
+                        info = speed_parser.parse(line).named
+                        info = ub.udict(info) - {'dots'}
+                        num, unit = info['rate'].strip().split(' ')
 
-                {
-                    'hashmode': 'sha256($pass.$salt)',
-                    'notes': 'weak',
-                    'attempts_per_second': 9746.6 * 1e6,
-                },
+                        if unit == 'GH/s':
+                            mag = 1e9
+                        elif unit == 'MH/s':
+                            mag = 1e6
+                        elif unit == 'kH/s':
+                            mag = 1e3
+                        elif unit == 'H/s':
+                            mag = 1
+                        else:
+                            raise Exception
+                        info['rate'] = float(num) * mag
+                        part.setdefault('tests', []).append(info)
+            if part:
+                entries.append(part)
 
-                {
-                    # A "Weak" but still used scheme
-                    'hashmode': 'md5',
-                    'notes': 'weak',
-                    'attempts_per_second': 65079.1 * 1e6,
-                }
+            hashmodes_of_interest = [
+                'VeraCrypt Streebog-512',
+                'HMAC-SHA256',
+                'sha256($pass.$salt)',
+                'MD5',
+                'bcrypt $2*$, Blowfish',
+                'AES Crypt (SHA256), k=8191',
+                'Ethereum Wallet, PBKDF2-HMAC-SHA256',
+                'VeraCrypt SHA512 + XTS 512 bit',
+                'Plaintext',
+            ]
+            variants = ub.ddict(list)
+            for hashmode in hashmodes_of_interest:
+                for entry in entries:
+                    if hashmode in entry['header']['name']:
+                        variants[hashmode].append(entry)
+            parsed[k] = variants
 
-        ])
+        rows = []
+        for devname, variants in parsed.items():
+            for hashmode, entries in variants.items():
+                for entry in entries:
+                    for test in entry['tests']:
+                        rows.append({
+                            'device': devname,
+                            'hashmode': hashmode,
+                            'full_hashmode': entry['header']['name'],
+                            'test_num': test['test_num'],
+                            'rate': test['rate'],
+                        })
+        import pandas as pd
+        df = pd.DataFrame(rows)
+        df = df.sort_values(['hashmode', 'full_hashmode'])
+        import rich
+        rich.print(df.to_string())
 
-    if MODE in {'big', 'full'}:
-        hashmodes.extend([
-                {
-                    # A "Good" modern (2021) scheme
-                    'hashmode': 'bcrypt $2*$, Blowfish',
-                    'notes': 'strong',
-                    'attempts_per_second': 96662,
-                },
-        ])
+    hashmodes_3090 = [
+            # {
+            #     # This is actually the worst case (how fast to print to stdout)
+            #     'hashmode': 'STDOUT',
+            #     'notes': 'pathological',
+            #     'attempts_per_second': 24549.4 * 1e9,
+            # },
 
-    hashmodes.extend([
+            {
+                # A "Stronger" modern (2021) scheme
+                'hashmode': 'VeraCrypt Streebog-512',
+                'notes': 'strongest',
+                'attempts_per_second': 46,
+            },
+
+            {
+                'hashmode': 'HMAC-SHA256',
+                'notes': 'weak',
+                'attempts_per_second': 1898.6 * 1e6,
+            },
+
+            {
+                'hashmode': 'sha256($pass.$salt)',
+                'notes': 'weak',
+                'attempts_per_second': 9746.6 * 1e6,
+            },
+
+            {
+                # A "Weak" but still used scheme
+                'hashmode': 'md5',
+                'notes': 'weak',
+                'attempts_per_second': 65079.1 * 1e6,
+            },
+
+            {
+                # A "Good" modern (2021) scheme
+                'hashmode': 'bcrypt $2*$, Blowfish',
+                'notes': 'strong',
+                'attempts_per_second': 96662,
+            },
+
             {
                 'hashmode': 'AES Crypt (SHA256), k=8191',
                 'notes': 'good',
                 'attempts_per_second': 922.9 * 1e3,
             },
+            {
+                # Based on rtx3090 attacking eth wallet
+                # This is a standin for a reasonably secure password hashmode
+                'hashmode': 'ETH-PBKDF2-HMAC-SHA256',
+                'notes': 'good',
+                'attempts_per_second': 3934 * 1e3,
+            },
+            {
+                # A "Strong" modern (2021) scheme
+                'hashmode': 'VeraCrypt SHA512 + XTS 512 bit',
+                'notes': 'very strong',
+                'attempts_per_second': 2837,
+            },
+
+            {
+                # This is a reasonable worst-case password hashmode
+                'hashmode': 'Plaintext',
+                'notes': 'weakest',
+                'attempts_per_second': 121 * 1e9,
+            },
+    ]
+
+    hashmodes_4090 = [
+            # {
+            #     # This is actually the worst case (how fast to print to stdout)
+            #     'hashmode': 'STDOUT',
+            #     'notes': 'pathological',
+            #     'attempts_per_second': 24549.4 * 1e9,
+            # },
+
+            {
+                # A "Stronger" modern (2021) scheme
+                # (VeraCrypt Streebog-512 + XTS 1536 bit) (Iterations: 499999)
+                'hashmode': 'VeraCrypt Streebog-512',
+                'notes': 'strongest',
+                'attempts_per_second': 102,
+            },
+
+            {
+                'hashmode': 'HMAC-SHA256',  # (HMAC-SHA256 (key = $pass))
+                'notes': 'weak',
+                'attempts_per_second': 4.333900e9,
+            },
+
+            {
+                'hashmode': 'sha256($pass.$salt)',
+                'notes': 'weak',
+                'attempts_per_second': 2.196030e+10,
+            },
+
+            {
+                # A "Weak" but still used scheme
+                'hashmode': 'md5',
+                'notes': 'weak',
+                'attempts_per_second': 1.641000e+11,
+            },
+
+            {
+                # A "Good" modern (2021) scheme
+                'hashmode': 'bcrypt $2*$, Blowfish',
+                'notes': 'strong',
+                'attempts_per_second': 1.840000e+05,
+            },
+
+            {
+                'hashmode': 'AES Crypt (SHA256), k=8191',
+                'notes': 'good',
+                'attempts_per_second': 2111.5 * 1e3,
+            },
+            {
+                # Based on rtx3090 attacking eth wallet
+                # This is a standin for a reasonably secure password hashmode
+                'hashmode': 'ETH-PBKDF2-HMAC-SHA256',  # Ethereum Wallet, PBKDF2-HMAC-SHA256
+                'notes': 'good',
+                'attempts_per_second': 8341.3 * 1e3,
+            },
+            {
+                # A "Strong" modern (2021) scheme
+                'hashmode': 'VeraCrypt SHA512 + XTS 512 bit',
+                'notes': 'very strong',
+                'attempts_per_second': 6.432000e+03,
+            },
+
+            {
+                # This is a reasonable worst-case password hashmode
+                'hashmode': 'Plaintext',
+                'notes': 'weakest',
+                'attempts_per_second': 2.653000e+11,
+            },
+    ]
+
+    chosen_hashmodes = []
+    if MODE in {'full'}:
+        chosen_hashmodes += [
+            'VeraCrypt Streebog-512',
+            'HMAC-SHA256',
+            'sha256($pass.$salt)',
+            'md5',
+        ]
+
+    if MODE in {'big', 'full'}:
+        chosen_hashmodes.extend([
+             'bcrypt $2*$, Blowfish',
+        ])
+
+    chosen_hashmodes.extend([
+        'AES Crypt (SHA256), k=8191',
     ])
 
     if 1:
-        hashmodes.extend([
-                    {
-                        # Based on rtx3090 attacking eth wallet
-                        # This is a standin for a reasonably secure password hashmode
-                        'hashmode': 'ETH-PBKDF2-HMAC-SHA256',
-                        'notes': 'good',
-                        'attempts_per_second': 3934 * 1e3,
-                    },
-                    {
-                        # A "Strong" modern (2021) scheme
-                        'hashmode': 'VeraCrypt SHA512 + XTS 512 bit',
-                        'notes': 'very strong',
-                        'attempts_per_second': 2837,
-                    },
-
-                    {
-                        # This is a reasonable worst-case password hashmode
-                        'hashmode': 'Plaintext',
-                        'notes': 'weakest',
-                        'attempts_per_second': 121 * 1e9,
-                    },
+        chosen_hashmodes.extend([
+            'ETH-PBKDF2-HMAC-SHA256',
+            'VeraCrypt SHA512 + XTS 512 bit',
+            'Plaintext',
         ])
 
-    hashmodes = sorted(hashmodes, key=lambda x: x['attempts_per_second'])
+    hashmodes_3090 = sorted(hashmodes_3090, key=lambda x: x['attempts_per_second'])
+    hashmodes_4090 = sorted(hashmodes_4090, key=lambda x: x['attempts_per_second'])
 
     devices = [
         {
@@ -454,7 +636,15 @@ def build_threat_models():
             # all of the available GPU wattage, so we should account for that
             # if we can.
             'watts': 370.0,
-            'benchmarks': hashmodes,
+            'benchmarks': [d for d in hashmodes_3090 if d['hashmode'] in chosen_hashmodes],
+        },
+        {
+            'name': 'RTX_4090',
+            # Note: it may be the case that a particular hashmode does not use
+            # all of the available GPU wattage, so we should account for that
+            # if we can.
+            'watts': 450.0,
+            'benchmarks': [d for d in hashmodes_4090 if d['hashmode'] in chosen_hashmodes],
         }
     ]
 
@@ -720,8 +910,8 @@ def main():
     }
 
     rows = []
-    for device, scheme, scale in it.product(devices, password_schemes, scales):
-        for benchmark in device['benchmarks']:
+    for device_info, scheme, scale in it.product(devices, password_schemes, scales):
+        for benchmark in device_info['benchmarks']:
 
             states = Fraction(scheme['states'])
             num_devices = Fraction(scale['num_devices'])
@@ -733,7 +923,7 @@ def main():
             seconds = states / Fraction(attempts_per_second)
 
             hours = seconds / Fraction(3600)
-            device_kilowatts = Fraction(device['watts']) / Fraction(1000)
+            device_kilowatts = Fraction(device_info['watts']) / Fraction(1000)
             device_dollars_per_hour = device_kilowatts * dollars_per_kwh
             dollars_per_device = device_dollars_per_hour * hours
             dollars = dollars_per_device * num_devices
@@ -747,7 +937,7 @@ def main():
                 'hashmode': benchmark['hashmode'],
                 'hashmode_attempts_per_second': int(hashmode_attempts_per_second),
 
-                'device': device['name'],
+                'device': device_info['name'],
                 'scale': scale['name'],
                 'num_devices': scale['num_devices'],
 
@@ -763,14 +953,15 @@ def main():
     df = pd.DataFrame(rows)
     df = df.sort_values('entropy')
 
-    chosen_device = 'RTX_3090'
-    df = df[df['device'] == chosen_device]
+    # device = 'RTX_3090'
+    device = ub.argval('--device', 'RTX_4090')
+    df = df[df['device'] == device]
     df['time'] = df['seconds'].apply(humanize_seconds)
     df['cost'] = df['dollars'].apply(partial(humanize_dollars, colored=1))
     df['entropy'] = df['entropy'].round(2)
     df['num_devices'] = df['num_devices'].apply(int)
 
-    hashmodes = sorted([d['hashmode'] for d in device['benchmarks']])
+    hashmodes = sorted([d['hashmode'] for d in device_info['benchmarks']])
 
     # https://github.com/pandas-dev/pandas/issues/18066
     monkeypatch_pandas_colored_stdout()
@@ -778,7 +969,7 @@ def main():
     # Output our assumptions
     print('\n---')
     print('Assumptions:')
-    device_info = ub.group_items(devices, lambda x: x['name'])[chosen_device][0]
+    device_info = ub.group_items(devices, lambda x: x['name'])[device][0]
     print('estimates = {!r}'.format(estimates))
     print('device_info = {}'.format(ub.repr2(device_info, nl=2)))
 
@@ -848,7 +1039,7 @@ def main():
             piv = piv.sort_index(axis=1, ascending=False)
 
             # https://stackoverflow.com/questions/64234474/cust-y-lbls-seaborn
-            ax: mpl.axes.Axes = plt.subplots(figsize=(15, 10))[1]
+            ax: mpl.axes.Axes = plt.subplots(figsize=(20 * 1.2, 10 * 1.2))[1]
 
             annot = piv.applymap(dollar_labelize)
             piv = piv.applymap(float)
@@ -886,19 +1077,26 @@ def main():
             ax.set_xlabel('Hashmode', labelpad=16)
 
             if use_latex:
-                title = '{{\\Huge Password Cost Security}}'
+                title = f'{{\\Huge Password Cost Security: {device}}}'
                 ax.set_title(title)
             else:
-                ax.set_title('Password Cost Security')
+                ax.set_title(f'Password Cost Security: {device}')
 
             ax.figure.subplots_adjust(
-                bottom=0.1, left=0.20, right=1.0, top=0.90, wspace=0.001)
+                # bottom=0.1, left=0.20, right=1.0, top=0.90, wspace=0.001)
+                bottom=0.1, left=0.10, right=1.0, top=0.90, wspace=0.001)
 
             if ub.argflag('--save'):
-                fname = 'passwd_cost_security.png'
+                fname = f'passwd_cost_security_{device}.png'
+                print(f'Save: {fname}')
                 ax.figure.savefig(fname)
+                try:
+                    import kwplot
+                    cropwhite_ondisk(fname)
+                except Exception:
+                    ...
 
-        if 1:
+        if 0:
             # For each hashmode plot (scheme versus adversary scale)
             for hashmode in ub.ProgIter(hashmodes, desc='plotting'):
                 subdf = df
@@ -912,7 +1110,8 @@ def main():
                 piv = piv.applymap(float)
 
                 # https://stackoverflow.com/questions/64234474/cust-y-lbls-seaborn
-                ax: mpl.axes.Axes = plt.subplots(figsize=(15, 10))[1]
+                # ax: mpl.axes.Axes = plt.subplots(figsize=(15, 10))[1]
+                ax: mpl.axes.Axes = plt.subplots(figsize=(15 * 1.2, 10 * 1.2))[1]
 
                 annot = piv.applymap(time_labelize)
                 sns.heatmap(piv, annot=annot, ax=ax, fmt='s',
@@ -953,24 +1152,35 @@ def main():
                     notes = ' (' + hashmode_to_notes[hashmode] + ')'
 
                 if use_latex:
-                    title = '{{\\Huge Password Time Security}}\nhashmode={}{}'.format(hashmode, notes)
+                    title = f'{{\\Huge Password Time Security: {device}}}\nhashmode={hashmode}{notes}'
                     ax.set_title(title)
                 else:
-                    ax.set_title('Password Time Security\n(hashmode={}{})'.format(hashmode, notes))
+                    ax.set_title(f'Password Time Security: {device}\n(hashmode={hashmode}{notes})')
 
                 ax.figure.subplots_adjust(
                     bottom=0.1, left=0.20, right=1.0, top=0.90, wspace=0.001)
 
                 if ub.argflag('--save'):
-                    fname = 'passwd_robustness_{}.png'.format(hashmode)
+                    fname = f'passwd_robustness_{hashmode}_{device}.png'
+                    print(f'Save: {fname}')
                     ax.figure.savefig(fname)
         plt.show()
+
+
+def cropwhite_ondisk(fpath):
+    import kwimage
+    from kwplot.mpl_make import crop_border_by_color
+    imdata = kwimage.imread(fpath)
+    imdata = crop_border_by_color(imdata)
+    kwimage.imwrite(fpath, imdata)
 
 
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/misc/notes/password_model.py
+        python ~/misc/notes/password_model.py --device=RTX_3090 --save --show
+        python ~/misc/notes/password_model.py --device=RTX_4090 --save --show
+
         python ~/misc/notes/password_model.py --show
         python ~/misc/notes/password_model.py --show --MODE=small
     """
