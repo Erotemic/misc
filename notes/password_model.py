@@ -172,6 +172,10 @@ def build_password_strategy():
         'special': len(string.punctuation),
     }
 
+    naive_schemes = 1
+    chbs_scheme = 1
+    diceware_scheme = 1
+
     if MODE == 'full':
         # Google random passwords are 15 chars long
         for num in [8, 15, 20]:
@@ -183,6 +187,18 @@ def build_password_strategy():
                     'base': base,
                 }
             )
+
+    if 0:
+        # Different random character variants
+        for num in [32]:
+            for base in [2, 3, 4, 5, 6, 8, 26, 96]:
+                password_schemes.append(
+                    {
+                        'name': 'chars-{}-{}'.format(num, base),
+                        'num': num,
+                        'base': base,
+                    }
+                )
 
     # Enumerate word-based password schemes
     phrase_scheme_basis = {
@@ -199,30 +215,31 @@ def build_password_strategy():
     elif MODE == 'big':
         phrase_scheme_basis['num_words'] = [6, 7, 8, 9]
 
-    for vocab_size in phrase_scheme_basis['vocab_size']:
-        for num_words in phrase_scheme_basis['num_words']:
-            password_schemes.append(
-                {
-                    'name': 'Diceware-words-{}-{}'.format(num_words, vocab_size),
-                    'base': vocab_size,
-                    'num': num_words,
-                }
-            )
+    if diceware_scheme:
+        for vocab_size in phrase_scheme_basis['vocab_size']:
+            for num_words in phrase_scheme_basis['num_words']:
+                password_schemes.append(
+                    {
+                        'name': 'Diceware-words-{}-{}'.format(num_words, vocab_size),
+                        'base': vocab_size,
+                        'num': num_words,
+                    }
+                )
 
-    naive_schemes = True
     if naive_schemes:
         password_schemes.append(naive_password_strategy())
         password_schemes.append(naive_password_strategy(
             required_caps=0, required_special=1, required_digits=0
         ))
 
-    password_schemes.append(
-        {
-            'name': 'XKCD-CHBS-{}-{}'.format(4, 2048),
-            'base': 2048,
-            'num': 4,
-        }
-    )
+    if chbs_scheme:
+        password_schemes.append(
+            {
+                'name': 'XKCD-CHBS-{}-{}'.format(4, 2048),
+                'base': 2048,
+                'num': 4,
+            }
+        )
 
     # Postprocess password schemes
     for scheme in password_schemes:
@@ -429,15 +446,16 @@ def build_threat_models():
                 entries.append(part)
 
             hashmodes_of_interest = [
-                'VeraCrypt Streebog-512',
-                'HMAC-SHA256',
-                'sha256($pass.$salt)',
-                'MD5',
-                'bcrypt $2*$, Blowfish',
-                'AES Crypt (SHA256), k=8191',
-                'Ethereum Wallet, PBKDF2-HMAC-SHA256',
-                'VeraCrypt SHA512 + XTS 512 bit',
-                'Plaintext',
+                # 'VeraCrypt Streebog-512',
+                # 'HMAC-SHA256',
+                # 'sha256($pass.$salt)',
+                # 'MD5',
+                # 'bcrypt $2*$, Blowfish',
+                # 'AES Crypt (SHA256), k=8191',
+                'PBKDF2-HMAC-SHA1 + AES-256-CBC',
+                # 'Ethereum Wallet, PBKDF2-HMAC-SHA256',
+                # 'VeraCrypt SHA512 + XTS 512 bit',
+                # 'Plaintext',
             ]
             variants = ub.ddict(list)
             for hashmode in hashmodes_of_interest:
@@ -510,6 +528,7 @@ def build_threat_models():
                 'notes': 'good',
                 'attempts_per_second': 922.9 * 1e3,
             },
+
             {
                 # Based on rtx3090 attacking eth wallet
                 # This is a standin for a reasonably secure password hashmode
@@ -579,6 +598,12 @@ def build_threat_models():
                 'notes': 'good',
                 'attempts_per_second': 2111.5 * 1e3,
             },
+
+            {
+                'hashmode': 'PBKDF2-HMAC-SHA1 + AES-256-CBC',
+                'notes': 'good',
+                'attempts_per_second': 1059.9 * 1e3,
+            },
             {
                 # Based on rtx3090 attacking eth wallet
                 # This is a standin for a reasonably secure password hashmode
@@ -626,6 +651,7 @@ def build_threat_models():
             'Plaintext',
         ])
 
+    chosen_hashmodes = ['PBKDF2-HMAC-SHA1 + AES-256-CBC']
     hashmodes_3090 = sorted(hashmodes_3090, key=lambda x: x['attempts_per_second'])
     hashmodes_4090 = sorted(hashmodes_4090, key=lambda x: x['attempts_per_second'])
 
@@ -1096,7 +1122,7 @@ def main():
                 except Exception:
                     ...
 
-        if 0:
+        if 1:
             # For each hashmode plot (scheme versus adversary scale)
             for hashmode in ub.ProgIter(hashmodes, desc='plotting'):
                 subdf = df

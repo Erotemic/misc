@@ -17,6 +17,41 @@ delete_remote_tags(){
 }
 
 
+delete_merged_branches(){
+    # https://stackoverflow.com/questions/6127328/how-do-i-delete-all-git-branches-which-have-been-merged
+
+    # Delete merged dev branches
+    TO_DELETE_LOCAL=$(git branch --merged main | grep -Ev "(^\*|master|main|release)" | grep "dev/")
+    TO_DELETE_REMOTE=$(git branch -r --merged main | grep -Ev "(^\*|master|main|release)" | grep "origin/dev/")
+    echo "TO_DELETE_REMOTE = $TO_DELETE_REMOTE"
+    echo "TO_DELETE_LOCAL = $TO_DELETE_LOCAL"
+    for branchname in $TO_DELETE; do
+      echo "branchname = $branchname"
+    done
+
+    for branchname in $TO_DELETE_LOCAL; do
+      echo "branchname = $branchname"
+      git branch -d "$branchname"
+    done
+
+    for full_branchname in $TO_DELETE_REMOTE; do
+      echo "full_branchname = $full_branchname"
+      branchname=$(echo "$full_branchname" | cut -d"/" -f2-)
+      echo "branchname = $branchname"
+    done
+
+
+    for full_branchname in $TO_DELETE_REMOTE; do
+      echo "full_branchname = $full_branchname"
+      branchname=$(echo "$full_branchname" | cut -d"/" -f2-)
+      remote=$(echo "$full_branchname" | cut -d"/" -f1)
+      echo "remote = $remote"
+      echo "branchname = $branchname"
+      git push --delete "$remote" "$branchname"
+    done
+}
+
+
 #prep_next_version(){
 #    MODNAME=$(python -c "import setup; print(setup.NAME)")
 #    VERSION=$(python -c "import setup; print(setup.VERSION)")

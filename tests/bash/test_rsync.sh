@@ -51,6 +51,7 @@ reset_rsync_test_remote()
     # Setup remote data
     mkdir -p "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X0_A
     mkdir -p "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X0_A/dir_L1_X0_B
+    mkdir -p "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X0_A/dir_L1_X0_B2
     mkdir -p "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X1_C
     mkdir -p "$REMOTE_DPATH"/$TEST_BASE/root/inside_dir
     mkdir -p "$REMOTE_DPATH"/$TEST_BASE/root/links
@@ -58,6 +59,12 @@ reset_rsync_test_remote()
 
     touch "$REMOTE_DPATH"/$TEST_BASE/root/file_L0_X0_a.txt
     touch "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X0_A/file_L1_X0_b.txt
+    touch "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X0_A/file1.txt
+    touch "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X0_A/file2.txt
+    touch "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X0_A/file1.json
+    touch "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X0_A/file2.json
+    touch "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X0_A/dir_L1_X0_B2/file1.txt
+    touch "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X0_A/dir_L1_X0_B2/file2.json
     touch "$REMOTE_DPATH"/$TEST_BASE/root/dir_L0_X1_C/file_L1_X0_c.txt
 
     touch "$REMOTE_DPATH"/$TEST_BASE/root/inside_dir/inside_file.txt
@@ -339,5 +346,33 @@ test_rsync_merge_folders(){
 
     # Note that the broken (nat11) link is overwritten
     tree "$MOVE_TEST_ROOT"
+
+}
+
+
+test_rsync_files_only(){
+    __doc__="
+    Demonstrate an invocation that only moves files matching a specific pattern.
+
+    source ~/misc/tests/bash/test_rsync.sh
+    "
+    reset_rsync_test_remote
+
+    # Test moving selected files from a specific directy
+    TEST_FILE_ROOT=$LOCAL_DPATH/rsync_include_file_test
+    echo "REMOTE_DPATH = $REMOTE_DPATH"
+    echo "TEST_FILE_ROOT = $TEST_FILE_ROOT"
+    [ -d "$TEST_FILE_ROOT" ] || rm -rf "$TEST_FILE_ROOT"
+    mkdir -p "$TEST_FILE_ROOT"
+
+    tree "$REMOTE_DPATH"
+    tree "$TEST_FILE_ROOT"
+
+    # Include only removes list from an existing exclude list, so you must specify --exclude
+    rsync -avn --include="/*.txt" --exclude="*" "$REMOTE_DPATH/rsync_test/root/dir_L0_X0_A/" "$TEST_FILE_ROOT"
+    rsync -avn --include="/*.json" --exclude="*" "$REMOTE_DPATH/rsync_test/root/dir_L0_X0_A/" "$TEST_FILE_ROOT"
+
+    rsync -avprPRn --include="/*.json" --exclude="*" "$REMOTE_DPATH/rsync_test/root/dir_L0_X0_A/" "$TEST_FILE_ROOT"
+
 
 }

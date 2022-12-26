@@ -4,12 +4,12 @@ Parse spreadsheet with best times, per stage and compute optimal runs.
 Look at differences when taking into account constraints.
 """
 import ubelt as ub
-# import networkx as nx
 import pandas as pd
 # https://docs.google.com/spreadsheets/d/1_cOIEnuKIQ-3LA_U0ygpiL87PTSBPlHmKDId0vC7alo/edit#gid=1471905853
 sheet_id = "1_cOIEnuKIQ-3LA_U0ygpiL87PTSBPlHmKDId0vC7alo"
 sheet_name = "Singlestar"
 url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+fpath = ub.grabdata(url)
 raw_df = pd.read_csv(url)
 
 
@@ -261,126 +261,252 @@ table[table['stage'] == 'LLL']
 def norm_name(n):
     return n.replace(' ', '_').replace("'", '').replace('"', '').replace('!', '').replace('.', '').lower()
 
-ptable = table.copy()
-ptable['name'] = ptable['coarse'].apply(norm_name)
+prows = []
+for row in table.to_dict('records'):
+    row = ub.udict(row) - {'Region', 'Version', 'Runner'}
+    row['name'] = norm_name(row['coarse'])
+    reqcode = row['requires'].split(';')
+    requires = [r for r in reqcode if r]
+    for r in requires:
+        if 'star' in r:
+            requires_stars = int(r.split(' ')[0])
+            row['requires_star'] = requires_stars
+        if 'basement_key' == r:
+            row['requires_basement_key'] = 1
+        if 'tower_key' == r:
+            row['requires_tower_key'] = 1
+        if 'sub' == r:
+            row['requires_sub'] = 1
+    rewcode = row['reward'].split(';')
+    rewards = [r for r in rewcode if r]
+    for r in rewards:
+        if r == 'star':
+            row['rewards_star'] = 1
+        if r == 'basement_key':
+            row['rewards_basement_key'] = 1
+        if r == 'tower_key':
+            row['rewards_tower_key'] = 1
+        if r == 'wing_cap':
+            row['rewards_wing_cap'] = 1
+        if r == 'jumbo_star':
+            row['rewards_jumbo_star'] = 1
+    prows.append(row)
+ptable = pd.DataFrame(prows)
 ptable = ptable.set_index('name', drop=0)
 
-SIMPLE = 1
+SIMPLE = 0
 if SIMPLE:
     # Simplify the problem
-    ptable = ptable[(ptable['stage'] == 'BoB') |
-                    (ptable['stage'] == 'WF') |
-                    (ptable['stage'] == 'CCM') |
-                    (ptable['stage'] == 'BitDW')]
+    ptable = ptable[
+        (ptable['stage'] == 'BoB') |
+        (ptable['stage'] == 'WF') |
+        (ptable['stage'] == 'CCM') |
+        (ptable['stage'] == 'WC') |
+        (ptable['stage'] == 'SS') |
+        (ptable['stage'] == 'BitDW')
+    ]
 
-    small = {
-        'behind_chain_chomps_gate',
-        'blast_away_the_wall',
-        'chip_off_whomps_block',
-        'fall_onto_the_caged_island',
-        'red_coins_on_the_floating_isle',
-        'shoot_into_the_wild_blue',
-        'to_the_top_of_the_fortress',
-        'lil_penguin_lost',
-        'wall_kicks_will_work',
-        'bowser_in_the_dark_world_course',
-        'bowser_in_the_dark_world_red_coins',
-        'bowser_in_the_dark_world_battle',
-    }
-    # ptable = ptable[[n in small for n in ptable['name']]]
 
-star_stages = [s for s in ptable[ptable['reward'] == 'star']['name']]
+def threshold_constraint_(var, thresh):
+    r"""
+    https://en.wikipedia.org/wiki/Big_M_method
 
-# times = pulp.LpVariable.dicts(name='times', indices=ptable['name'],
-#                               lowBound=0, upBound=1, cat=pulp.LpInteger)
+    References:
+        .. [1] https://or.stackexchange.com/questions/33/in-an-integer-program-how-i-can-force-a-binary-variable-to-equal-1-if-some-cond
+        https://stackoverflow.com/questions/28395992/mixed-integer-programming-variable-assignment-per-condition-if-then-else
 
+    Is the formulation in the first reference wrong?
+
+    Ignore:
+        import kwplot
+        kwplot.autosns()
+
+        XLB, XRB = -70, 70
+
+        x = np.linspace(XLB, XRB, 100)
+        b = 0.0
+
+        plt = kwplot.autoplt()
+        M = 140
+
+        '''
+
+        According to [1]
+
+        To enforce (x < b) => (y == 1):
+
+            b - x <= My
+
+        To enforce (x > b) => (y == 1):
+
+            x - b <= My
+
+        M is a large constant used for numerical stability, but you want
+        it to be as small as possible, while still producing correct result
+        '''
+
+        LB = -3
+        UB = 3
+
+        kwplot.figure(doclf=1, pnum=(1, 2, 1))
+        y = (b - x) / M
+        plt.fill_between(x, y, UB, alpha=0.5, label='yM')
+
+        plt.plot([b, b], [LB, UB])
+        ax = plt.gca()
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_xlim(XLB, XRB)
+        ax.set_ylim(LB, UB)
+        ax.set_title(f'Check for less than a threshold\nb - x <= My  <--> ((x < b) --> (y == 1))\nb = {b}')
+        ax.legend()
+
+        kwplot.figure(doclf=0, pnum=(1, 2, 2))
+        y = (x - b) / M
+        plt.fill_between(x, y, UB, alpha=0.5, label='y')
+
+        plt.plot([b, b], [LB, UB])
+        ax = plt.gca()
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_xlim(XLB, XRB)
+        ax.set_ylim(LB, UB)
+        ax.set_title(f'Check for greater than a threshold\nx - b <= My  <--> ((x > b) --> (y == 1))\nb = {b}')
+        ax.legend()
+    """
 
 import pulp  # NOQA
-prob = pulp.LpProblem("M64", pulp.LpMinimize)
 
 # Make a variable indicating if we complete_flags a stage
 complete_flags = pulp.LpVariable.dicts(name='got', indices=ptable['name'],
                                        lowBound=0, upBound=1, cat=pulp.LpInteger)
 
 # Make a variable indicating if we can get to the start of a stage
-can_get_to = pulp.LpVariable.dicts(name='can_get', indices=ptable['name'],
+can_enter = pulp.LpVariable.dicts(name='can_enter', indices=ptable['name'],
                                    lowBound=0, upBound=1, cat=pulp.LpInteger)
 
 # Make a variable indicating how many stars we are missing to get to a stage
-abundence = pulp.LpVariable.dicts(name='abundence', indices=ptable['name'],
-                                    lowBound=0, upBound=1, cat=pulp.LpInteger)
-has_basement_key = pulp.LpVariable('has_basement_key', lowBound=0, upBound=1, cat=pulp.LpInteger)
-has_tower_key = pulp.LpVariable('has_tower_key', lowBound=0, upBound=1, cat=pulp.LpInteger)
-has_jumbo_star = pulp.LpVariable('has_jumbo_star', lowBound=0, upBound=1, cat=pulp.LpInteger)
+star_deficit = pulp.LpVariable.dicts(name='star_deficit', indices=ptable['name'],
+                                       lowBound=0, upBound=1, cat=pulp.LpInteger)
 
-# A subset of complete_flags stages give stars
-star_flags = ub.udict(complete_flags) & star_stages
+# Get the subset of coarses that give each type of reward
+reward_cols = [c for c in ptable.columns if c.startswith('rewards_')]
+reward_flags = {}
+for c in reward_cols:
+    key = c.split('_', 1)[1]
+    subset = ptable[ptable[c] > 0]
+    reward_flags[key] = ub.udict(complete_flags) & (subset['name'].tolist())
 
 # Indicates how many stars we have
-num_stars = sum(star_flags.values())
+num_stars = pulp.lpSum(reward_flags['star'].values())
 
-# For every stage we could complete
-time_cost_parts = []
-for name in complete_flags:
-    # It costs time to complete a coarse
-    time_cost_parts.append(
-        ptable.loc[name]['in_game_time'] * complete_flags[name]
-    )
+# The total time is the sum of the time associated with each coarse we
+# completed
+total_time = sum(
+    ptable.loc[k]['in_game_time'] * v
+    for k, v in complete_flags.items()
+)
 
-    # You can only get the star if requirements are met
-    row = ptable.loc[name].to_dict()
-    reqcode = row['requires'].split(';')
-    requires = [r for r in reqcode if r]
-    print(f'name={name}')
-    print(f'requires={requires}')
-    for r in requires:
-        if 'star' in r:
-            required_stars = int(r.split(' ')[0])
+prob = pulp.LpProblem("M64", pulp.LpMinimize)
 
-            # We want to say
-            # can_get_to = (num_stars >= required_stars)
-            # i.e. is 1 when the constraint is satisfied and 0 otherwise
-            # But that's not a valid phrasing...
-            #
-            # But when that would be 0, then num_stars - required_stars is
-            # negative. So when num_stars - required_stars is negative, we
-            # need to force the varaiable to be 0 or less.
-            # Use a temporary variable that can be negative, 0 or 1
-            abundence[name] = num_stars - required_stars
-            # We can complete a stage when num missing is 0 or less
-            # Negate, so we can see how many extra stars we have (abundence)
-            # Add 1, so when the abundence is 0 or more we know we can complete
-            prob.add(can_get_to[name] <= (abundence[name] + 1))
-            prob.add(can_get_to[name] >= 0)
-        if 'basement_key' == r:
-            prob.add(can_get_to[name] <= has_basement_key)
-        if 'tower_key' == r:
-            prob.add(can_get_to[name] <= has_tower_key)
+# Subject to the following constraints
 
-    # Can only complete a coarse if you are able to get to it.
-    prob.add(complete_flags[name] <= can_get_to[name])
+# Get subset of coarses that have requirements
+require_cols = [c for c in ptable.columns if c.startswith('requires_')]
+require_flags = {}
 
-prob.add(has_basement_key >= complete_flags['bowser_in_the_dark_world_battle'])
+deficit_values = ub.ddict(dict)
+deficit_flags = ub.ddict(dict)
+
+
+# Gah this doesn't quite work, because we need to encode that
+# we need 8 stars BEFORE we get the basement key.
+
+for c in require_cols:
+    key = c.split('_', 1)[1]
+    subset = ptable[ptable[c] > 0]
+    # Now many do we have of this reward type?
+    num_have = sum(reward_flags.get(key, {}).values())
+
+    def_accum = []
+    for _, row in subset.iterrows():
+        ...
+        name = row['name']
+        # For each stage with this particular requirement, we can only enter if
+        # the requirement is satisfied.
+        is_satisfied = can_enter[row['name']]
+
+        # For this coarse, how many of this reward type are required?
+        num_required = row[c]
+
+        """
+        We want to encode:
+            is_satisfied = 1 if (num_required >= num_have) else 0
+
+        But that specific expression isn't in normal form. Instead we can make
+        a variable equal to our deficit of the resource wrt to this constraint.
+        And then use another variable to encode if we have a deficit or not.
+
+        num_deficit | have_deficit |
+        ----------- | ------------ |
+                 +2 |            1 |
+                 +1 |            1 |
+                  0 |            0 |
+                 -1 |            0 |
+                 -2 |            0 |
+
+        This is encoded via
+
+            have_deficit >= num_deficit
+            have_deficit
+
+        Our goal then becomes:
+
+            is_satisfied = 1 if num_deficit <= 0 else 0
+
+        Which I think we need to encode with an M-method, which means
+        we need to ensure M is a constant larger than the maximum number of
+        items.
+
+            is_satisfied
+        """
+        deficit_key = f'deficit_{key}_{name}'
+        # num_deficit = pulp.LpVariable(deficit_key)
+        has_deficit = pulp.LpVariable(deficit_key, lowBound=0, upBound=1)
+        M = len(ptable) * 2
+        deficit_flags[name][key] = has_deficit
+        num_deficit = num_required - num_have
+        deficit_values[name][key] = num_deficit
+        # prob.add(num_deficit == (num_required - num_have))
+        #
+        # prob.add(num_deficit - 1 <= M * has_deficit)
+        # prob.add(num_deficit - 1 <= M * has_deficit)
+        prob.add(num_deficit <= M * (1 - has_deficit))
+
+        # Encode we can only enter if there is no deficit
+        prob.add((-num_deficit) + 2 >= is_satisfied)
+
+
+# For each coarse, we can only complete it if we can enter it.
+for name in complete_flags.keys():
+    prob.add(complete_flags[name] <= can_enter[name])
+
+
+# Hack:
+    prob.add(complete_flags['bowser_in_the_dark_world_battle'] <= complete_flags['bowser_in_the_dark_world_red_coins'])
 
 # We get the keys when we complete bowser
 if SIMPLE:
-    # prob.add(complete_flags['bowser_in_the_dark_world_battle'] >= 1)
+    # We must get the basement key
+    prob.add(sum(reward_flags['basement_key'].values()) >= 1)
     ...
 else:
-    prob.add(has_tower_key >= complete_flags['bowser_in_the_fire_sea_battle'])
-    prob.add(has_jumbo_star >= complete_flags['bowser_in_the_sky_battle'])
+    # We must get the jumbo star
+    prob.add(sum(reward_flags['jumbo_star'].values()) >= 1)
 
-    # We must do these levels
-    # TODO: jumbo star constraint instead
-    # prob.add(complete_flags['bowser_in_the_dark_world_battle'] >= 1)
-    # prob.add(complete_flags['bowser_in_the_fire_sea_battle'] >= 1)
-    # prob.add(complete_flags['bowser_in_the_sky_battle'] >= 1)
-    # prob.add(has_jumbo_star  >= 1)
 
-# Minimize total time
-total_time = sum(time_cost_parts)
-prob.setObjective(total_time)
-
+# Minimize total time (and also bias towards not doing things)
+prob.setObjective(total_time * 1000 + sum(can_enter.values()) )
 
 # Not sure what is broken ...
 
@@ -388,15 +514,47 @@ prob.setObjective(total_time)
 pulp.PULP_CBC_CMD().solve(prob)
 
 
-can_get_to_soln = {k: v.value() for k, v in can_get_to.items()}
-abundence_soln = {k: v.value() for k, v in abundence.items()}
-print('can_get_to_soln = {}'.format(ub.repr2(can_get_to_soln, nl=1)))
-print('abundence_soln = {}'.format(ub.repr2(abundence_soln, nl=1)))
+class emtpy_var():
+    def value(self):
+        return None
 
 # Read solution
-solution = {k: v.value() for k, v in complete_flags.items()}
-print('solution = {}'.format(ub.urepr(solution, nl=1, align=':')))
-print([k for k, v in solution.items() if v > 0])
+soln_rows = []
+for name in complete_flags.keys():
+    row = {
+        'name': name,
+        'time': ptable.loc[name]['in_game_time'],
+        'complete': complete_flags[name].value(),
+        'can_enter': can_enter[name].value(),
+        'reward_star': reward_flags['star'].get(name, emtpy_var()).value(),
+        'reward_basement_key': reward_flags['basement_key'].get(name, emtpy_var()).value()
+        # 'deficit': complete_flags[name].value(),
+    }
+    # for key, defs in deficit_flags[name].items():
+    #     deficit_col = f'has_deficit_{key}'
+    #     row[deficit_col] = defs.value()
+    for key, defs in deficit_values[name].items():
+        deficit_col = f'deficit_{key}'
+        try:
+            row[deficit_col] = defs.value()
+        except Exception:
+            ...
+    soln_rows.append(row)
+
+import rich
+soln_table = pd.DataFrame(soln_rows)
+soln_table = soln_table.sort_values('time')
+soln_table['complete'] = soln_table['complete'].apply(bool)
+rich.print(soln_table.to_string())
+
+# can_get_to_soln = {k: v.value() for k, v in can_enter.items()}
+# deficit_soln = {k: v.value() for k, v in star_deficit.items()}
+# print('can_get_to_soln = {}'.format(ub.repr2(can_get_to_soln, nl=1)))
+# print('deficit_soln = {}'.format(ub.repr2(deficit_soln, nl=1)))
+
+# solution = {k: v.value() for k, v in complete_flags.items()}
+# print('solution = {}'.format(ub.urepr(solution, nl=1, align=':')))
+# print([k for k, v in solution.items() if v > 0])
 
 num_stars_soln = num_stars.value()
 print(f'num_stars_soln={num_stars_soln}')
