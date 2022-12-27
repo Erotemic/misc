@@ -3,6 +3,7 @@ Mario64 Speedrun Routing
 Parse spreadsheet with best times, per stage and compute optimal runs.
 Look at differences when taking into account constraints.
 """
+import rich
 import ubelt as ub
 import pandas as pd
 # https://docs.google.com/spreadsheets/d/1_cOIEnuKIQ-3LA_U0ygpiL87PTSBPlHmKDId0vC7alo/edit#gid=1471905853
@@ -239,7 +240,7 @@ table.loc['Quick Race Through Downtown!', 'requires'] += ';vanish_cap'
 table.loc['Eye to Eye in the Secret Room', 'requires'] += ';vanish_cap'
 table.loc['Wing Mario over the Rainbow Red Coins', 'requires'] += ';wing_cap'
 
-print(table.to_string())
+rich.print(table.to_string())
 
 table[table['stage'] == 'BoB']
 table[table['stage'] == 'WF']
@@ -541,7 +542,6 @@ for name in complete_flags.keys():
             ...
     soln_rows.append(row)
 
-import rich
 soln_table = pd.DataFrame(soln_rows)
 soln_table = soln_table.sort_values('time')
 soln_table['complete'] = soln_table['complete'].apply(bool)
@@ -561,3 +561,8 @@ print(f'num_stars_soln={num_stars_soln}')
 
 total_time_soln = total_time.value()
 print(f'total_time_soln={total_time_soln}')
+
+
+# We could do this as a shortest path problem, where we take care to only
+# include feasible paths forward and each subgraph you go down is a separate
+# graph with implied context. The space requirements get pretty big though.
