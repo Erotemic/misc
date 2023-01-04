@@ -90,6 +90,8 @@ def main():
         already in the array.
         '''))
 
+    plt.show()
+
 if __name__ == '__main__':
     """
     CommandLine:
