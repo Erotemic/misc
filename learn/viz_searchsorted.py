@@ -86,9 +86,41 @@ def main():
     fig.suptitle(ub.codeblock(
         '''
         Notice:
-        side=left and side=right have the same result except when the value is
-        already in the array.
+        side=left and side=right have the same result
+        except when the value is already in the array.
         '''))
+
+    if 1:
+        pnum_ = kwplot.PlotNums(nRows=3, nCols=2)
+        fig = kwplot.figure(fnum=2, doclf=1, pnum=pnum_[0])
+        fig.suptitle(ub.codeblock('''Cases:'''))
+
+        array = [0, 1, 2]
+        values = [2]
+        fig = kwplot.figure(fnum=2, doclf=0, pnum=pnum_())
+        plot_searchsorted_visualization(array, values, side='left', ax=fig.gca())
+        fig.gca().set_title('left')
+        fig = kwplot.figure(fnum=2, doclf=0, pnum=pnum_())
+        plot_searchsorted_visualization(array, values, side='right', ax=fig.gca())
+        fig.gca().set_title('right')
+
+        array = [0, 1, 2]
+        values = [2.5]
+        fig = kwplot.figure(fnum=2, doclf=0, pnum=pnum_())
+        plot_searchsorted_visualization(array, values, side='left', ax=fig.gca())
+        fig.gca().set_title('left')
+        fig = kwplot.figure(fnum=2, doclf=0, pnum=pnum_())
+        plot_searchsorted_visualization(array, values, side='right', ax=fig.gca())
+        fig.gca().set_title('right')
+
+        array = [1, 2]
+        values = [0.5]
+        fig = kwplot.figure(fnum=2, doclf=0, pnum=pnum_())
+        plot_searchsorted_visualization(array, values, side='left', ax=fig.gca())
+        fig.gca().set_title('left')
+        fig = kwplot.figure(fnum=2, doclf=0, pnum=pnum_())
+        plot_searchsorted_visualization(array, values, side='right', ax=fig.gca())
+        fig.gca().set_title('right')
 
     plt.show()
 
