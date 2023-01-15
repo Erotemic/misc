@@ -92,6 +92,53 @@ def main(cmdline=1, **kwargs):
         ax.set_ylim(ymin, 1.1)
 
 
+def hash_strength(base, hashlen, worldscale):
+    """
+    base = 16
+    hashlen = 8
+    hashlen = 12
+    worldscale = 4520
+
+    hash_strength(base=16, hashlen=8, worldscale=4520)
+    hash_strength(base=26, hashlen=8, worldscale=4520)
+    hash_strength(base=16, hashlen=12, worldscale=4520)
+    hash_strength(base=16, hashlen=16, worldscale=4520)
+    hash_strength(base=26, hashlen=16, worldscale=4520)
+    """
+    import sympy
+    num_doublings = 3
+    rows = []
+    for g in range(num_doublings):
+        worldsize = worldscale * (2 ** g)
+        r = sympy.Float(worldsize)
+        N = sympy.Float(base ** hashlen)
+
+        dits = (sympy.log(N) / sympy.log(10)).evalf()
+
+        p_v1 = Birthday.exact_symbolic_direct(N, r)
+        p_v2 = Birthday.exact_symbolic_logspace(N, r)
+        p_est = Birthday.approx_wiki_sympy_genshared_v1(N, r)
+
+        row = {
+            'worldscale': worldscale,
+            'g': g,
+            'worldsize': worldsize,
+            'p_v1': p_v1,
+            'p_v2': p_v2,
+            'p_est': p_est,
+            'base': base,
+            'hashlen': hashlen,
+            'dits': dits,  # dit = base10 information
+        }
+        # print('row = {}'.format(ub.urepr(row, nl=1)))
+
+        rows.append(row)
+    import rich
+    import pandas as pd
+    df = pd.DataFrame(rows)
+    rich.print(df)
+
+
 class Birthday:
     """
     Different implementations / approximations of the birthday problem
@@ -173,18 +220,18 @@ class Birthday:
         from scipy.special import loggamma
         return np.clip(1 - exp(loggamma(N + 1) - loggamma(N - r + 1) - r * log(N)), 0, 1)
 
-    # @staticmethod
-    # def exact_symbolic_direct(N, r):
-    #     """
-    #     """
-    #     from sympy import factorial, Pow
-    #     return (factorial(N) / Pow(N, r)) / (factorial(N - r))
+    @staticmethod
+    def exact_symbolic_direct(N, r):
+        """
+        """
+        from sympy import factorial, Pow
+        return 1 - (factorial(N) / Pow(N, r)) / (factorial(N - r))
 
     @staticmethod
     def exact_symbolic_logspace(N, r):
         from sympy import loggamma
         from sympy import exp, log
-        return np.clip(1 - exp(loggamma(N + 1) - loggamma(N - r + 1) - r * log(N)), 0, 1)
+        return 1 - exp(loggamma(N + 1) - loggamma(N - r + 1) - r * log(N))
 
     # def approx_poisson(N, r):
     #     from numpy import exp
@@ -270,11 +317,11 @@ def symbolic_work():
     # scipy.special.logsumexp(body)
 
 
-if __name__ == '__main__':
-    """
+# if __name__ == '__main__':
+#     """
 
-    CommandLine:
-        python ~/misc/learn/birthday_problem.py
-        python -m birthday_problem
-    """
-    main()
+#     CommandLine:
+#         python ~/misc/learn/birthday_problem.py
+#         python -m birthday_problem
+#     """
+#     main()
