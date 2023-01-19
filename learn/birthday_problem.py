@@ -260,12 +260,15 @@ def symbolic_work():
 
     import scipy.special
     N = (16 ** 8)
-    r = 10000
+    # N = (26 ** 12)
+    #N = (32 ** 12)
+    # r = 10000
+    r = 5000
     # N = 365
     # r = 23
     body = 1 - (np.arange(1, r) / N)
     np.prod(body)
-    np.exp(np.log(body).sum())
+    1 - np.exp(np.log(body).sum())
     # np.log(body)
     # scipy.special.logsumexp(body)
 

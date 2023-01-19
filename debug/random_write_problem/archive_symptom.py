@@ -21,6 +21,7 @@ def main(cmdline=1, **kwargs):
 
     home = ub.Path.home()
     archive_dpath = home / 'misc/debug/random_write_problem/symptoms'
+    archive_dpath.ensuredir()
 
     move_tasks = []
 
