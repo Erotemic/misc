@@ -16,7 +16,44 @@ Each attribute has a raw value that can be a decimal or a hexadecimal value, who
 
 * a worst value, which represents the lowest recorded normalized value.
 
-The initial default value of attributes is 100 but can vary between manufacturer """
+The initial default value of attributes is 100 but can vary between manufacturer
+
+
+PCIE Lane Speeds
+                              Lanes (GB/s)
+
+        |          |          |          |          |          |
+--------+         -+         -+         -+         -+         -+
+Version |    x1    |    x2    |    x4    |    x8    |    x16   |
+--------+         -+         -+         -+         -+         -+
+    1.0 |  0.250   |
+--------+         -+         -+         -+         -+         -+
+    2.0 |  0.500   |  1.000   |  2.000   |  4.000   |  8.000   |
+--------+         -+         -+         -+         -+         -+
+    3.0 |  0.985   |
+--------+         -+
+    4.0 |  1.968   |
+--------+         -+
+    5.0 |  3.938   |
+--------+         -+         -+         -+         -+         -+
+
+
+Theoretical SATA Speed:
+    750MB/S
+
+
+Theoretical Disk IO Speeds:
+
+                       Read         |    Write
+    HDD - SATA     -      80 MB/s   |      160 MB/s
+    SSD - SATA     - 500-600 MB/s
+    SSD - PCIe 2.0 - 1000 MB/s (2 lanes)
+
+    Refernces:
+        https://en.wikipedia.org/wiki/PCI_Express
+
+
+"""
 
 
 def smart_table():

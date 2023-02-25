@@ -1,14 +1,18 @@
 """
 https://www.reddit.com/r/linux/comments/n1501j/linux_performance_tools/
 
+Requirements:
+    pip install python-slugify
+
+
 SeeAlso:
     ~/code/erotemic/pub/owned_hardware.py
 """
 import ubelt as ub
-import slugify
 
 
 def slugify_key(text):
+    import slugify
     return slugify.slugify(text, separator='_', lowercase=True)
 
 
@@ -93,12 +97,17 @@ def motherboard_info():
 
     # pcie_usage = ub.dict_hist(item['current_usage'] for item in pcie_slots)
 
-    _varied = varied_values(pcie_slots, min_variations=0)
-    _varied = ub.map_keys(slugify_key, _varied)
+    # _varied = varied_values(pcie_slots, min_variations=0)
+    # _varied = ub.map_keys(slugify_key, _varied)
     # unvaried = {k: ub.peek(v) for k, v in _varied.items() if len(v) == 1}
     # varied = {k: v for k, v in _varied.items() if len(v) > 1}
 
     print(info['out'])
+
+    import pandas as pd
+    df = pd.DataFrame(pcie_slots)
+    import rich
+    rich.print(df.to_string())
 
     # info = ub.cmd('sudo dmidecode -t baseboard')
     # print(info['out'])
