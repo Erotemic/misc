@@ -112,8 +112,15 @@ def motherboard_info():
     # info = ub.cmd('sudo dmidecode -t baseboard')
     # print(info['out'])
 
+    ## Get mootherboard serial
+    info = ub.cmd('sudo dmidecode -t 2')
+    print(info['out'])
+
 
 def ram_info():
+    """
+    xdoctest ~/misc/notes/hardwareinfo/backend_linux.py ram_info
+    """
     import re
     info = ub.cmd('sudo dmidecode --type 17')
     print(info['out'])
@@ -343,15 +350,23 @@ def diskinfo():
         'dax': 'dax-capable device',
     }
     colnames = list(coldesc.keys())
-    out = ub.cmd(f'lsblk --all --json --output={",".join(colnames)}')['out']
+    # out = ub.cmd(f'lsblk --all --json --output={",".join(colnames)}')['out']
+    out = ub.cmd('lsblk --all --json')['out']
     data = json.loads(out)
-    cols = ['kname', 'model', 'serial', 'size', 'type']
+    # cols = ['kname', 'model', 'serial', 'size', 'type']
     import pandas as pd
     df = pd.DataFrame(data['blockdevices'])
     df = df[df['type'] == 'disk']
-    print(df[cols])
+    # print(df[cols])
 
 
 # def current_specs():
 #     cpu_info = parse_cpu_info()
 #     cpu_info['unvaried']['model_name']
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/misc/notes/hardwareinfo/backend_linux.py
+    """
+    import xdoctest
+    xdoctest.doctest_module(__file__)

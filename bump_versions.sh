@@ -131,6 +131,42 @@ accept_latest_gitlab_dev_mr(){
     # authentication token used for that hostname
     PRIVATE_GITLAB_TOKEN=$(git_token_for "$HOST")
 
+    export MODNAME
+    export HOST
+    export GROUP_NAME
+    export MERGE_BRANCH
+    export DEPLOY_REMOTE
+    export PRIVATE_GITLAB_TOKEN
+
+    # TODO: use python logic instead of bash.
+    __ignore__="
+    from xcookie.vcs_remotes import GitlabRemote
+    import os
+    proj_name = os.environ['MODNAME']
+    proj_group = os.environ['GROUP_NAME']
+    proj_host = os.environ['HOST']
+    remote = GitlabRemote(proj_name, proj_group, proj_host)
+    project = remote.project
+
+    mrs = project.mergerequests.list(iterator=True)
+    open_mrs = []
+    for cand_mr in mrs:
+        if cand_mr.state == 'opened':
+            open_mrs.append(cand_mr)
+
+    mergable_mrs = []
+    for mr in open_mrs:
+        if mr.draft:
+            print('mr is a draft')
+        elif mr.merge_status == 'can_be_merged':
+            mergable_mrs.append(mr)
+
+    assert len(mergable_mrs) == 1, 'expected only one mergable branch'
+    mr = mergable_mrs[0]
+    status = mr.merge()
+    assert status['merge_error'] is None
+    "
+
     if [[ "$PRIVATE_GITLAB_TOKEN" == "ERROR" ]]; then
         echo "Failed to load authentication key"
         return 1
@@ -231,6 +267,43 @@ create_new_gitlab_dev_mr(){
         echo "Failed to load authentication key"
         return 1
     fi
+
+    export MODNAME
+    export HOST
+    export GROUP_NAME
+    export MERGE_BRANCH
+    export DEPLOY_REMOTE
+    export DEFAULT_BRANCH
+
+    # TODO: use python logic instead of bash.
+    __ignore__="
+    from xcookie.vcs_remotes import GitlabRemote
+    import os
+    proj_name = os.environ['MODNAME']
+    proj_group = os.environ['GROUP_NAME']
+    proj_host = os.environ['HOST']
+    remote = GitlabRemote(proj_name, proj_group, proj_host)
+    project = remote.project
+
+    merge_branch = os.environ['MERGE_BRANCH']
+    default_branch = os.environ['DEFAULT_BRANCH']
+
+    title = 'Start branch for ' + merge_branch
+    print(title)
+
+    user = remote.gitlab.user
+
+    status = project.mergerequests.create({
+        'title': title,
+        'source_branch': merge_branch,
+        'target_branch': default_branch,
+        'description': 'auto created MR',
+        'assignee_id': user.id,
+    })
+
+    assert status.state == 'opened'
+    print(status.web_url)
+    "
 
     TMP_DIR=$(mktemp -d -t ci-XXXXXXXXXX)
 
@@ -415,10 +488,11 @@ finish_deployment(){
     #git push --tags $DEPLOY_REMOTE 
 
     echo "NEXT_VERSION = $NEXT_VERSION"
-    git co -b "dev/$NEXT_VERSION"
+    git checkout -b "dev/$NEXT_VERSION"
 
-    rob sedr "'$VERSION'" "'$NEXT_VERSION'" True
-    rob sedr "'dev/$VERSION'" "'dev/$NEXT_VERSION'" True
+    REPO_DPATH="$HOME/code/$MODNAME"
+    xdev sed --regexpr="'$VERSION'" --repl="'$NEXT_VERSION'" --dpath="$REPO_DPATH" --dry=False
+    xdev sed --regexpr="'dev/$VERSION'" --repl="'dev/$NEXT_VERSION'" --dpath="$REPO_DPATH" --dry=False
 
     DATE_STR=$(date +'%Y-%m-%d')
     sed -i "s|Unreleased|Released $DATE_STR|g" CHANGELOG.md
@@ -443,9 +517,6 @@ finish_deployment(){
     git commit -am "Start branch for $NEXT_VERSION"
     git push "$DEPLOY_REMOTE"
 
-
-    # Hack for netharn
-    sed -i "s|'name': '$MODNAME', 'branch': 'dev/$VERSION'|'name': '$MODNAME', 'branch': 'dev/$NEXT_VERSION'|g" "$HOME"/code/netharn/super_setup.py
 }
 
 
