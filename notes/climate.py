@@ -61,7 +61,7 @@ twh = reg.Unit('terawatt/hour')
 
 cents = 0.01 * reg.dollar
 
-ONLINE_MODE = 1
+ONLINE_MODE = 0
 
 if ONLINE_MODE:
     columns_of_interest = [
@@ -130,6 +130,7 @@ co2_offset_costs = {
     'terrapass': (100.75 * reg.dollars) / (20_191 * CO2_pound).to(CO2_ton),
     # 'cotap': (75 * reg.dollars) / (5 * CO2_ton),
     'cotap': (15 * reg.dollars) / (1 * CO2_ton),
+    'wren': (25) / (1 * CO2_ton),
 }
 print('us_person_anual_footprint_candidates = {}'.format(ub.repr2(us_person_anual_footprint_candidates, precision=2, nl=1, align=':', sort=0)))
 print('co2_offset_costs = {}'.format(ub.repr2(co2_offset_costs, precision=2, nl=1, align=':', sort=0)))
@@ -204,6 +205,8 @@ else:
 personal_timeline = personal_timeline.sort_index()
 
 rows = [
+    {'date': '2023-03-13', 'amount':  250.00 * reg.dollars, 'organization': 'wren'},
+    {'date': '2023-03-13', 'amount':  272.15 * reg.dollars, 'organization': 'wren'},
     {'date': '2022-11-23', 'amount':  300.00 * reg.dollars, 'organization': 'cotap'},
     {'date': '2022-07-05', 'amount':  300.00 * reg.dollars, 'organization': 'cotap'},
     {'date': '2022-07-05', 'amount':   40.00 * reg.dollars, 'organization': 'cotap', 'towards': 'flight&vacation'},
