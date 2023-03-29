@@ -492,7 +492,7 @@ finish_deployment(){
 
     REPO_DPATH="$HOME/code/$MODNAME"
     xdev sed --regexpr="'$VERSION'" --repl="'$NEXT_VERSION'" --dpath="$REPO_DPATH" --dry=False
-    xdev sed --regexpr="'dev/$VERSION'" --repl="'dev/$NEXT_VERSION'" --dpath="$REPO_DPATH" --dry=False
+    #xdev sed --regexpr="'dev/$VERSION'" --repl="'dev/$NEXT_VERSION'" --dpath="$REPO_DPATH" --dry=False
 
     DATE_STR=$(date +'%Y-%m-%d')
     sed -i "s|Unreleased|Released $DATE_STR|g" CHANGELOG.md
