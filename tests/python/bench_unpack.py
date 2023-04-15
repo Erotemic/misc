@@ -11,6 +11,7 @@ def benchmark_unpack():
     import pandas as pd
     import timerit
     import string
+    import itertools as it
 
     def tuple_unpack(items):
         *prefix, key = items
@@ -20,12 +21,18 @@ def benchmark_unpack():
         prefix, key = items[:-1], items[-1]
         return prefix, key
 
+    def islice_unpack(items):
+        last_idx = len(items) - 1
+        prefix = list(it.islice(items, 0, last_idx))
+        key = items[last_idx]
+        return prefix, key
+
     method_lut = locals()  # can populate this some other way
 
     ti = timerit.Timerit(5000, bestof=3, verbose=2)
 
     basis = {
-        'method': ['tuple_unpack', 'slice_unpack'],
+        'method': ['tuple_unpack', 'slice_unpack', 'islice_unpack'],
         'size': list(range(1, 64 + 1)),
         'type': ['string', 'float'],
     }
@@ -52,10 +59,12 @@ def benchmark_unpack():
         # Timerit will run some user-specified number of loops.
         # and compute time stats with similar methodology to timeit
         for timer in ti.reset(key):
-            if type == 'string':
+            if params['type'] == 'string':
                 items = [''.join(random.choices(string.printable, k=5)) for _ in range(size)]
-            elif type == 'float':
+            elif params['type'] == 'float':
                 items = [random.random() for _ in range(size)]
+            else:
+                raise NotImplementedError(params['type'])
             with timer:
                 method(items)
         for time in ti.times:
@@ -89,6 +98,8 @@ def benchmark_unpack():
         # not sure about notebooks.
         import kwplot
         sns = kwplot.autosns()
+        plt = kwplot.autoplt()
+        plt.ion()
 
         plotkw = {}
         for gname, labels in group_labels.items():
@@ -101,3 +112,11 @@ def benchmark_unpack():
         ax.set_title('Benchmark')
         ax.set_xlabel('Execution time')
         ax.set_ylabel('Size of slices')
+        plt.show()
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/misc/tests/python/bench_unpack.py
+    """
+    benchmark_unpack()
