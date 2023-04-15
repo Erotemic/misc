@@ -18,8 +18,10 @@ import json
 import numpy as np
 import pandas as pd
 
+REPR_EXTENSIONS = ub.util_repr._REPR_EXTENSIONS
 
-@ub.util_format._FORMATTER_EXTENSIONS.register(pint.Unit)
+
+@REPR_EXTENSIONS.register(pint.Unit)
 def format_unit(data, **kwargs):
     numer = [k for k, v in data._units.items() if v > 0]
     denom = [k for k, v in data._units.items() if v < 0]
@@ -38,7 +40,7 @@ def format_unit(data, **kwargs):
         return '* ' + numer_str + ' / ' + denom_str
 
 
-@ub.util_format._FORMATTER_EXTENSIONS.register(pint.Quantity)
+@REPR_EXTENSIONS.register(pint.Quantity)
 def format_quantity(data, _return_info=None, **kwargs):
     return ub.repr2(data.magnitude, **kwargs) + ' ' + ub.repr2(data.u)
 
