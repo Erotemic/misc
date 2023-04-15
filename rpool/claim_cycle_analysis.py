@@ -322,8 +322,8 @@ class Assumptions(ConversionRates):
             'num_claims': agent.num_claims,
             'intervals_per_claim': intervals_per_claim,
             'total_claim_cost': agent.total_claim_cost,
-            'total_claimed_rpl_reward': agent.total_claimed_rpl_reward,
-            'total_claimed_eth_reward': agent.total_claimed_eth_reward,
+            # 'total_claimed_rpl_reward': agent.total_claimed_rpl_reward,
+            # 'total_claimed_eth_reward': agent.total_claimed_eth_reward,
             # 'total_unclaimed_rpl': agent.total_unclaimed_rpl,
             # 'total_unclaimed_eth': agent.total_unclaimed_eth,
             'net_gain': agent.net_gain.to(report_unit),
@@ -376,13 +376,14 @@ def main():
         maxrow = group.loc[group['net_gain'].idxmax()]
         maximized_rows.append(maxrow)
     norm_df = pd.concat(norm_groups)
+    norm_df = norm_df.sort_values('net_value')
 
     # Create a table of the most efficient strategies per assumption condition
     maximized_df = pd.DataFrame(maximized_rows)
     piv_result = maximized_df.pivot(
         index=['initial_stake'],
         columns=['total_years'],
-        values=['intervals_per_claim'])
+        values=['intervals_per_claim', 'net_gain'])
 
     # Print tables
     rich.print(norm_df.to_string(float_format='%0.2f'))
