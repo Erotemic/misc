@@ -16,14 +16,19 @@ def main(cmdline=1, **kwargs):
         >>> kwargs = dict(srcs=['i gq'])
         >>> main(cmdline=cmdline, **kwargs)
     """
-    config = ArchiveSymptomConfig.legacy(cmdline=cmdline, data=kwargs)
-    print('config = ' + ub.urepr(dict(config), nl=1))
+    config = ArchiveSymptomConfig.cli(cmdline=cmdline, data=kwargs, strict=True)
+    import rich
+    rich.print('config = ' + ub.urepr(config, nl=1))
 
     home = ub.Path.home()
     archive_dpath = home / 'misc/debug/random_write_problem/symptoms'
     archive_dpath.ensuredir()
 
     move_tasks = []
+
+    special_rel_mappings = {
+        '/media/joncrall/raid/home/joncrall/data': home / 'data'
+    }
 
     assert archive_dpath.exists()
     assert archive_dpath.is_dir()
@@ -34,6 +39,16 @@ def main(cmdline=1, **kwargs):
         input_fpath.is_file()
 
         abs_fpath = input_fpath.absolute()
+
+        # HACK:
+        # not sure why it always resolves to the physical dir even
+        # if I'm in a symlinked version.
+        if 1:
+            for k, v in special_rel_mappings.items():
+                if str(abs_fpath).startswith(k):
+                    fix = ub.Path(str(abs_fpath).replace(k, str(v)))
+                    if fix.exists():
+                        abs_fpath = fix
 
         rel_fpath = abs_fpath.relative_to(home)
         dst_fpath = archive_dpath / rel_fpath

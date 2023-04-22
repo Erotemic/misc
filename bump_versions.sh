@@ -707,3 +707,51 @@ mypkgs(){
 
 
 }
+
+
+open_common_paths_multi_repos(){
+    # Check if we can make it easier to maintain several similar changes across github repos
+
+    ~/code/vtool_ibeis/CHANGELOG.md
+
+    python -c "if 1:
+    import ubelt as ub
+    import os
+    dpath = ub.Path.appdir('vimtk/tmp').ensuredir()
+    fpath = dpath / 'helper_init_script.vim'
+
+    home = ub.Path.home()
+
+    lines = []
+
+    modnames = [
+        'plottool_ibeis',
+        'guitool_ibeis',
+        'dtool_ibeis',
+        'vtool_ibeis',
+        'vtool_ibeis_ext',
+        'utool',
+        'ibeis',
+        'pyhesaff',
+        'pyflann_ibeis',
+    ]
+
+    for idx, modname in enumerate(modnames):
+        common_paths = [
+            home / 'code' / modname / 'CHANGELOG.md',
+            home / 'code' / modname / 'requirements/tests.txt',
+            home / 'code' / modname / modname / '__init__.py',
+        ]
+        if idx == 0:
+            lines.append(';e ' + os.fspath(common_paths[0]))
+        else:
+            lines.append(';tabe ' + os.fspath(common_paths[0]))
+
+        for p in common_paths[1:]:
+            lines.append(';sp '  + os.fspath(p))
+    text = chr(10).join(lines)
+    fpath.write_text(text)
+    print(fpath)
+    "
+    gvim -s "$HOME"/.cache/vimtk/tmp/helper_init_script.vim
+}
