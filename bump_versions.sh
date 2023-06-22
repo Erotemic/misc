@@ -13,7 +13,6 @@ delete_remote_tags(){
     # https://stackoverflow.com/questions/5480258/how-to-delete-a-remote-tag
     git push --delete origin test-tag4
     git tag --delete test-tag4
-
 }
 
 
@@ -467,7 +466,7 @@ finish_deployment(){
     DEPLOY_BRANCH=$3
     # -----
     echo "
-    Ensure you've merged the topic-branch into teh default branch (main/master)
+    Ensure you've merged the topic-branch into the default branch (main/master)
 
     TODO: assert the version doesnt already exist (if we forgot to bump the version var)
 
@@ -604,6 +603,16 @@ mypkgs(){
     MODNAME=kwimage_ext
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
+    accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch $MODNAME $DEPLOY_REMOTE
+    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+
+    source ~/misc/bump_versions.sh
+    MODNAME=kwutil
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    load_secrets
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
     update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH

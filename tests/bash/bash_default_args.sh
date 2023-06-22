@@ -1,6 +1,12 @@
 #!/bin/bash
-# https://stackoverflow.com/questions/9332802/how-to-write-a-bash-script-that-takes-optional-input-arguments
-# https://www.codegrepper.com/code-examples/shell/shell+default+value+for+variable
+__doc__='
+References:
+    https://stackoverflow.com/questions/9332802/how-to-write-a-bash-script-that-takes-optional-input-arguments
+    https://www.codegrepper.com/code-examples/shell/shell+default+value+for+variable
+
+CommandLine:
+    bash ~/misc/tests/bash/bash_default_args.sh
+'
 
 demo_default_args(){
     FUNC_VAR1="${ARG_VAR1:-default1}"  # If variable not set or null, use default.
@@ -23,14 +29,13 @@ echo "ARG_VAR1 = $ARG_VAR1"
 echo "ARG_VAR2 = $ARG_VAR2"
 echo "===================="
 
-
-fob_list = []
-list_len = 0
-val = 1
-last = 0
-old = 0
-while list_len < length:
-    fob_list.append(val)
-    old = val
-    val += last
-    last = old
+#fob_list = []
+#list_len = 0
+#val = 1
+#last = 0
+#old = 0
+#while list_len < length:
+#    fob_list.append(val)
+#    old = val
+#    val += last
+#    last = old
