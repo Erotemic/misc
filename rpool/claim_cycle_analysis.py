@@ -62,6 +62,7 @@ class ConversionRates(scfg.DataConfig):
         conversions._ureg = pint.UnitRegistry()
         conversions._ureg.define('dollar = []')
         conversions._ureg.define(f'ETH = {conversions.eth_to_dollar} dollar')
+        conversions._ureg.define('gwei = 1 / 1_000_000_000 ETH')
         conversions._ureg.define(f'RPL = {conversions.rpl_to_eth} ETH')
 
 
@@ -91,19 +92,22 @@ class Assumptions(ConversionRates):
     initial amount staked, reward rates, etc...
     """
 
-    num_8eth_minipools = scfg.Value(0.0, help='number of 8 eth minipools')
+    num_8eth_minipools = scfg.Value(2.0, help='number of 8 eth minipools')
 
-    num_16eth_minipools = scfg.Value(1.0, help='number of 16 eth minipools')
+    num_16eth_minipools = scfg.Value(0.0, help='number of 16 eth minipools')
 
     cost_per_claim = scfg.Value(
-        "0.015 ETH", help=ub.paragraph(
+        "0.005 ETH",
+        # "0.015 ETH",
+        help=ub.paragraph(
             '''
             The expected cost of claiming and restaking rewards, which depends
-            on the current gas rate
+            on the current gas rate. This has a big effect on the optimal
+            number of intervals to wait.
             '''))
 
     rpl_staked = scfg.Value(
-        "300.00 RPL", help='Initial amount of RPL collateral staked')
+        "405.00 RPL", help='Initial amount of RPL collateral staked')
 
     node_eth_reward = scfg.Value(
         None,
@@ -387,7 +391,8 @@ def main():
 
     # Print tables
     rich.print(norm_df.to_string(float_format='%0.2f'))
-    rich.print(piv_result)
+    print('--')
+    rich.print(piv_result.to_string())
 
     plotkw = {}
     if len(rpl_staked_basis) > 1:
@@ -479,12 +484,21 @@ def _pint_repr_extensions():
 def coerce_unit(data, unit, ureg):
     """
     Helper to convert input into a proper unit
+
+    Ignore:
+        import sys, ubelt
+        sys.path.append(ubelt.expandpath('~/misc/rpool'))
+        from claim_cycle_analysis import *  # NOQA
+        ureg = ConversionRates()._ureg
+        print(coerce_unit('1ETH', 'gwei', ureg))
+        print(coerce_unit('16gwei', 'ETH', ureg))
     """
     import numbers
     if data is None:
         value = None
     elif isinstance(data, str):
         value = ureg.parse_expression(data)
+        value = value.to(unit)
     elif isinstance(data, numbers.Number):
         value = ureg.parse_expression(f'{data} {unit}')
     elif isinstance(data, pint.Quantity):
