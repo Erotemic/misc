@@ -26,12 +26,13 @@ Optional Requirements:
 
 References:
     # We likely have too many oversimplified assumptions here.
-    https://www.rocketpooltool.com/
-    https://docs.rocketpool.net/guides/node/responsibilities.html#rewards
-    https://docs.rocketpool.net/guides/node/rewards.html#rewards-and-checkpoints
-    https://github.com/rocket-pool/rocketpool-research/blob/master/Merkle%20Rewards%20System/rewards-calculation-spec.md
-    https://www.reddit.com/r/rocketpool/comments/o3rovh/rpl_rewards_estimate/
-    https://docs.google.com/spreadsheets/d/1Wl3EukDALcd8nBQQkMhzXr5WfwmEj264YPfch9AJN30/edit#gid=0
+    .. [RocketPool] https://www.rocketpooltool.com/
+    .. [Responsibilities] https://docs.rocketpool.net/guides/node/responsibilities.html#rewards
+    .. [RewardsDocs] https://docs.rocketpool.net/guides/node/rewards.html#rewards-and-checkpoints
+    .. [RewardsSpec] https://github.com/rocket-pool/rocketpool-research/blob/master/Merkle%20Rewards%20System/rewards-calculation-spec.md
+    .. [RedditRPLEstimate] https://www.reddit.com/r/rocketpool/comments/o3rovh/rpl_rewards_estimate/
+    .. [RPL Calculator] https://docs.google.com/spreadsheets/d/1Wl3EukDALcd8nBQQkMhzXr5WfwmEj264YPfch9AJN30/edit#gid=0
+    .. [RPLExposureCalculator] https://docs.google.com/spreadsheets/d/1Md05gdJ-HRIJ9qslxALY6_M8wvi98B5dxlVOccV0LJ0/edit#gid=0
 
 
 TODO:
