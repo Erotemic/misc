@@ -360,6 +360,29 @@ def diskinfo():
     # print(df[cols])
 
 
+def network_connector_speed():
+    """
+    ethernet speed
+
+    References:
+        https://serverfault.com/questions/207474/how-do-i-verify-the-speed-of-my-nic
+        https://phoenixnap.com/kb/linux-network-speed-test
+
+    Notes:
+        sudo ethtool eno1 | grep Speed
+        sudo ethtool enp7s0 | grep Speed
+        sudo ethtool wlp8s0 | grep Speed
+
+        # To monitor speeds
+        sudo apt install cbm
+
+        # Speedtest on the CLI
+        pip install speedtest-cli
+
+
+    """
+
+
 # def current_specs():
 #     cpu_info = parse_cpu_info()
 #     cpu_info['unvaried']['model_name']

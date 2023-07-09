@@ -64,6 +64,8 @@ ls_array(){
     __doc__='
     Read the results of a glob pattern into an array
 
+    See Also: ~/local/init/utils.sh
+
     Args:
         arr_name
         glob_pattern
