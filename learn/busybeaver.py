@@ -51,7 +51,7 @@ class Action(NamedTuple):
     next_state: State
 
     @classmethod
-    def enumerate(cls, all_states, alphabet_symbols):
+    def enumerate(cls, all_states, alphabet_symbols, accept_states=None):
         for next_state in all_states:
             for write_symbol in alphabet_symbols:
                 for direction in {L, R}:
@@ -78,7 +78,7 @@ class TransitionTable(Dict[State, Dict[Symbol, Action]]):
         def possible_symbol_to_actions():
             # Create an object that will enumerate possible actions for each state
             # and for each possible symbol that could be read.
-            possible_actions = list(Action.enumerate(all_states, alphabet_symbols))
+            possible_actions = list(Action.enumerate(all_states, alphabet_symbols, accept_states))
             for action_tup in product(*tee(possible_actions, len(alphabet_symbols))):
                 yield dict(zip(alphabet_symbols, action_tup))
 
@@ -184,10 +184,31 @@ class TuringMachine(NamedTuple):
                 if curr in self.accept_states:
                     break
                 if max_steps is not None and step_num > max_steps:
-                    logs.append('BREAK')
+                    curr = 'BREAK'
                     break
-
+        logs.append(curr)
         return logs
+
+    @classmethod
+    def numberof(cls, num_states, num_symbols=2):
+        """
+        Number of turing machines with num_states and num_symbols
+
+        CommandLine:
+            xdoctest -m /home/joncrall/misc/learn/busybeaver.py TuringMachine.numberof
+
+        Example:
+            >>> print(TuringMachine.numberof(1))
+            >>> print(len(list(TuringMachine.enumerate(1))))
+            >>> #
+            >>> print(TuringMachine.numberof(2))
+            >>> print(len(list(TuringMachine.enumerate(2))))
+            >>> if 0:
+            >>>     print(TuringMachine.numberof(3))
+            >>>     print(len(list(TuringMachine.enumerate(3))))
+        """
+        num_directions = 2
+        return (num_symbols * num_directions * (num_states + 1)) ** (num_symbols * num_states)
 
     @classmethod
     def enumerate(cls, num_states : int, num_symbols=2):
@@ -206,7 +227,8 @@ class TuringMachine(NamedTuple):
         """
         # I'm confused by the wiki saying input symbols cannot have the blank
         # symbol, but blank 0, input is {1} and the initial tape is all 0?
-        # isn't that not allowed? Whatever, moving forward
+        # isn't that not allowed? Whatever, moving forward, the results are
+        # mostly correct.
         blank_symbol = Symbol(0)
         input_symbols = {Symbol(s) for s in range(1, num_symbols)}
         alphabet_symbols = input_symbols | {blank_symbol}
@@ -219,27 +241,37 @@ class TuringMachine(NamedTuple):
         accept_states = {State('HALT')}
         all_states = accept_states | transition_states
 
-        for initial_state in all_states:
-            for transition in TransitionTable.enumerate(all_states, accept_states, alphabet_symbols):
-                machine = cls(
-                    all_states, alphabet_symbols, blank_symbol, input_symbols,
-                    transition, initial_state, accept_states)
-                yield machine
+        initial_state = min(transition_states)
+
+        for transition in TransitionTable.enumerate(all_states, accept_states, alphabet_symbols):
+            machine = cls(
+                all_states, alphabet_symbols, blank_symbol, input_symbols,
+                transition, initial_state, accept_states)
+            yield machine
 
     @classmethod
     def busybeaver3(cls):
         """
-        Hard coded defenition of the TM for busybeaver(3)
+        Hard coded defenition of a TM for busybeaver(3)
 
-        Ignore:
-            machine = TuringMachine.busybeaver3()
-            tape = InfiniteTape(machine.blank_symbol)
-            machine.run(tape)
-            list(tape.values())
+        CommandLine:
+            xdoctest -m /home/joncrall/misc/learn/busybeaver.py TuringMachine.busybeaver3
+
+        Example:
+            >>> import sys, ubelt
+            >>> sys.path.append(ubelt.expandpath('~/misc/learn'))
+            >>> from busybeaver import *  # NOQA
+            >>> import ubelt as ub
+            >>> machine = TuringMachine.busybeaver3()
+            >>> print('machine = {}'.format(ub.urepr(machine._asdict(), nl=-1)))
+            >>> tape = InfiniteTape(machine.blank_symbol)
+            >>> machine.run(tape)
+            >>> print(f'tape={tape}')
+            >>> assert sum(v == '1' for v in tape.values()) == 6
         """
         A, B, C = map(State, ['A', 'B', 'C'])
         HALT = State('HALT')
-        _0, _1 = map(Symbol, [0, 1])
+        _0, _1 = map(Symbol, ['0', '1'])
         transition = TransitionTable({
             A: {
                 _0: Action(_1, R, B),
@@ -250,7 +282,7 @@ class TuringMachine(NamedTuple):
                 _1: Action(_1, R, B),
             },
             C: {
-                _0: Action(_1, R, B),
+                _0: Action(_1, L, B),
                 _1: Action(_1, R, HALT),
             },
         })
@@ -278,8 +310,57 @@ def possible_accept_states(all_states):
             yield accept_states
 
 
-def busy_beaver(n):
-    for machine in TuringMachine.enumerate(n):
-        if machine.halts():
-            ...
-        ...
+def busybeaver(n, max_steps=None):
+    """
+    Initialize an output number to zero. For each n-state turing machine
+    initialize a tape of all zeros for it to run on.  Run each n-state turing
+    machine in parallel on its tape. When a machine halts, count the number of
+    1's that appear on that machines tape. Update the output to be the maximum
+    of itself and the count of 1's. After all machines that will hault finish,
+    the output is the n-th busy beaver number.
+
+    In other words, it is the maximum number of ones written by any halting
+    n-state turing machine.
+
+    This function is not computable in general.
+
+    Known values:
+        n=1 -> 1
+        n=2 -> 4
+        n=3 -> 6
+        n=4 -> 13
+        n=5 -> ??
+
+    Ignore:
+        >>> busybeaver(1, max_steps=100)
+        >>> busybeaver(1)
+        >>> import pytest
+        >>> with pytest.raises(Undecidable):
+        >>>     busybeaver(3)
+    """
+    if max_steps is None:
+        # For certain n, we can make this a computable function
+        if n == 1:
+            max_steps = 10
+
+    output = 0
+    tm_iter = TuringMachine.enumerate(n)
+    import ubelt as ub
+    prog = ub.ProgIter(tm_iter, total=TuringMachine.numberof(n), verbose=3)
+    for machine in prog:
+        tape = InfiniteTape(machine.blank_symbol)
+        if max_steps is not None or machine.halts():
+            logs = machine.run(tape, max_steps)
+            if logs[-1] != 'BREAK':
+                num_ones = sum(v == '1' for v in tape.values())
+                output = max(output, num_ones)
+        prog.set_extra(f'output={output}')
+    return output
+
+
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/misc/learn/busybeaver.py
+    """
+    busybeaver(3, max_steps=100)
