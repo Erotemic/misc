@@ -536,7 +536,7 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -544,9 +544,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -554,9 +554,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -564,9 +564,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -574,9 +574,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -584,9 +584,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -594,9 +594,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -604,9 +604,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     MODNAME=kwutil
@@ -614,9 +614,9 @@ mypkgs(){
     DEPLOY_BRANCH=release
     load_secrets
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     MODNAME=kwplot
@@ -624,9 +624,9 @@ mypkgs(){
     DEPLOY_BRANCH=release
     load_secrets
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -634,9 +634,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -644,9 +644,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -654,9 +654,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -664,9 +664,9 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
-    update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
-    create_new_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
 
     ### GITHUB PROJECTS
@@ -680,7 +680,7 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -688,7 +688,7 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -696,7 +696,7 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
 
 
     source ~/misc/bump_versions.sh
@@ -704,7 +704,7 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
 
 
     source ~/misc/bump_versions.sh
@@ -712,7 +712,7 @@ mypkgs(){
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     update_default_branch $MODNAME $DEPLOY_REMOTE
-    finish_deployment $MODNAME $DEPLOY_REMOTE $DEPLOY_BRANCH
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
 
 
 }

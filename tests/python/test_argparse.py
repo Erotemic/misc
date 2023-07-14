@@ -21,7 +21,6 @@
 #             grp._actions.remove(action)
 
 
-
 def main():
     # import argparse
     # parser = argparse.ArgumentParser()
@@ -36,8 +35,6 @@ def main():
         foo = scfg.Value(None, nargs='*')
     config = MyConfig.cli(argv=['--foo=-bar,none'], strict=True)
     print('config = {}'.format(ub.repr2(config, nl=1)))
-
-
 
 
 if __name__ == '__main__':
