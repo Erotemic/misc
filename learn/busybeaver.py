@@ -59,6 +59,13 @@ class Action(NamedTuple):
 
 
 class TransitionTable(Dict[State, Dict[Symbol, Action]]):
+    """
+    A table that has an entry for every state, and maps it to another mapping
+    typically from either a 0 to an action or 1 to a potentially different
+    action.
+
+    This is what defines execution flow
+    """
     @classmethod
     def enumerate(cls, all_states, accept_states, alphabet_symbols):
         """
@@ -109,13 +116,28 @@ class TuringMachine(NamedTuple):
     """
     References:
         https://en.wikipedia.org/wiki/Turing_machine
+
+    Example:
+        list(TuringMachine.enumerate(2))[37]
     """
+
+    # Interesting: all states a program can occupy
     Q: set[State]              # non-empty, all states
+
+    # Boring, these just say we can either have 0 or 1 on the tape
     Γ: set[Symbol]             # non-empty, tape alphabet symbols
     b: Symbol                  # blank symbol
     Σ: set[Symbol]             # input symbols, subset of Γ - {b}
+
+    # Interesting: this defines how you move between states.
+    # THIS IS YOUR PROGRAM!
     δ: TransitionTable         # transition function
+
+    # Boring, just pick one. This is the entry point to the program.
+    # e.g. the main function or bootstrap function.
     q0: State                  # initial state, element of Q
+
+    # Boring, just use HALT
     F: State                   # final state, subset of Q
 
     @property
@@ -147,6 +169,10 @@ class TuringMachine(NamedTuple):
         return self.F
 
     def halts(self):
+        """
+        Example:
+            self = TuringMachine.random()
+        """
         raise Undecidable
 
     def run(self, tape: InfiniteTape = None, max_steps: int = None):
@@ -190,6 +216,31 @@ class TuringMachine(NamedTuple):
         return logs
 
     @classmethod
+    def random(cls, n=1, rng=None):
+        """
+        n = 1
+        cls = TuringMachine
+        """
+        import random
+        try:
+            import kwarray
+            rng = kwarray.ensure_rng(rng)
+        except ImportError:
+            if rng is None:
+                rng = random.Random(random.randint(0, 10000000000))
+            else:
+                rng = random.Random(rng)
+
+        rng.randint
+        possible  = cls.numberof(n)
+
+        all_tms = list(cls.enumerate(n))  # todo: make an api with enumerage
+        import random
+        tm = random.choice(all_tms)
+        return tm
+        ...
+
+    @classmethod
     def numberof(cls, num_states, num_symbols=2):
         """
         Number of turing machines with num_states and num_symbols
@@ -213,15 +264,15 @@ class TuringMachine(NamedTuple):
     @classmethod
     def enumerate(cls, num_states : int, num_symbols=2):
         """
-        Enumerate all turning machines of size n. There is no guarentee if they
-        will halt if you run them or not.
+        Enumerate all turning machines of size n.
+        There is no guarantee any generated TM will halt if you run them.
 
         Example:
             >>> import sys, ubelt
             >>> sys.path.append(ubelt.expandpath('~/misc/learn'))
             >>> from busybeaver import *  # NOQA
             >>> import itertools as it
-            >>> for n in range(0, 5):
+            >>> for n in range(1, 5):
             >>>     first_five = list(it.islice(TuringMachine.enumerate(n), 0, 10))
             >>>     print('first_five({}) = {}'.format(n, ub.urepr([m._asdict() for m in first_five], nl=-1)))
         """
@@ -312,11 +363,11 @@ def possible_accept_states(all_states):
 
 def busybeaver(n, max_steps=None):
     """
-    Initialize an output number to zero. For each n-state turing machine
-    initialize a tape of all zeros for it to run on.  Run each n-state turing
-    machine in parallel on its tape. When a machine halts, count the number of
+    Initialize an output number to zero. For each n-state Turing Machine
+    initialize a tape of all zeros for it to run on.  Run each n-state Turing
+    Machine in parallel on its tape. When a machine halts, count the number of
     1's that appear on that machines tape. Update the output to be the maximum
-    of itself and the count of 1's. After all machines that will hault finish,
+    of itself and the count of 1's. After all machines that will halt finish,
     the output is the n-th busy beaver number.
 
     In other words, it is the maximum number of ones written by any halting
@@ -334,6 +385,8 @@ def busybeaver(n, max_steps=None):
     Ignore:
         >>> busybeaver(1, max_steps=100)
         >>> busybeaver(1)
+        >>> busybeaver(2, max_steps=100)
+        >>> busybeaver(3, max_steps=100)
         >>> import pytest
         >>> with pytest.raises(Undecidable):
         >>>     busybeaver(3)
@@ -345,16 +398,20 @@ def busybeaver(n, max_steps=None):
 
     output = 0
     tm_iter = TuringMachine.enumerate(n)
-    import ubelt as ub
-    prog = ub.ProgIter(tm_iter, total=TuringMachine.numberof(n), verbose=3)
-    for machine in prog:
-        tape = InfiniteTape(machine.blank_symbol)
-        if max_steps is not None or machine.halts():
-            logs = machine.run(tape, max_steps)
-            if logs[-1] != 'BREAK':
-                num_ones = sum(v == '1' for v in tape.values())
-                output = max(output, num_ones)
-        prog.set_extra(f'output={output}')
+    # import ubelt as ub
+    from progiter.manager import ProgressManager
+    pman = ProgressManager()
+    with pman:
+        prog = pman.progiter(tm_iter, total=TuringMachine.numberof(n), verbose=3)
+        # prog = ub.ProgIter(tm_iter, total=TuringMachine.numberof(n), verbose=3)
+        for machine in prog:
+            tape = InfiniteTape(machine.blank_symbol)
+            if max_steps is not None or machine.halts():
+                logs = machine.run(tape, max_steps)
+                if logs[-1] != 'BREAK':
+                    num_ones = sum(v == '1' for v in tape.values())
+                    output = max(output, num_ones)
+            prog.set_extra(f'output={output}')
     return output
 
 
