@@ -124,7 +124,8 @@ class TestCaseGenerator:
     """
     Generates random data for RHS and LHS of proposed dictionary operation
     """
-    def __init__(self, max_size, rng, niter):
+    def __init__(self, max_size, rng, niter, rhs_classes=None,
+                 lhs_classes=None):
         # Get a list of items that are equal but non-identical
         key_alternatives = []
         for k in range(0, max_size):
@@ -135,6 +136,15 @@ class TestCaseGenerator:
         self.key_alternatives = key_alternatives
         self.rng = rng
         self.niter = niter
+
+        if lhs_classes is None:
+            lhs_classes = [dict]
+        if rhs_classes is None:
+            # rhs_classes = [set, list, dict, tuple, mydefaultdict]
+            rhs_classes = [set, list, dict, tuple]
+
+        self.lhs_classes = lhs_classes
+        self.rhs_classes = rhs_classes
 
     def _random_keys(self):
         rng = self.rng
@@ -148,25 +158,26 @@ class TestCaseGenerator:
         return keys
 
     def random_lhs(self):
-        keys1 = self._random_keys()
-        # Make a random LHS dictionary
-        lhs = {k: idx for idx, k in enumerate(keys1)}
-        return lhs
+        keys = self._random_keys()
+        # Make a random LHS iterable
+        cls = self.rng.choice(self.lhs_classes)
+        if issubclass(cls, Mapping):
+            item = cls((k, idx) for idx, k in enumerate(keys))
+        else:
+            item = cls(keys)
+        return item
 
     def random_rhs(self):
-        keys2 = self._random_keys()
+        keys = self._random_keys()
         # The RHS can be anything iterable, here are some common choices
-        # rhs_types = [set, list, dict, tuple, mydefaultdict]
-        rhs_types = [set, list, dict, tuple]
-
         # Make a random RHS iterable
         # Choose some iterable type for the "other" argument
-        rhs_type = self.rng.choice(rhs_types)
-        if issubclass(rhs_type, Mapping):
-            rhs = rhs_type((k, idx) for idx, k in enumerate(keys2))
+        cls = self.rng.choice(self.rhs_classes)
+        if issubclass(cls, Mapping):
+            item = cls((k, idx) for idx, k in enumerate(keys))
         else:
-            rhs = rhs_type(keys2)
-        return rhs
+            item = cls(keys)
+        return item
 
     def next_case(self):
         lhs = self.random_lhs()
@@ -300,7 +311,7 @@ def _group_results(df):
     # Choose a subset of them as exemplars
     grouper = ['LHS_order', 'LHS_id', 'RHS_order', 'RHS_id']
 
-    FIND_EXEMPLARS = 1
+    FIND_EXEMPLARS = 0
     SHOW_ROWS = 0
     SHOW_KEYS = 0
 
@@ -312,15 +323,21 @@ def _group_results(df):
     if not SHOW_KEYS:
         drop_cols += ['rhs_keys', 'lhs_keys', 'result_keys']
 
-    ave_times = df.groupby('op')[['min', 'mean', 'std']].mean().sort_values('min')
+    drop_cols = df.columns.intersection(drop_cols)
+
+    if 'min' in df.columns:
+        ave_times = df.groupby('op')[['min', 'mean', 'std']].mean().sort_values('min')
+    else:
+        ave_times = None
 
     pd.options.display.multi_sparse = False
 
     for op, opgroup in df.groupby(['op']):
         parts = []
         print(f'--- {op} ---')
-        times = ave_times.loc[[op]]
-        rich.print(times)
+        if ave_times is not None:
+            times = ave_times.loc[[op]]
+            rich.print(times)
         grouped = opgroup.groupby(grouper)
 
         for _, group in grouped:
@@ -356,8 +373,9 @@ def _group_results(df):
         # list(chosen_df['lhs'].values)
         # list(chosen_df['rhs'].values)
 
-    print('Times:')
-    rich.print(ave_times)
+    if ave_times is not None:
+        print('Times:')
+        rich.print(ave_times)
 
 
 def main():
@@ -368,7 +386,7 @@ def main():
         # Randonly generate cases
         # rng = random.Random(3300082100142)
         rng = random
-        max_size = 100
+        max_size = 10
         niter = 10000
         casegen = TestCaseGenerator(max_size, rng, niter)
         casegen.next_case()
@@ -420,6 +438,66 @@ def main():
             row['std'] = ti.std()
             rows.append(row)
 
+    import pandas as pd
+    df = pd.DataFrame(rows)
+    _group_results(df)
+
+
+def test_counter():
+    from collections import Counter
+    print(Counter({True: 2}) & Counter({1: 1}))
+    print(Counter({True: 1}) & Counter({1: 2}))
+    print(Counter({1: 2}) & Counter({True: 1}))
+    print(Counter({1: 1}) & Counter({True: 2}))
+    # Counter({True: 1})
+    # Counter({True: 1})
+    # Counter({1: 1})
+    # Counter({1: 1})
+
+    print(Counter({True: 2}) | Counter({1: 1}))
+    print(Counter({True: 1}) | Counter({1: 2}))
+    print(Counter({1: 2}) | Counter({True: 1}))
+    print(Counter({1: 1}) | Counter({True: 2}))
+    # Counter({True: 2})
+    # Counter({True: 2})
+    # Counter({1: 2})
+    # Counter({1: 2})
+
+    print(Counter({True: 2}) - Counter({1: 1}))
+    print(Counter({True: 1}) - Counter({1: 2}))
+    print(Counter({1: 2}) - Counter({True: 1}))
+    print(Counter({1: 1}) - Counter({True: 2}))
+    # Counter({True: 1})
+    # Counter()
+    # Counter({1: 1})
+    # Counter()
+
+    # Do the above analysis, but for counters, which have existing &, |, and -
+    # operations in the stdlib.
+    import operator
+    rng = random
+    max_size = 10
+    niter = 10000
+    casegen = TestCaseGenerator(max_size, rng, niter, rhs_classes=[Counter],
+                                lhs_classes=[Counter])
+    operations = [
+        operator.or_,
+        operator.and_,
+        operator.sub,
+    ]
+    # Get the same cases so we can test the same ones for each operation
+    fixed_cases = list(casegen)
+    rows = []
+    for operation in operations:
+        for case in fixed_cases:
+            lhs, rhs = case['lhs'], case['rhs']
+
+            # Execute the candidate implementation
+            result = operation(lhs, rhs)
+
+            row = analyze_result(lhs, rhs, result)
+            row['op'] = operation.__name__
+            rows.append(row)
     import pandas as pd
     df = pd.DataFrame(rows)
     _group_results(df)
