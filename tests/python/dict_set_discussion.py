@@ -14,43 +14,73 @@ class CandidateOperations:
         Intersection-like method for dictionaries based on existing key
         intersection
 
+        Baseline __and__ implementation.
+
         Example:
             >>> self = {'a': 1, 'b': 2}
             >>> other = {'b': 1, 'c': 3}
             >>> __and_v1__(self, other)
         """
-        common = self.keys() & other
-        return self.__class__((k, self[k]) for k in common)
+        chosen = self.keys() & other
+        return self.__class__((k, self[k]) for k in chosen)
 
     def __and_v2__(self, other):
         """
-        Alternative __sub__ that preserves LHS order
+        Alternative __and__ that preserves LHS order
         """
-        isect_keys = set(self.keys())
-        isect_keys.intersection_update(other)
-        new = self.__class__((k, self[k]) for k in self if k in isect_keys)
+        chosen = set(self.keys())
+        chosen.intersection_update(other)
+        new = self.__class__((k, self[k]) for k in self if k in chosen)
         return new
+
+    def __and_v3__(self, other):
+        """
+        Alternative __and__ that preserves RHS order
+        """
+        new = self.__class__((k, self[k]) for k in other if k in self)
+        return new
+
+    def __and_v4__(self, other):
+        """
+        Alternative __and__ that preserves LHS order and ID
+        """
+        chosen = set(self.keys())
+        chosen.intersection_update(other)
+        new = self.__class__((k, self[k]) for k in self if k in chosen)
+        return new
+
+    # ----
 
     def __sub_v1__(self: dict, other: Iterable):
         """
         Difference-like method for dictionaries based on existing key
-        difference
+        difference.
+
+        Baseline __sub__ implementation.
 
         Example:
             >>> self = {'a': 1, 'b': 2}
             >>> other = {'b': 1, 'c': 3}
             >>> __sub_v1__(self, other)
         """
-        common = self.keys() - other
-        return self.__class__((k, self[k]) for k in common)
+        chosen = self.keys() - other
+        return self.__class__((k, self[k]) for k in chosen)
 
     def __sub_v2__(self, other):
         """
         Alternative __sub__ that preserves LHS order
         """
-        diff_keys = set(self.keys())
-        diff_keys.difference_update(other)
-        new = self.__class__((k, self[k]) for k in self if k in diff_keys)
+        chosen = set(self.keys())
+        chosen.difference_update(other)
+        new = self.__class__((k, self[k]) for k in self if k in chosen)
+        return new
+
+    def __sub_v3__(self, other):
+        """
+        Alternative __sub__ that preserves LHS order
+        """
+        _other = set(other)
+        new = self.__class__((k, self[k]) for k, v in self.items() if k not in _other)
         return new
 
 
@@ -152,59 +182,59 @@ class ExemplarCaseGenerator:
 
     def __init__(self):
         self.exemplars = [
-            {'lhs': {3: 0, 0: 1, 2.0: 2}, 'rhs': [3.0, 2, 1.0, 4.0, 0]},
-            {'lhs': {4.0: 0, True: 1, 2.0: 2, 0.0: 3}, 'rhs': {4.0: 0, True: 1, 3: 2, 0.0: 3}},
-            {'lhs': {False: 0, 3: 1, 1: 2}, 'rhs': {3: 0, True: 1, 4: 2, False: 3, 2: 4}},
-            {'lhs': {4: 0}, 'rhs': [0]},
-            {'lhs': {2: 0, 3: 1, 1: 2, 4.0: 3}, 'rhs': {0.0, 1, 2, 3, 4}},
-            {'lhs': {}, 'rhs': {}},
-            {'lhs': {4: 0, False: 1, 2: 2, 3.0: 3, 1: 4}, 'rhs': {1: 0, 4: 1, 0: 2, 3.0: 3, 2.0: 4}},
-            {'lhs': {0.0: 0, 3.0: 1, 2.0: 2, 4.0: 3}, 'rhs': {0.0, 1.0, 2.0, 4}},
-            {'lhs': {4.0: 0}, 'rhs': {}},
-            {'lhs': {1.0: 0, 2.0: 1, 0: 2}, 'rhs': (0, True, 2, 3.0)},
-            {'lhs': {2: 0, 4: 1, True: 2, False: 3}, 'rhs': {4.0: 0, 1: 1, 0: 2}},
-            {'lhs': {1.0: 0, 4: 1, False: 2, 3: 3, 2: 4}, 'rhs': [3, True, 0.0]},
-            {'lhs': {4: 0, False: 1, 2: 2, True: 3, 3.0: 4}, 'rhs': {1.0: 0, 4: 1, 0.0: 2, 3.0: 3, 2.0: 4}},
-            {'lhs': {2.0: 0, True: 1, 0: 2, 4.0: 3, 3: 4}, 'rhs': {2, 3, 4.0}},
-            {'lhs': {False: 0, 1: 1, 3.0: 2}, 'rhs': {3.0: 0, 0.0: 1, 1: 2, 4: 3}},
-            {'lhs': {True: 0, 0.0: 1, 4: 2, 3: 3, 2: 4}, 'rhs': {0.0, True, 4}},
-            {'lhs': {False: 0, 2: 1, 3.0: 2, 1.0: 3}, 'rhs': {0.0: 0, 4: 1, 3.0: 2}},
-            {'lhs': {2: 0, 4.0: 1, True: 2}, 'rhs': (4.0, 2, False, 3.0)},
-            {'lhs': {}, 'rhs': {4}},
-            {'lhs': {1.0: 0, 3: 1, 4.0: 2, 2.0: 3}, 'rhs': {False, True, 2.0, 3, 4}},
-            {'lhs': {1.0: 0, 3: 1, 0.0: 2, 2: 3}, 'rhs': {False, 1.0, 2, 3}},
-            {'lhs': {4.0: 0}, 'rhs': []},
-            {'lhs': {}, 'rhs': {1.0: 0}},
-            {'lhs': {3.0: 0, 2.0: 1, 1: 2, 4: 3}, 'rhs': (False, 1.0, 4.0, 3.0, 2.0)},
-            {'lhs': {3.0: 0, 2: 1, 0.0: 2, 1.0: 3, 4: 4}, 'rhs': (0, 3, 1, 4.0, 2.0)},
-            {'lhs': {4: 0, 0: 1, True: 2, 2.0: 3}, 'rhs': (0.0, 3, 2)},
-            {'lhs': {False: 0, 3.0: 1, True: 2}, 'rhs': {False: 0, 2.0: 1, 3: 2, 4.0: 3}},
-            {'lhs': {2.0: 0, 0: 1, 3.0: 2, 4.0: 3}, 'rhs': {False, 1.0, 3}},
-            {'lhs': {4: 0, 2.0: 1, False: 2}, 'rhs': {0, True, 3.0, 4}},
-            {'lhs': {1.0: 0}, 'rhs': [2.0]},
-            {'lhs': {3: 0, 4.0: 1, True: 2}, 'rhs': {1: 0, 2.0: 1, 3.0: 2}},
-            {'lhs': {2.0: 0, True: 1, 3: 2}, 'rhs': {True: 0, 2: 1, False: 2, 3: 3, 4.0: 4}},
-            {'lhs': {2.0: 0, True: 1, 4.0: 2, 3: 3}, 'rhs': {2.0, 3, 4}},
-            {'lhs': {3: 0, 2.0: 1, 1: 2, 4: 3}, 'rhs': {4: 0, 2: 1, 1: 2}},
-            {'lhs': {}, 'rhs': []},
-            {'lhs': {0.0: 0, 3: 1, 4.0: 2, 2: 3, True: 4}, 'rhs': (3, 2, 4, False)},
-            {'lhs': {3.0: 0, 0.0: 1, 4.0: 2}, 'rhs': {3.0: 0, 4: 1, 1.0: 2}},
-            {'lhs': {False: 0, 2: 1, 4: 2, 3: 3}, 'rhs': (2, 4.0, 3, True, False)},
-            {'lhs': {4.0: 0}, 'rhs': (2,)},
-            {'lhs': {3.0: 0, 2: 1, False: 2, 4.0: 3}, 'rhs': {1: 0, 2: 1, 3: 2, 4.0: 3, 0: 4}},
-            {'lhs': {True: 0}, 'rhs': {}},
-            {'lhs': {}, 'rhs': {2: 0}},
-            {'lhs': {2: 0, 3.0: 1, True: 2, 0: 3}, 'rhs': {0.0, 2, 4}},
-            {'lhs': {}, 'rhs': {}},
-            {'lhs': {4.0: 0, 3: 1, False: 2, 2.0: 3}, 'rhs': {2: 0, 3.0: 1, True: 2}},
-            {'lhs': {}, 'rhs': {1: 0}},
-            {'lhs': {3: 0, 2.0: 1, 0: 2, 1.0: 3}, 'rhs': {0.0, 1.0, 2.0, 4.0}},
-            {'lhs': {False: 0, 2.0: 1, 4.0: 2}, 'rhs': {2.0: 0, 4: 1, 3.0: 2, False: 3}},
-            {'lhs': {False: 0, 2.0: 1, 4: 2, 1: 3}, 'rhs': {1.0: 0, 2.0: 1, 3.0: 2}},
-            {'lhs': {4.0: 0}, 'rhs': {}},
-            {'lhs': {0: 0, 4: 1, 1: 2, 3: 3, 2.0: 4}, 'rhs': {0.0, 2.0, 3.0}},
-            {'lhs': {}, 'rhs': {}},
-            {'lhs': {0: 0}, 'rhs': {3.0: 0}},
+            {'rhs': {}, 'lhs': {3.0: 0}},
+            {'rhs': [2.0, 0, 4.0, True, 3.0], 'lhs': {False: 0, 3: 1, 2.0: 2, 1.0: 3, 4: 4}},
+            {'rhs': (), 'lhs': {}},
+            {'rhs': (0,), 'lhs': {4.0: 0}},
+            {'rhs': {False, 1, 3}, 'lhs': {False: 0, 1: 1, 2.0: 2, 4: 3, 3.0: 4}},
+            {'rhs': {2.0: 0, 4: 1, 1: 2, 0: 3, 3: 4}, 'lhs': {3.0: 0, 4.0: 1, 2: 2, 0.0: 3, True: 4}},
+            {'rhs': [4, 2, 0], 'lhs': {0: 0, 2.0: 1, 3: 2, 1: 3, 4: 4}},
+            {'rhs': (3, 4, 1.0, 0, 2.0), 'lhs': {0: 0, 3: 1, 4: 2}},
+            {'rhs': [2], 'lhs': {}},
+            {'rhs': {0, True, 2.0, 3.0, 4}, 'lhs': {True: 0, 3: 1, 2.0: 2, 0: 3, 4: 4}},
+            {'rhs': [False, 4, 1.0, 3.0], 'lhs': {2.0: 0, 4: 1, 3.0: 2}},
+            {'rhs': {False, 1.0, 2, 3, 4}, 'lhs': {1.0: 0, 2: 1, 4: 2, 3: 3, 0.0: 4}},
+            {'rhs': (1.0, 3.0, 4.0, 2.0, False), 'lhs': {False: 0, 4.0: 1, 1.0: 2, 2.0: 3}},
+            {'rhs': [3, False, 4.0], 'lhs': {4.0: 0, 1.0: 1, 3: 2}},
+            {'rhs': {0, True, 4}, 'lhs': {0: 0, 4.0: 1, 2: 2}},
+            {'rhs': (0, 1, 2, 4.0), 'lhs': {0.0: 0, 3.0: 1, 2.0: 2, 4.0: 3}},
+            {'rhs': [0, 1.0, 4], 'lhs': {3: 0, 4: 1, 1: 2}},
+            {'rhs': {1, 2.0, 3}, 'lhs': {4: 0, 1: 1, 3.0: 2, False: 3, 2.0: 4}},
+            {'rhs': (2, 1, False), 'lhs': {1.0: 0, 4.0: 1, 3.0: 2, 2: 3}},
+            {'rhs': (2,), 'lhs': {2.0: 0}},
+            {'rhs': [0, 4, 2], 'lhs': {2: 0, 3.0: 1, 0: 2}},
+            {'rhs': {0.0, 1.0, 2, 3}, 'lhs': {4.0: 0, True: 1, 3.0: 2}},
+            {'rhs': {2.0: 0, 3: 1, 1: 2}, 'lhs': {4.0: 0, 1: 1, 2.0: 2, 0: 3}},
+            {'rhs': (False, 2.0, 1), 'lhs': {3: 0, False: 1, 4.0: 2, 1: 3}},
+            {'rhs': [False, 2, 3], 'lhs': {False: 0, True: 1, 4: 2}},
+            {'rhs': {2}, 'lhs': {2.0: 0}},
+            {'rhs': {}, 'lhs': {3.0: 0}},
+            {'rhs': [2.0, 0, 4.0, True, 3.0], 'lhs': {False: 0, 3: 1, 2.0: 2, 1.0: 3, 4: 4}},
+            {'rhs': (), 'lhs': {}},
+            {'rhs': (0,), 'lhs': {4.0: 0}},
+            {'rhs': {False, 1, 3}, 'lhs': {False: 0, 1: 1, 2.0: 2, 4: 3, 3.0: 4}},
+            {'rhs': {2.0: 0, 4: 1, 1: 2, 0: 3, 3: 4}, 'lhs': {3.0: 0, 4.0: 1, 2: 2, 0.0: 3, True: 4}},
+            {'rhs': (3, 4, 1.0, 0, 2.0), 'lhs': {0: 0, 3: 1, 4: 2}},
+            {'rhs': [2], 'lhs': {}},
+            {'rhs': [False, 4, 1.0, 3.0], 'lhs': {2.0: 0, 4: 1, 3.0: 2}},
+            {'rhs': (1.0, 3.0, 4.0, 2.0, False), 'lhs': {False: 0, 4.0: 1, 1.0: 2, 2.0: 3}},
+            {'rhs': {0, True, 4}, 'lhs': {0: 0, 4.0: 1, 2: 2}},
+            {'rhs': (2,), 'lhs': {2.0: 0}},
+            {'rhs': (False, 2.0, 1), 'lhs': {3: 0, False: 1, 4.0: 2, 1: 3}},
+            {'rhs': {}, 'lhs': {3.0: 0}},
+            {'rhs': [2.0, 0, 4.0, True, 3.0], 'lhs': {False: 0, 3: 1, 2.0: 2, 1.0: 3, 4: 4}},
+            {'rhs': (), 'lhs': {}},
+            {'rhs': (0,), 'lhs': {4.0: 0}},
+            {'rhs': {False, 1, 3}, 'lhs': {False: 0, 1: 1, 2.0: 2, 4: 3, 3.0: 4}},
+            {'rhs': [4, 2, 0], 'lhs': {0: 0, 2.0: 1, 3: 2, 1: 3, 4: 4}},
+            {'rhs': [2], 'lhs': {}},
+            {'rhs': {1, 2.0, 3}, 'lhs': {4: 0, 1: 1, 3.0: 2, False: 3, 2.0: 4}},
+            {'rhs': {}, 'lhs': {3.0: 0}},
+            {'rhs': [2.0, 0, 4.0, True, 3.0], 'lhs': {False: 0, 3: 1, 2.0: 2, 1.0: 3, 4: 4}},
+            {'rhs': (), 'lhs': {}},
+            {'rhs': (0,), 'lhs': {4.0: 0}},
+            {'rhs': {False, 1, 3}, 'lhs': {False: 0, 1: 1, 2.0: 2, 4: 3, 3.0: 4}},
+            {'rhs': [2], 'lhs': {}},
         ]
 
     def __iter__(self):
@@ -214,9 +244,17 @@ class ExemplarCaseGenerator:
 def compare_keys(keys, keys_result):
     """
     Compare if the input and output keys have the same order and item identity
+
+    Example:
+        >>> compare_keys([True], [1])
+        {'size': 1, 'order': True, 'id': False}
+        >>> compare_keys([1.0, 2.0], [2.0])
+        {'size': 2, 'order': True, 'id': True}
+        >>> compare_keys([1.0, 2.0, 3.0], [3, 2.0])
+        {'size': 3, 'order': False, 'id': False}
     """
-    keys_common = [k for k in keys if k in keys_result]
-    is_identical = [k1 is kc for k1, kc in zip(keys, keys_common)]
+    keys_lut1 = dict(zip(keys, keys))
+    is_identical = [keys_lut1[k2] is k2 for k2 in keys_result if k2 in keys_lut1]
     is_all_identical = all(is_identical)
     has_order = has_common_order(keys, keys_result)
     status = {
@@ -260,19 +298,34 @@ def _group_results(df):
     import pandas as pd
     # Breakup the rows into groups of cases with similar behavior
     # Choose a subset of them as exemplars
-    grouper = ['RHS_order', 'LHS_order', 'RHS_id', 'LHS_id']
+    grouper = ['LHS_order', 'LHS_id', 'RHS_order', 'RHS_id']
 
-    FIND_EXEMPLARS = 0
+    FIND_EXEMPLARS = 1
+    SHOW_ROWS = 0
+    SHOW_KEYS = 0
+
     if FIND_EXEMPLARS:
         chosen = []
+
+    drop_cols = ['rhs', 'lhs', 'result', 'min', 'mean', 'std']
+
+    if not SHOW_KEYS:
+        drop_cols += ['rhs_keys', 'lhs_keys', 'result_keys']
+
+    ave_times = df.groupby('op')[['min', 'mean', 'std']].mean().sort_values('min')
+
+    pd.options.display.multi_sparse = False
 
     for op, opgroup in df.groupby(['op']):
         parts = []
         print(f'--- {op} ---')
-        for _, group in opgroup.groupby(grouper):
-            to_show = group.drop(['rhs', 'lhs', 'result'], axis=1)
+        times = ave_times.loc[[op]]
+        rich.print(times)
+        grouped = opgroup.groupby(grouper)
+
+        for _, group in grouped:
+            to_show = group.drop(drop_cols, axis=1)
             parts.append(to_show)
-            # rich.print(to_show.to_string())
 
             if FIND_EXEMPLARS:
                 flags = (group['RHS_size'] > 2) & (group['LHS_size'] > 2)
@@ -285,7 +338,11 @@ def _group_results(df):
                 chosen.extend(flags[flags].index[0:1])
                 flags = (group['RHS_size'] == 1) & (group['LHS_size'] == 1)
                 chosen.extend(flags[flags].index[0:1])
-        rich.print(pd.concat(parts).to_string())
+        if parts:
+            rich.print(grouped.size().to_string())
+            if SHOW_ROWS:
+                combo = pd.concat(parts)
+                rich.print(combo.to_string())
 
     if FIND_EXEMPLARS:
         import ubelt as ub
@@ -296,20 +353,23 @@ def _group_results(df):
         exemplars = [__and__(row, {'lhs', 'rhs'})
                      for row in chosen_df.to_dict('records')]
         print('exemplars = {}'.format(ub.urepr(exemplars, nl=1)))
-        list(chosen_df['lhs'].values)
-        list(chosen_df['rhs'].values)
+        # list(chosen_df['lhs'].values)
+        # list(chosen_df['rhs'].values)
+
+    print('Times:')
+    rich.print(ave_times)
 
 
 def main():
     # Initialize a seeded random number generator
 
-    RANDOMIZE = 0
+    RANDOMIZE = 1
     if RANDOMIZE:
         # Randonly generate cases
         # rng = random.Random(3300082100142)
         rng = random
-        max_size = 5
-        niter = 100
+        max_size = 100
+        niter = 10000
         casegen = TestCaseGenerator(max_size, rng, niter)
         casegen.next_case()
     else:
@@ -319,19 +379,45 @@ def main():
     operations = [
         CandidateOperations.__and_v1__,
         CandidateOperations.__and_v2__,
+        # CandidateOperations.__and_v3__,
         CandidateOperations.__sub_v1__,
         CandidateOperations.__sub_v2__,
+        # CandidateOperations.__sub_v3__,
     ]
+    # operations = [v for k, v in CandidateOperations.__dict__.items() if '_v' in k]
+
+    # Test ubelt implementations
+    if 0:
+        import ubelt as ub
+        operations.append(ub.SetDict.intersection)
+        operations.append(ub.SetDict.difference)
+
+    # Get the same cases so we can test the same ones for each operation
+    fixed_cases = list(casegen)
+
+    # fixed_cases = [
+    #     {'lhs': {4: 0, 2.0: 1, False: 2}, 'rhs': {0, True, 3.0, 4}},
+    # ]
+
+    import timerit
+    ti = timerit.Timerit(100, bestof=10, verbose=0)
 
     rows = []
     for operation in operations:
-        for case in casegen:
-            rhs, lhs = case['rhs'], case['lhs']
+        for case in fixed_cases:
+            lhs, rhs = case['lhs'], case['rhs']
 
+            time_inst = operation.__name__ + str(case)
             # Execute the candidate implementation
-            result = operation(lhs, rhs)
+            for timer in ti.reset(time_inst):
+                with timer:
+                    result = operation(lhs, rhs)
+
             row = analyze_result(lhs, rhs, result)
             row['op'] = operation.__name__
+            row['min'] = ti.min()
+            row['mean'] = ti.mean()
+            row['std'] = ti.std()
             rows.append(row)
 
     import pandas as pd
