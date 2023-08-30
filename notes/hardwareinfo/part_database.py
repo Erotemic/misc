@@ -175,11 +175,31 @@ items = [
 
     {
         'name': 'LG 27GL850',
-        'msrp': 500.00 * dollars,
+        'msrp': 379.99 * dollars,
         'type': 'monitor',
         'model': '27UK650-W',
         'size': 27 * inches,
         'spec_url': 'https://www.lg.com/us/monitors/lg-27GL850-B-gaming-monitor',
+        'display': {
+            'panel_type': 'IPS',  # in-plane-switching
+            'response_time': 1 * ms,
+            'max_resolution': {
+                'width': 2560 * pixels,
+                'height': 1440 * pixels,
+            },
+            'color_depth': 1.07e9,
+            'refresh_rate': 144 * Hz,
+            'viewing_angle':  {'vertical': 178 * degrees, 'horizontal': 178 * degrees},
+        },
+    },
+
+    {
+        'name': 'LG 27GL83A 27',
+        'msrp': 500.00 * dollars,
+        'type': 'monitor',
+        'model': '27GL83A-B',
+        'size': 27 * inches,
+        'spec_url': 'https://www.lg.com/us/monitors/lg-27gl83a-b-gaming-monitor',
         'display': {
             'panel_type': 'Nano IPS',  # in-plane-switching
             'response_time': 1 * ms,

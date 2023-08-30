@@ -383,6 +383,31 @@ def network_connector_speed():
     """
 
 
+def monitor_info():
+    """
+    Get information about connected monitors / displays
+
+    Looks like the information isn't that good.
+
+    References:
+        https://askubuntu.com/questions/371261/display-monitor-info-via-command-line
+
+    Notes:
+        sudo apt-get install read-edid
+
+        sudo get-edid | parse-edid
+
+        lshw -c display
+
+        xrandr --prop
+
+        dbus-send --session --print-reply --dest=org.gnome.Mutter.DisplayConfig /org/gnome/Mutter/DisplayConfig org.gnome.Mutter.DisplayConfig.GetCurrentState
+
+    """
+    info = ub.cmd('xrandr --prop')
+    print(info.stdout)
+
+
 # def current_specs():
 #     cpu_info = parse_cpu_info()
 #     cpu_info['unvaried']['model_name']

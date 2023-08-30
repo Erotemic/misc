@@ -1,10 +1,34 @@
 Oh Sadness
 ==========
 
+PSA: Last night there was a power outage and my machine hard shut down while I
+was working on it  After the power came on I tried to boot the machine and was
+treated to my first experience where an unsafe shutdown caused an error.
+
+The boot sequence got stuck on:
+
+```
+Failed to start default target: Transaction for graphics.target/start is destructive (emergency.target has 'start' job queued, but 'stop' is included in this transaction).
+```
+
+Rebooting resulted in the same message.
+
+Fortunately the error was googleable. I found information that pointed me to
+the `fsck` command, which is sometimes able to fix corrupted filesystems.
+
+In addition to this I also had to edit my `/etc/fstab` because for whatever
+reason my machine switched the names it assigned to the disks. This is a lesson
+that it's a good idea to use the `/dev/disk/by-id/...` name rather than the
+`/dev/...` name.
+
+
+Details
+=======
+
+
 On 2023-08-06 there was a power outage, which caused a hard shutdown on my machine I was working on.
 
-After the power came on I booted the machine and was treated to the following
-message in the boot sequence:
+FOr more details, the message was:
 
 .. code::
 
@@ -23,9 +47,9 @@ message in the boot sequence:
     Press Enter for maintenance
     or press Control-D to continue.
 
-    On this I press enter, and try to muck with things. At one point exiting this
-    brought me into a loop where I had to exit a lot of emergency prompts. But
-    usually it ends with this.
+On this I press enter, and try to muck with things. At one point exiting this
+brought me into a loop where I had to exit a lot of emergency prompts. But
+usually it ends with this.
 
 
 .. code::

@@ -672,7 +672,7 @@ mypkgs(){
     ### GITHUB PROJECTS
 
     # Currently need to manually merge PRs
-
+    # TODO: use: create_github_release
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -714,6 +714,14 @@ mypkgs(){
     update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
 
+}
+
+
+create_github_release(){
+    __doc__="
+    References:
+        https://cli.github.com/manual/gh_release_create
+    "
 
 }
 
