@@ -5,6 +5,10 @@ pip install pySMART
 pip install git+https://github.com/truenas/py-SMART
 
 
+Requirements:
+    pySMART
+    sudo apt-get install smartmontools
+
 
 Each drive manufacturer defines a set of attributes,[21][22] and sets threshold values beyond which attributes should not pass under normal operation.
 
