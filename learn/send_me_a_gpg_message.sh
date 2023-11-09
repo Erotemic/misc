@@ -69,6 +69,8 @@ consise-version(){
     __doc__="
     For copy / pasting in chats
     "
+    # For more info
+    # https://github.com/Erotemic/misc/blob/d0c679b0ead85136613f22339a8aff1f93573269/learn/send_me_a_gpg_message.sh
     RECPIENT_FINGERPRINT=4AC8B478335ED6ED667715F3622BE571405441B4
     gpg --recv-keys --keyserver hkp://keyserver.ubuntu.com $RECPIENT_FINGERPRINT
     echo $RECPIENT_FINGERPRINT
