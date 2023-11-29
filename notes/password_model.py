@@ -382,12 +382,15 @@ def build_threat_models():
     # password schemes
     # https://gist.github.com/Chick3nman/e4fcee00cb6d82874dace72106d73fef#file-rtx_3090_v6-1-1-benchmark-L1006
     # https://gist.github.com/Chick3nman/32e662a5bb63bc4f51b847bb422222fd#file-RTX_4090_v6.2.6.Benchmark
+    # https://gist.github.com/Chick3nman/d65bcd5c137626c0fcb05078bba9ca89#file-tesla_a100_pcie_v6-1-1
+    # https://gist.github.com/Chick3nman/e1417339accfbb0b040bcd0a0a9c6d54#file-h100_pcie_v6-2-6-benchmark
 
     if 0:
         # For developer hard codeing
         raw_hashcat_benchmarks = {
             'RTX_3090': 'https://gist.githubusercontent.com/Chick3nman/e4fcee00cb6d82874dace72106d73fef/raw/11ec7cf3c8c2627bf8b6a20673f2d571caa0bef9/RTX_3090_v6.1.1.Benchmark',
             'RTX_4090': 'https://gist.githubusercontent.com/Chick3nman/32e662a5bb63bc4f51b847bb422222fd/raw/265c25315440e0219e9c0406a56369ccaf640ac6/RTX_4090_v6.2.6.Benchmark',
+            'Tesla A100': 'https://gist.githubusercontent.com/Chick3nman/d65bcd5c137626c0fcb05078bba9ca89/raw/08ec4a8d41ded82e8c3d9311ffbf9656cf5719cb/TESLA_A100_PCIE_v6.1.1',
         }
         parsed = {}
         for k, url in raw_hashcat_benchmarks.items():
