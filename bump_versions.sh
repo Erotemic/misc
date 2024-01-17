@@ -363,7 +363,7 @@ create_new_gitlab_dev_mr(){
 }
 
 
-git_checkeven(){
+git_check_branches_are_same(){
     __doc__="
     Check if two branches are equal (i.e. even)
     "
@@ -446,7 +446,7 @@ update_default_branch(){
     "
 
     git fetch "$DEPLOY_REMOTE"
-    git_checkeven "$DEPLOY_REMOTE/release" "$DEPLOY_REMOTE/$DEFAULT_BRANCH"
+    git_check_branches_are_same "$DEPLOY_REMOTE/release" "$DEPLOY_REMOTE/$DEFAULT_BRANCH"
     RES=$?
     if [ "$RES" == "0" ]; then
         echo "WARNING: $DEFAULT_BRANCH is up to date with release, did you forget to merge the topic branch?"
@@ -561,6 +561,16 @@ mypkgs(){
     source ~/misc/bump_versions.sh
     load_secrets
     MODNAME=scriptconfig
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=geowatch
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
