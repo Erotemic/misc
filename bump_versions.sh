@@ -244,6 +244,10 @@ accept_latest_gitlab_dev_mr(){
 
 
 create_new_gitlab_dev_mr(){
+    __doc__='
+    Create a new MR for the current branch. This only changes the state of
+    gitlab, not the repo itself.
+    '
     MODNAME=$1
     DEPLOY_REMOTE=$2
 
@@ -269,6 +273,7 @@ create_new_gitlab_dev_mr(){
     # You must have a way of loading an authentication token here
     # The function ``git_token_for`` should map a hostname to the
     # authentication token used for that hostname
+    # shellcheck disable=SC2155
     export PRIVATE_GITLAB_TOKEN=$(git_token_for "$HOST")
 
     if [[ "$PRIVATE_GITLAB_TOKEN" == "ERROR" ]]; then
@@ -425,6 +430,9 @@ gitlab_update_master_to_main(){
 }
 
 update_default_branch(){
+    __doc__='
+    Checkouts out the main branch and updates it to the state on the remote.
+    '
     MODNAME=$1
     DEPLOY_REMOTE=$2
     # -----
@@ -461,6 +469,14 @@ update_default_branch(){
 
 
 finish_deployment(){
+    __doc__='
+    Given an updated main branch on a state that we want to release, update the
+    release branch to the current state of main, which will trigger the release
+    CI. Then determine what the next patch version should be, and make a branch
+    where that version is bumped and a new changelog entry is ready for it.  If
+    the user wants to bump a non-patch version, then they will have to change
+    that manually after this run.
+    '
     MODNAME=$1
     DEPLOY_REMOTE=$2
     DEPLOY_BRANCH=$3
