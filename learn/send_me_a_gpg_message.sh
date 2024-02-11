@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 __doc__="
 How to write a message that only a specific recipient (in this case Jon Crall) can read.
 

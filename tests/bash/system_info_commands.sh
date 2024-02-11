@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Get amd64, arm64, etc arch info
 dpkg --print-architecture

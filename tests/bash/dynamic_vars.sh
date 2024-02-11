@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # https://stackoverflow.com/questions/16553089/dynamic-variable-names-in-bash
 
 key="custom_key"

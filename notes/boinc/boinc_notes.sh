@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # https://boinc.berkeley.edu/wiki/Boinccmd_tool
 

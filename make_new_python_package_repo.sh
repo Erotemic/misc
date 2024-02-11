@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 __doc__='
 Requirements:
     pip install sphinx sphinx_rtd_theme
@@ -123,7 +123,7 @@ make_pypkg(){
 
     
     echo "$(codeblock "
-    #!/bin/bash 
+    #!/usr/bin/env bash 
 
     # Install all dependency packages
     pip install -r requirements.txt

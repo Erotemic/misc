@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 __notes__="
 TODO:
 
@@ -636,6 +636,16 @@ mypkgs(){
 
     source ~/misc/bump_versions.sh
     MODNAME=kwutil
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    load_secrets
+    accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
+
+    source ~/misc/bump_versions.sh
+    MODNAME=simple_dvc
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     load_secrets
