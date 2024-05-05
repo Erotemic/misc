@@ -491,6 +491,28 @@ finish_deployment(){
     DEPLOY_BRANCH = $DEPLOY_BRANCH
     "
 
+    cd "$HOME/code/$MODNAME"
+    # Get default branch name (master/main)
+    DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+    echo "DEFAULT_BRANCH = $DEFAULT_BRANCH"
+    git checkout "$DEFAULT_BRANCH" || git checkout "$DEPLOY_REMOTE/$DEFAULT_BRANCH" -b "$DEFAULT_BRANCH"
+    git fetch "$DEPLOY_REMOTE"
+    git pull "$DEPLOY_REMOTE" "$DEFAULT_BRANCH"
+    git push "$DEPLOY_REMOTE" "$DEFAULT_BRANCH:release"
+
+    start_next_version "$MODNAME" "$DEPLOY_REMOTE"
+}
+
+
+start_next_version(){
+    MODNAME=$1
+    DEPLOY_REMOTE=$2
+    # -----
+    echo "
+    This assumes you are on the released main branch.
+
+    MODNAME = $MODNAME
+    "
 
     cd "$HOME/code/$MODNAME"
     VERSION=$(python -c "import $MODNAME; print($MODNAME.__version__)")
@@ -500,17 +522,6 @@ finish_deployment(){
     VERSION = $VERSION
     NEXT_VERSION = $NEXT_VERSION
     "
-
-    # Get default branch name (master/main)
-    DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
-    echo "DEFAULT_BRANCH = $DEFAULT_BRANCH"
-    git checkout "$DEFAULT_BRANCH" || git checkout "$DEPLOY_REMOTE/$DEFAULT_BRANCH" -b "$DEFAULT_BRANCH"
-    git fetch "$DEPLOY_REMOTE"
-    git pull "$DEPLOY_REMOTE" "$DEFAULT_BRANCH"
-    git push "$DEPLOY_REMOTE" "$DEFAULT_BRANCH:release"
-    #git tag "${TAG_NAME}" "${TAG_NAME}"^{} -f -m "tarball tag ${VERSION}"
-    #git tag "${TAG_NAME}" -f -m "tarball tag ${VERSION}"
-    #git push --tags $DEPLOY_REMOTE
 
     echo "NEXT_VERSION = $NEXT_VERSION"
     git checkout -b "dev/$NEXT_VERSION"
@@ -541,7 +552,6 @@ finish_deployment(){
 
     git commit -am "Start branch for $NEXT_VERSION"
     git push "$DEPLOY_REMOTE"
-
 }
 
 
