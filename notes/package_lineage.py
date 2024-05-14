@@ -1,4 +1,9 @@
+import ubelt as ub
 import networkx as nx
+from graphid import util
+import xdev
+import kwplot
+kwplot.autompl()
 
 nodes = [p.strip() for p in """
 utool
@@ -10,9 +15,12 @@ guitool_ibeis
 ubelt
 hotspotter
 xdev
+xinspect
 xdoctest
 geowatch
 kwcoco
+kwimage
+kwimage_ext
 kwarray
 kwplot
 liberator
@@ -30,6 +38,10 @@ delayed_image
 shitspotter
 scriptconfig
 cmd_queue
+pypogo
+xcookie
+sm64-random-assets
+line_profiler
 """.strip().split(chr(10)) if p.strip()]
 
 
@@ -170,11 +182,143 @@ torch_liberator liberator
 torch_liberator networkx_algo_common_subtree
 """.strip().split(chr(10)) if p.strip()]
 
+
+def parse_requirements(fname="requirements.txt", versions=False):
+    """
+    Parse the package dependencies listed in a requirements file but strips
+    specific versioning information.
+
+    Args:
+        fname (str): path to requirements file
+        versions (bool | str, default=False):
+            If true include version specs.
+            If strict, then pin to the minimum version.
+
+    Returns:
+        List[str]: list of requirements items
+
+    CommandLine:
+        python -c "import setup, ubelt; print(ubelt.urepr(setup.parse_requirements()))"
+    """
+    from os.path import exists, dirname, join
+    import re
+    require_fpath = fname
+
+    def parse_line(line, dpath=""):
+        """
+        Parse information from a line in a requirements text file
+
+        line = 'git+https://a.com/somedep@sometag#egg=SomeDep'
+        line = '-e git+https://a.com/somedep@sometag#egg=SomeDep'
+        """
+        # Remove inline comments
+        comment_pos = line.find(" #")
+        if comment_pos > -1:
+            line = line[:comment_pos]
+
+        if line.startswith("-r "):
+            # Allow specifying requirements in other files
+            target = join(dpath, line.split(" ")[1])
+            for info in parse_require_file(target):
+                yield info
+        else:
+            # See: https://www.python.org/dev/peps/pep-0508/
+            info = {"line": line}
+            if line.startswith("-e "):
+                info["package"] = line.split("#egg=")[1]
+            else:
+                if "--find-links" in line:
+                    # setuptools doesnt seem to handle find links
+                    line = line.split("--find-links")[0]
+                if ";" in line:
+                    pkgpart, platpart = line.split(";")
+                    # Handle platform specific dependencies
+                    # setuptools.readthedocs.io/en/latest/setuptools.html
+                    # #declaring-platform-specific-dependencies
+                    plat_deps = platpart.strip()
+                    info["platform_deps"] = plat_deps
+                else:
+                    pkgpart = line
+                    platpart = None
+
+                # Remove versioning from the package
+                pat = "(" + "|".join([">=", "==", ">"]) + ")"
+                parts = re.split(pat, pkgpart, maxsplit=1)
+                parts = [p.strip() for p in parts]
+
+                info["package"] = parts[0]
+                if len(parts) > 1:
+                    op, rest = parts[1:]
+                    version = rest  # NOQA
+                    info["version"] = (op, version)
+            yield info
+
+    def parse_require_file(fpath):
+        dpath = dirname(fpath)
+        with open(fpath, "r") as f:
+            for line in f.readlines():
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    for info in parse_line(line, dpath=dpath):
+                        yield info
+
+    def gen_packages_items():
+        if exists(require_fpath):
+            for info in parse_require_file(require_fpath):
+                yield info
+
+    packages = list(gen_packages_items())
+    return packages
+
+
+def find_real_dependency_edges(pkgname, nodes=None):
+    import ubelt as ub
+    dpath = ub.Path(f'$HOME/code/{pkgname}').expand()
+    edges = []
+    if not dpath.exists():
+        print('{dpath=} does not exist')
+    else:
+        req_dpath = dpath / 'requirements'
+        if not req_dpath.exists():
+            print(f'{req_dpath=} does not exist')
+
+        run_fpath = dpath / 'requirements/runtime.txt'
+        if not run_fpath.exists():
+            print(f'{run_fpath=} does not exist')
+
+        for info in parse_requirements(run_fpath):
+            if nodes is None or info['package'] in nodes:
+                edges.append((pkgname, info['package'], {'type': 'runtime'}))
+
+        if 1:
+            run_fpath = dpath / 'requirements/tests.txt'
+            if not run_fpath.exists():
+                print(f'{run_fpath=} does not exist')
+
+            for info in parse_requirements(run_fpath):
+                if nodes is None or info['package'] in nodes:
+                    edges.append((pkgname, info['package'], {'type': 'test'}))
+
+        if 1:
+            run_fpath = dpath / 'requirements/optional.txt'
+            if not run_fpath.exists():
+                print(f'{run_fpath=} does not exist')
+
+            for info in parse_requirements(run_fpath):
+                if nodes is None or info['package'] in nodes:
+                    edges.append((pkgname, info['package'], {'type': 'optional'}))
+    return edges
+
+
+real_edges = list(ub.flatten([list(find_real_dependency_edges(pkgname, nodes)) for pkgname in nodes]))
+
 graph = nx.DiGraph()
 graph.add_nodes_from(nodes)
 graph.add_edges_from(causedby_edges)
 
-nx.write_network_text(graph)
+# nx.write_network_text(graph)
+util.util_graphviz.dump_nx_ondisk(graph, 'crall_pkgs_causal.png')
+xdev.startfile('crall_pkgs_causal.png')
 
 # print('Reverse')
 # nx.write_network_text(graph.reverse())
@@ -183,7 +327,6 @@ nx.write_network_text(graph)
 # kwplot.autompl()
 # nx.draw_networkx(graph)
 
-from graphid import util
 # util.show_nx(graph)
 
 
@@ -191,12 +334,43 @@ graph2 = nx.DiGraph()
 graph2.add_nodes_from(nodes)
 graph2.add_edges_from(dependency_edges)
 
-nx.write_network_text(graph2)
+# nx.write_network_text(graph2)
 
-import kwplot
-kwplot.autompl()
-kwplot.figure(fnum=1, doclf=1)
+# kwplot.figure(fnum=1, doclf=1)
 # util.show_nx(nx.transitive_reduction(graph2.reverse()), fnum=1)
-from graphid import util
 util.util_graphviz.dump_nx_ondisk(graph2.reverse(), 'crall_pkgs_dependencies.png')
 
+
+graph3 = nx.DiGraph()
+graph3.add_nodes_from(nodes)
+graph3.add_edges_from(real_edges)
+
+# nx.write_network_text(graph3)
+
+# kwplot.figure(fnum=1, doclf=1)
+graph3t = nx.transitive_reduction(graph3.reverse())
+util.util_graphviz.dump_nx_ondisk(graph3t, 'crall_pkgs_dependencies_full.png')
+xdev.startfile('crall_pkgs_dependencies_full.png')
+
+
+graph3_opt = graph3.copy()
+graph3_opt.remove_edges_from([(u, v) for u, v, d in graph3_opt.edges(data=True) if d['type'] == 'test'])
+graph3t = nx.transitive_reduction(graph3_opt.reverse())
+util.util_graphviz.dump_nx_ondisk(graph3t, 'crall_pkgs_dependencies_opt.png')
+xdev.startfile('crall_pkgs_dependencies_opt.png')
+
+
+graph3_opt = graph3.copy()
+graph3_opt.remove_edges_from([(u, v) for u, v, d in graph3.edges(data=True) if d['type'] != 'runtime'])
+graph3t = nx.transitive_reduction(graph3_opt.reverse())
+util.util_graphviz.dump_nx_ondisk(graph3t, 'crall_pkgs_dependencies_min.png')
+xdev.startfile('crall_pkgs_dependencies_min.png')
+
+
+with_extern_real_edges = list(ub.flatten([list(find_real_dependency_edges(pkgname, None)) for pkgname in nodes]))
+graph4 = nx.DiGraph()
+graph4.add_nodes_from(nodes)
+graph4.add_edges_from(with_extern_real_edges)
+
+util.util_graphviz.dump_nx_ondisk(graph4.reverse(), 'crall_extern_pkgs_dependencies_fulll.png')
+xdev.startfile('crall_extern_pkgs_dependencies_fulll.png')
