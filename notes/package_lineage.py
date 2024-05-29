@@ -33,6 +33,7 @@ pyflann_ibeis
 kwutil
 git_well
 netharn
+bioharn
 ndsampler
 delayed_image
 shitspotter
@@ -42,6 +43,8 @@ pypogo
 xcookie
 sm64-random-assets
 line_profiler
+mathutf
+networkx_algo_common_subtree
 """.strip().split(chr(10)) if p.strip()]
 
 
@@ -78,6 +81,7 @@ netharn kwcoco
 netharn ndsampler
 netharn torch_liberator
 netharn scriptconfig
+bioharn netharn
 ndsampler kwcoco
 ndsampler delayed_image
 
@@ -374,3 +378,28 @@ graph4.add_edges_from(with_extern_real_edges)
 
 util.util_graphviz.dump_nx_ondisk(graph4.reverse(), 'crall_extern_pkgs_dependencies_fulll.png')
 xdev.startfile('crall_extern_pkgs_dependencies_fulll.png')
+
+
+with_extern_real_edges = list(ub.flatten([list(find_real_dependency_edges(pkgname, None)) for pkgname in nodes]))
+contrib = {
+    'torch',
+    'mmdet',
+    'networkx',
+    'cibuildwheel',
+    'dvc',
+    'pandas',
+    'scikit-build',
+    'scikit-learn',
+    'scikit-image',
+    'distinctipy',
+    'MONAI',
+    'openskill',
+}
+extended_nodes = set(nodes) | contrib
+with_extern_contrib_real_edges = [(u, v, d) for u, v, d in with_extern_real_edges if v in extended_nodes]
+graph4 = nx.DiGraph()
+graph4.add_nodes_from(extended_nodes)
+graph4.add_edges_from(with_extern_contrib_real_edges)
+
+util.util_graphviz.dump_nx_ondisk(graph4.reverse(), 'crall_extern_contrib_pkgs_dependencies_full.png')
+xdev.startfile('crall_extern_contrib_pkgs_dependencies_full.png')

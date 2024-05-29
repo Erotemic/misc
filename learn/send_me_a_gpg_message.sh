@@ -87,3 +87,27 @@ consise-version(){
     # Send me this message
     cat $YOUR_ENCRYPTED_FPATH
 }
+
+alternative-stdint-version(){
+    __doc__="This variant deos not use intermediate files"
+
+    RECPIENT_FINGERPRINT=4AC8B478335ED6ED667715F3622BE571405441B4
+    gpg --recv-keys --keyserver hkp://keyserver.ubuntu.com $RECPIENT_FINGERPRINT
+    echo "
+    --- START YOUR MESSAGE ---
+    Hello world,
+    This is a super secret message.
+    --- END YOUR MESSAGE ---
+    " | gpg --encrypt --armor --recipient $RECPIENT_FINGERPRINT
+
+    # The above prints a message to the screen, send me this text
+
+    ####
+    # Now on my end, I will decrypt
+    echo "
+-----BEGIN PGP MESSAGE-----
+
+<cyphertext>
+-----END PGP MESSAGE-----
+    " | gpg --decrypt
+}
