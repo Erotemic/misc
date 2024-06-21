@@ -1,0 +1,36 @@
+# https://www.youtube.com/watch?v=E1xLLzOqiTg
+# https://lotv.spawningtool.com/build/80638/#:~:text=Classic%20vs%20Dark%20in%20%22GSL%20vs%20World%22,poke%20with%20first%20immortal%2C%20but%20don't%20get
+# https://www.youtube.com/watch?v=E1xLLzOqiTg&t=188s
+
+OLD - Optimal Cannon Rush (3 pylon wall-off)
+9 - pylon
+10 - rally probe 
+(chronoboost when pylon finishes)
+Chronoboost again when it finishes
+13 - rally 13th probe to opponent base
+13 - forge
+go up to 14 probes (do not go to 15)
+Probe arives at base when forge has 20 seconds left (build a pylon) - forge and pylon should finish at the same time.
+Build cannon, and attempt wall
+
+
+  14	  0:17	  Pylon	  
+  14	  0:18	  Action	  Send probe to proxy
+  16	  0:39	  Gateway	  
+  18	  0:57	  Forge	  
+  18	  1:03	  Assimilator	  
+  19	  1:14	  Pylon	  Proxy, behind expansion
+  20	  1:30	  Cybernetics Core	  
+  20	  1:34	  Photon Cannon	  Proxy
+  21	  1:42	  Assimilator	  
+  22	  1:57	  Photon Cannon	  Proxy
+  22	  2:08	  Robotics Bay	  Proxy
+  22	  2:18	  Shield Battery	  Proxy
+  23	  2:24	  Warp Gate	  
+  23	  2:30	  Adept	  
+  25	  2:41	  Pylon	  Proxy
+  25	  2:55	  Immortal	  
+  29	  2:58	  Shield Battery	  Proxy
+  29	  3:08	  Shield Battery	  Proxy
+  29	  3:22	  Warp Prism	  After finnished, continue Immortal production
+  31	  3:37	  Photon Cannon	  Home for defence

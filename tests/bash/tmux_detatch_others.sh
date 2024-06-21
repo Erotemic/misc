@@ -1,0 +1,1 @@
+tmux detach-client -a
