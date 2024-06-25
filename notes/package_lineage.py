@@ -18,6 +18,7 @@ xdev
 xinspect
 xdoctest
 geowatch
+mkinit
 kwcoco
 kwimage
 kwimage_ext
@@ -45,6 +46,7 @@ sm64-random-assets
 line_profiler
 mathutf
 networkx_algo_common_subtree
+dotfiles
 """.strip().split(chr(10)) if p.strip()]
 
 
@@ -66,8 +68,14 @@ utool xdev
 utool xdoctest
 utool mkinit
 utool vimtk
-utool timerit
-utool progiter
+utool xinspect
+
+ubelt timerit
+ubelt progiter
+
+dotfiles xdev
+dotfiles git_well
+kwimage kwimage_ext
 
 geowatch shitspotter
 geowatch scriptconfig
@@ -78,6 +86,7 @@ geowatch torch_liberator
 netharn kwarray
 netharn kwimage
 netharn kwcoco
+netharn kwplot
 netharn ndsampler
 netharn torch_liberator
 netharn scriptconfig
@@ -96,6 +105,8 @@ torch_liberator networkx_algo_common_subtree
 vtool_ibeis kwarray
 vtool_ibeis kwimage
 plottool_ibeis kwplot
+
+bioharn netharn
 
 kwcoco geowatch
 """.strip().split(chr(10)) if p.strip()]
@@ -140,6 +151,7 @@ netharn kwimage
 netharn kwarray
 netharn kwplot
 netharn ndsampler
+bioharn netharn
 
 kwarray ubelt
 
