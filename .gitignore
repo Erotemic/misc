@@ -105,3 +105,5 @@ facts/images/
 
 facts/fact_document.synctex
 facts/internal.toml
+
+*.png
