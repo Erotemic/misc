@@ -10,8 +10,8 @@ CommandLine:
     python ~/misc/facts/renderer.py print_facts
     python ~/misc/facts/renderer.py render_facts
 """
-import os
-import pathlib
+# import os
+# import pathlib
 import re
 import toml
 import ubelt as ub

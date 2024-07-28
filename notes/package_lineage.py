@@ -46,6 +46,7 @@ kwplot
 kwgis
 kwutil
 
+simple_dvc
 scriptconfig
 cmd_queue
 ndsampler
@@ -124,6 +125,7 @@ geowatch scriptconfig
 geowatch cmd_queue
 geowatch delayed_image
 geowatch torch_liberator
+geowatch simple_dvc
 
 netharn kwarray
 netharn kwimage
@@ -371,118 +373,119 @@ def find_real_dependency_edges(pkgname, nodes=None, include='all'):
     return edges
 
 
-real_edges = []
-for pkgname in nodes:
-    real_edges += list(find_real_dependency_edges(pkgname, nodes))
+def main():
+    real_edges = []
+    for pkgname in nodes:
+        real_edges += list(find_real_dependency_edges(pkgname, nodes))
+
+    if 0:
+        graph = nx.DiGraph()
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(causedby_edges)
+
+        # nx.write_network_text(graph)
+        util.util_graphviz.dump_nx_ondisk(graph, 'crall_pkgs_causal.png')
+        xdev.startfile('crall_pkgs_causal.png')
+
+    # print('Reverse')
+    # nx.write_network_text(graph.reverse())
+
+    # import kwplot
+    # kwplot.autompl()
+    # nx.draw_networkx(graph)
+
+    # util.show_nx(graph)
+
+    if 0:
+        graph2 = nx.DiGraph()
+        graph2.add_nodes_from(nodes)
+        graph2.add_edges_from(dependency_edges)
+
+        # nx.write_network_text(graph2)
+
+        # kwplot.figure(fnum=1, doclf=1)
+        # util.show_nx(nx.transitive_reduction(graph2.reverse()), fnum=1)
+        util.util_graphviz.dump_nx_ondisk(graph2.reverse(), 'crall_pkgs_dependencies.png')
+
+    if 0:
+        graph3 = nx.DiGraph()
+        graph3.add_nodes_from(nodes)
+        graph3.add_edges_from(real_edges)
+
+        # nx.write_network_text(graph3)
+
+        # kwplot.figure(fnum=1, doclf=1)
+        graph3t = nx.transitive_reduction(graph3.reverse())
+        util.util_graphviz.dump_nx_ondisk(graph3t, 'crall_pkgs_dependencies_full.png')
+        xdev.startfile('crall_pkgs_dependencies_full.png')
+
+    if 0:
+        graph3_opt = nx.DiGraph()
+        graph3_opt.add_nodes_from(nodes)
+        graph3_opt.add_edges_from(real_edges)
+        graph3_opt.remove_edges_from([(u, v) for u, v, d in graph3_opt.edges(data=True) if d['type'] == 'test'])
+        graph3t = nx.transitive_reduction(graph3_opt.reverse())
+        util.util_graphviz.dump_nx_ondisk(graph3t, 'crall_pkgs_dependencies_opt.png')
+        xdev.startfile('crall_pkgs_dependencies_opt.png')
+
+    if 1:
+        graph3_opt = nx.DiGraph()
+        graph3_opt.add_nodes_from(nodes)
+        graph3_opt.add_edges_from(real_edges)
+        graph3_opt.remove_edges_from([(u, v) for u, v, d in graph3_opt.edges(data=True) if d['type'] != 'runtime'])
+        graph3t = nx.transitive_reduction(graph3_opt.reverse())
+        util.util_graphviz.dump_nx_ondisk(graph3t, 'crall_pkgs_dependencies_min.png')
+        xdev.startfile('crall_pkgs_dependencies_min.png')
+
+    if 1:
+        graph3_opt = nx.DiGraph()
+        graph3_opt.add_nodes_from(nodes)
+        graph3_opt.add_edges_from(real_edges)
+        non_geowatch_nodes = set(graph3_opt.nodes) - (set(nx.descendants(graph3_opt, 'geowatch')) | {'geowatch'})
+        non_geowatch_nodes |= {'ubelt', 'xdoctest', 'progiter', 'mkinit', 'networkx_algo_common_subtree', 'liberator', 'timerit'}
+        graph3_opt.remove_nodes_from(non_geowatch_nodes)
+        graph3t = nx.transitive_reduction(graph3_opt.reverse())
+        util.util_graphviz.dump_nx_ondisk(graph3t, 'geowatch_pkgs_dependencies.png')
+        xdev.startfile('geowatch_pkgs_dependencies.png')
+
+    if 1:
+        with_extern_real_edges = list(ub.flatten([list(find_real_dependency_edges(pkgname, None)) for pkgname in nodes]))
+        graph4 = nx.DiGraph()
+        graph4.add_nodes_from(nodes)
+        graph4.add_edges_from(with_extern_real_edges)
+
+        util.util_graphviz.dump_nx_ondisk(graph4.reverse(), 'crall_extern_pkgs_dependencies_full.png')
+        xdev.startfile('crall_extern_pkgs_dependencies_full.png')
+
+    if 0:
+        with_extern_real_edges = list(ub.flatten([list(find_real_dependency_edges(pkgname, None)) for pkgname in nodes]))
+        contrib = {
+            'torch',
+            'mmdet',
+            'networkx',
+            'cibuildwheel',
+            'dvc',
+            'pandas',
+            'scikit-build',
+            'scikit-learn',
+            'scikit-image',
+            'distinctipy',
+            'MONAI',
+            'openskill',
+        }
+        extended_nodes = set(nodes) | contrib
+        with_extern_contrib_real_edges = [(u, v, d) for u, v, d in with_extern_real_edges if v in extended_nodes]
+        graph4 = nx.DiGraph()
+        graph4.add_nodes_from(extended_nodes)
+        graph4.add_edges_from(with_extern_contrib_real_edges)
+
+        util.util_graphviz.dump_nx_ondisk(graph4.reverse(), 'crall_extern_contrib_pkgs_dependencies_full.png')
+        xdev.startfile('crall_extern_contrib_pkgs_dependencies_full.png')
 
 
-if 0:
-    graph = nx.DiGraph()
-    graph.add_nodes_from(nodes)
-    graph.add_edges_from(causedby_edges)
-
-    # nx.write_network_text(graph)
-    util.util_graphviz.dump_nx_ondisk(graph, 'crall_pkgs_causal.png')
-    xdev.startfile('crall_pkgs_causal.png')
-
-# print('Reverse')
-# nx.write_network_text(graph.reverse())
-
-# import kwplot
-# kwplot.autompl()
-# nx.draw_networkx(graph)
-
-# util.show_nx(graph)
-
-
-if 0:
-    graph2 = nx.DiGraph()
-    graph2.add_nodes_from(nodes)
-    graph2.add_edges_from(dependency_edges)
-
-    # nx.write_network_text(graph2)
-
-    # kwplot.figure(fnum=1, doclf=1)
-    # util.show_nx(nx.transitive_reduction(graph2.reverse()), fnum=1)
-    util.util_graphviz.dump_nx_ondisk(graph2.reverse(), 'crall_pkgs_dependencies.png')
-
-
-if 0:
-    graph3 = nx.DiGraph()
-    graph3.add_nodes_from(nodes)
-    graph3.add_edges_from(real_edges)
-
-    # nx.write_network_text(graph3)
-
-    # kwplot.figure(fnum=1, doclf=1)
-    graph3t = nx.transitive_reduction(graph3.reverse())
-    util.util_graphviz.dump_nx_ondisk(graph3t, 'crall_pkgs_dependencies_full.png')
-    xdev.startfile('crall_pkgs_dependencies_full.png')
-
-
-if 0:
-    graph3_opt = nx.DiGraph()
-    graph3_opt.add_nodes_from(nodes)
-    graph3_opt.add_edges_from(real_edges)
-    graph3_opt.remove_edges_from([(u, v) for u, v, d in graph3_opt.edges(data=True) if d['type'] == 'test'])
-    graph3t = nx.transitive_reduction(graph3_opt.reverse())
-    util.util_graphviz.dump_nx_ondisk(graph3t, 'crall_pkgs_dependencies_opt.png')
-    xdev.startfile('crall_pkgs_dependencies_opt.png')
-
-
-if 1:
-    graph3_opt = nx.DiGraph()
-    graph3_opt.add_nodes_from(nodes)
-    graph3_opt.add_edges_from(real_edges)
-    graph3_opt.remove_edges_from([(u, v) for u, v, d in graph3_opt.edges(data=True) if d['type'] != 'runtime'])
-    graph3t = nx.transitive_reduction(graph3_opt.reverse())
-    util.util_graphviz.dump_nx_ondisk(graph3t, 'crall_pkgs_dependencies_min.png')
-    xdev.startfile('crall_pkgs_dependencies_min.png')
-
-
-if 1:
-    graph3_opt = nx.DiGraph()
-    graph3_opt.add_nodes_from(nodes)
-    graph3_opt.add_edges_from(real_edges)
-    non_geowatch_nodes = set(graph3_opt.nodes) - (set(nx.descendants(graph3_opt, 'geowatch')) | {'geowatch'})
-    non_geowatch_nodes |= {'ubelt', 'xdoctest', 'progiter', 'mkinit', 'networkx_algo_common_subtree', 'liberator', 'timerit'}
-    graph3_opt.remove_nodes_from(non_geowatch_nodes)
-    graph3t = nx.transitive_reduction(graph3_opt.reverse())
-    util.util_graphviz.dump_nx_ondisk(graph3t, 'geowatch_pkgs_dependencies.png')
-    xdev.startfile('geowatch_pkgs_dependencies.png')
-
-
-if 1:
-    with_extern_real_edges = list(ub.flatten([list(find_real_dependency_edges(pkgname, None)) for pkgname in nodes]))
-    graph4 = nx.DiGraph()
-    graph4.add_nodes_from(nodes)
-    graph4.add_edges_from(with_extern_real_edges)
-
-    util.util_graphviz.dump_nx_ondisk(graph4.reverse(), 'crall_extern_pkgs_dependencies_full.png')
-    xdev.startfile('crall_extern_pkgs_dependencies_full.png')
-
-
-if 0:
-    with_extern_real_edges = list(ub.flatten([list(find_real_dependency_edges(pkgname, None)) for pkgname in nodes]))
-    contrib = {
-        'torch',
-        'mmdet',
-        'networkx',
-        'cibuildwheel',
-        'dvc',
-        'pandas',
-        'scikit-build',
-        'scikit-learn',
-        'scikit-image',
-        'distinctipy',
-        'MONAI',
-        'openskill',
-    }
-    extended_nodes = set(nodes) | contrib
-    with_extern_contrib_real_edges = [(u, v, d) for u, v, d in with_extern_real_edges if v in extended_nodes]
-    graph4 = nx.DiGraph()
-    graph4.add_nodes_from(extended_nodes)
-    graph4.add_edges_from(with_extern_contrib_real_edges)
-
-    util.util_graphviz.dump_nx_ondisk(graph4.reverse(), 'crall_extern_contrib_pkgs_dependencies_full.png')
-    xdev.startfile('crall_extern_contrib_pkgs_dependencies_full.png')
+if __name__ == '__main__':
+    """
+    CommandLine:
+        python ~/misc/notes/package_lineage.py
+    """
+    main()
