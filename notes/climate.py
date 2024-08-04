@@ -141,6 +141,10 @@ us_person_anual_footprint = us_person_anual_footprint_candidates['nature.org']
 dollar_per_co2ton = co2_offset_costs['cotap']
 
 
+cost_per_co2kg = dollar_per_co2ton.to(reg.dollar / reg.CO2 / reg.kilogram)
+print(f'cost_per_co2kg={cost_per_co2kg}')
+
+
 person_offset_costs = {}
 person_offset_costs['us_person_anual_offset_cost'] = us_person_anual_offset_cost = us_person_anual_footprint * dollar_per_co2ton
 person_offset_costs['us_cost_to_offset_2018'] = us_cost_to_offset_2018 = us_emissions_2018 * dollar_per_co2ton
@@ -157,8 +161,12 @@ paid_cost_per_kwh = (10.42 * cents) / kwh
 print('paid_cost_per_kwh  = {!r}'.format(paid_cost_per_kwh))
 
 # What is the carbon cost of each coal kwh?
-extra_cost_per_kwh = dollar_per_co2ton * coal_2019_co2_per_kwh
-print('extra_cost_per_kwh = {!r}'.format(extra_cost_per_kwh))
+offset_cost_per_kwh = dollar_per_co2ton * coal_2019_co2_per_kwh
+print('offset_cost_per_kwh = {!r}'.format(offset_cost_per_kwh))
+
+tax_fraction = offset_cost_per_kwh / (paid_cost_per_kwh + offset_cost_per_kwh)
+tax_percent = (tax_fraction * 100).m
+print(f'tax_percent = {tax_percent:5.2f}%')
 
 
 # Figure out where my balance is
