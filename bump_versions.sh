@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 __notes__="
 TODO:
 
@@ -90,6 +90,42 @@ delete_merged_branches(){
 #    git commit -am "Start branch for $NEXT_VERSION"
 #}
 
+accept_latest_github_dev_mr(){
+    __doc__="
+    Accept the latest github PR associated with a dev branch.
+    "
+    MODNAME=$1
+    DEPLOY_REMOTE=$2
+
+    cd "$HOME/code/$MODNAME"
+    MERGE_BRANCH=$(git branch --show-current)
+    GROUP_NAME=$(git remote get-url "$DEPLOY_REMOTE" | cut -d ":" -f 2 | cut -d "/" -f 1)
+    HOST=https://$(git remote get-url "$DEPLOY_REMOTE" | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
+
+    #gh pr list --json baseRefName,headRefName,id,state,title,headRepository,mergeStateStatus,mergeable,number \
+    #    | jq '. | map(select(.headRefName | startswith("dev/0"))) | .[0].number'
+    #
+    python -c "if 1:
+        import ubelt as ub
+        info = ub.cmd('gh pr list --json baseRefName,headRefName,id,state,title,headRepository,mergeStateStatus,mergeable,number')
+        import json
+        data = json.loads(info.stdout)
+
+        mergable_mrs = []
+        for item in data:
+            if item['headRefName'].startswith('dev/') and item['mergeStateStatus'] == 'CLEAN' and item['mergeable'] == 'MERGEABLE':
+                mergable_mrs.append(item)
+
+        assert len(mergable_mrs) == 1, 'expected only one mergable branch'
+        mr = mergable_mrs[0]
+        print(mr['number'])
+        mr_number = mr['number']
+        info = ub.cmd(f'gh pr merge --merge {mr_number}', verbose=3)
+        info.check_returncode()
+    "
+    echo "accept_latest_github_dev_mr finished."
+}
+
 
 accept_latest_gitlab_dev_mr(){
     __doc__='
@@ -158,7 +194,7 @@ accept_latest_gitlab_dev_mr(){
     project = remote.project
     remote.gitlab.auth()
 
-    mrs = project.mergerequests.list(iterator=True)
+    mrs = list(project.mergerequests.list(iterator=True))
     open_mrs = []
     for cand_mr in mrs:
         if cand_mr.state == 'opened':
@@ -168,6 +204,8 @@ accept_latest_gitlab_dev_mr(){
     for mr in open_mrs:
         if mr.draft:
             print('mr is a draft')
+        elif mr.author['username'] != 'jon.crall':
+            ...
         elif 'do not merge' in mr.title:
             ...
         elif mr.merge_status == 'can_be_merged':
@@ -242,8 +280,41 @@ accept_latest_gitlab_dev_mr(){
 
 }
 
+create_new_github_dev_mr(){
+    MODNAME=$1
+    DEPLOY_REMOTE=$2
+
+    cd "$HOME/code/$MODNAME"
+    MERGE_BRANCH=$(git branch --show-current)
+    DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+    GROUP_NAME=$(git remote get-url "$DEPLOY_REMOTE" | cut -d ":" -f 2 | cut -d "/" -f 1)
+    HOST=https://$(git remote get-url "$DEPLOY_REMOTE" | cut -d "/" -f 1 | cut -d "@" -f 2 | cut -d ":" -f 1)
+    echo "
+        MODNAME=$MODNAME
+        DEPLOY_REMOTE=$DEPLOY_REMOTE
+        HOST=$HOST
+        GROUP_NAME=$GROUP_NAME
+        MERGE_BRANCH=$MERGE_BRANCH
+        "
+
+    python -c "if 1:
+        import ubelt as ub
+        merge_branch = ub.cmd('git branch --show-current').stdout
+        title = 'Start branch for ' + merge_branch
+        body = 'auto created PR'
+        print(title)
+        info = ub.cmd(['gh', 'pr', 'create', '--title', title, '--body', body], verbose=3)
+        info.check_returncode()
+    "
+    echo "create_new_github_dev_mr finished."
+}
+
 
 create_new_gitlab_dev_mr(){
+    __doc__='
+    Create a new MR for the current branch. This only changes the state of
+    gitlab, not the repo itself.
+    '
     MODNAME=$1
     DEPLOY_REMOTE=$2
 
@@ -269,6 +340,7 @@ create_new_gitlab_dev_mr(){
     # You must have a way of loading an authentication token here
     # The function ``git_token_for`` should map a hostname to the
     # authentication token used for that hostname
+    # shellcheck disable=SC2155
     export PRIVATE_GITLAB_TOKEN=$(git_token_for "$HOST")
 
     if [[ "$PRIVATE_GITLAB_TOKEN" == "ERROR" ]]; then
@@ -363,7 +435,7 @@ create_new_gitlab_dev_mr(){
 }
 
 
-git_checkeven(){
+git_check_branches_are_same(){
     __doc__="
     Check if two branches are equal (i.e. even)
     "
@@ -425,6 +497,9 @@ gitlab_update_master_to_main(){
 }
 
 update_default_branch(){
+    __doc__='
+    Checkouts out the main branch and updates it to the state on the remote.
+    '
     MODNAME=$1
     DEPLOY_REMOTE=$2
     # -----
@@ -446,7 +521,7 @@ update_default_branch(){
     "
 
     git fetch "$DEPLOY_REMOTE"
-    git_checkeven "$DEPLOY_REMOTE/release" "$DEPLOY_REMOTE/$DEFAULT_BRANCH"
+    git_check_branches_are_same "$DEPLOY_REMOTE/release" "$DEPLOY_REMOTE/$DEFAULT_BRANCH"
     RES=$?
     if [ "$RES" == "0" ]; then
         echo "WARNING: $DEFAULT_BRANCH is up to date with release, did you forget to merge the topic branch?"
@@ -461,6 +536,14 @@ update_default_branch(){
 
 
 finish_deployment(){
+    __doc__='
+    Given an updated main branch on a state that we want to release, update the
+    release branch to the current state of main, which will trigger the release
+    CI. Then determine what the next patch version should be, and make a branch
+    where that version is bumped and a new changelog entry is ready for it.  If
+    the user wants to bump a non-patch version, then they will have to change
+    that manually after this run.
+    '
     MODNAME=$1
     DEPLOY_REMOTE=$2
     DEPLOY_BRANCH=$3
@@ -475,6 +558,28 @@ finish_deployment(){
     DEPLOY_BRANCH = $DEPLOY_BRANCH
     "
 
+    cd "$HOME/code/$MODNAME"
+    # Get default branch name (master/main)
+    DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+    echo "DEFAULT_BRANCH = $DEFAULT_BRANCH"
+    git checkout "$DEFAULT_BRANCH" || git checkout "$DEPLOY_REMOTE/$DEFAULT_BRANCH" -b "$DEFAULT_BRANCH"
+    git fetch "$DEPLOY_REMOTE"
+    git pull "$DEPLOY_REMOTE" "$DEFAULT_BRANCH"
+    git push "$DEPLOY_REMOTE" "$DEFAULT_BRANCH:release"
+
+    start_next_version "$MODNAME" "$DEPLOY_REMOTE"
+}
+
+
+start_next_version(){
+    MODNAME=$1
+    DEPLOY_REMOTE=$2
+    # -----
+    echo "
+    This assumes you are on the released main branch.
+
+    MODNAME = $MODNAME
+    "
 
     cd "$HOME/code/$MODNAME"
     VERSION=$(python -c "import $MODNAME; print($MODNAME.__version__)")
@@ -484,17 +589,6 @@ finish_deployment(){
     VERSION = $VERSION
     NEXT_VERSION = $NEXT_VERSION
     "
-
-    # Get default branch name (master/main)
-    DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
-    echo "DEFAULT_BRANCH = $DEFAULT_BRANCH"
-    git checkout "$DEFAULT_BRANCH" || git checkout "$DEPLOY_REMOTE/$DEFAULT_BRANCH" -b "$DEFAULT_BRANCH"
-    git fetch "$DEPLOY_REMOTE"
-    git pull "$DEPLOY_REMOTE" "$DEFAULT_BRANCH"
-    git push "$DEPLOY_REMOTE" "$DEFAULT_BRANCH:release"
-    #git tag "${TAG_NAME}" "${TAG_NAME}"^{} -f -m "tarball tag ${VERSION}"
-    #git tag "${TAG_NAME}" -f -m "tarball tag ${VERSION}"
-    #git push --tags $DEPLOY_REMOTE
 
     echo "NEXT_VERSION = $NEXT_VERSION"
     git checkout -b "dev/$NEXT_VERSION"
@@ -525,7 +619,6 @@ finish_deployment(){
 
     git commit -am "Start branch for $NEXT_VERSION"
     git push "$DEPLOY_REMOTE"
-
 }
 
 
@@ -561,6 +654,16 @@ mypkgs(){
     source ~/misc/bump_versions.sh
     load_secrets
     MODNAME=scriptconfig
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=geowatch
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
@@ -609,7 +712,27 @@ mypkgs(){
     create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=kwgis
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
+
+    source ~/misc/bump_versions.sh
     MODNAME=kwutil
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    load_secrets
+    accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
+
+    source ~/misc/bump_versions.sh
+    MODNAME=simple_dvc
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     load_secrets
@@ -688,32 +811,40 @@ mypkgs(){
     MODNAME=ubelt
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
-    update_default_branch $MODNAME $DEPLOY_REMOTE
+    accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
     finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
     MODNAME=progiter
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
-    update_default_branch $MODNAME $DEPLOY_REMOTE
+    accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
     finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
     MODNAME=mkinit
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
-    update_default_branch $MODNAME $DEPLOY_REMOTE
+    accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
     finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
 
     source ~/misc/bump_versions.sh
     MODNAME=xdoctest
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
-    update_default_branch $MODNAME $DEPLOY_REMOTE
+    accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
     finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
 
     source ~/misc/bump_versions.sh
@@ -722,6 +853,32 @@ mypkgs(){
     DEPLOY_BRANCH=release
     update_default_branch $MODNAME $DEPLOY_REMOTE
     finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=git_well
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    update_default_branch $MODNAME $DEPLOY_REMOTE
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=xdev
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    update_default_branch $MODNAME $DEPLOY_REMOTE
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=utool
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
 }
 

@@ -10,10 +10,10 @@ https://github.com/pytorch/pytorch/issues/4293
 https://stackoverflow.com/questions/4354257/can-i-stop-all-processes-using-cuda-in-linux-without-rebooting
 "
 
-# Interactive 
-fuser -vki /dev/nvidia*
+# Interactive
+#fuser -vki /dev/nvidia*
 
-188770
+#188770
 
 # Zombie killer
 python -c "
@@ -36,32 +36,35 @@ print('GPU Table')
 rich.print(gpu_table)
 # These rows might be zombies
 candidate_rows = app_table[app_table['process_name'] == '[Not Found]']
+candidate_rows = app_table[app_table['process_name'].str.contains('python')]
+
+import psutil
 
 if len(candidate_rows):
     print('')
     print('Candidate Zombies')
     rich.print(candidate_rows)
-    if rich.prompt.Confirm.ask('Detected what might be a zombie process. Kill it?'):
-        for bad_pid in candidate_rows['pid']:
-            ...
-        ...
+    for bad_pid in candidate_rows['pid']:
+        print(bad_pid)
+        if rich.prompt.Confirm.ask('Detected what might be a zombie process. Kill it?'):
+            bad_proc = psutil.Process(bad_pid)
+            bad_proc.kill()
 
-    for pid in psutil.pids():
-        proc = psutil.Process(pid)
-        if pid == bad_pid:
-            raise Exception
-        for parent in proc.parents():
-            if parent.pid == bad_pid:
-                raise Exception
-            ...
+            #for pid in psutil.pids():
+            #    proc = psutil.Process(pid)
+            #    if pid == bad_pid:
+            #        raise Exception
+            #    for parent in proc.parents():
+            #        if parent.pid == bad_pid:
+            #            raise Exception
+            #...
+            ## Need to figure out how to map the pid to the thing we really want to kill.
+            #import pynvml
+            #pynvml.nvmlInit()
+            #for idx in range(pynvml.nvmlDeviceGetCount()):
+            #    handle = pynvml.nvmlDeviceGetHandleByIndex(idx)
+            #    uuid = pynvml.nvmlDeviceGetUUID(handle)
 
-    # Need to figure out how to map the pid to the thing we really want to kill.
-    import pynvml
-    pynvml.nvmlInit()
-    for idx in range(pynvml.nvmlDeviceGetCount()):
-        handle = pynvml.nvmlDeviceGetHandleByIndex(idx)
-        uuid = pynvml.nvmlDeviceGetUUID(handle)
-       
 else:
     print('No zombies detected')
 "

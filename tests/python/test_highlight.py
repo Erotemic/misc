@@ -19,7 +19,7 @@ def generate_test_text():
     import ubelt as ub
     language_text = {}
     language_text['bash'] = ub.codeblock('''
-        #!/bin/bash
+        #!/usr/bin/env bash
         echo {foobar} + ackbar
     ''')
     language_text['sh'] = ub.codeblock('''
@@ -56,22 +56,22 @@ def generate_test_text():
 # lang, quote, raw
 items = {}
 items['bash,sss,raw=0'] = ('''
-#!/bin/bash
+#!/usr/bin/env bash
 echo {foobar} + ackbar
 ''')
 
 items['bash,sss,raw=1'] = r'''
-#!/bin/bash
+#!/usr/bin/env bash
 echo {foobar} + ackbar
 '''
 
 items['bash,ddd,raw=0'] = """
-#!/bin/bash
+#!/usr/bin/env bash
 echo {foobar} + ackbar
 """
 
 items['bash,ddd,raw=1'] = r"""
-#!/bin/bash
+#!/usr/bin/env bash
 echo {foobar} + ackbar
 """
 

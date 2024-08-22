@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 JSON_DATA='[{"k": "a"}, {"k": "a", "k1": "alt"}, {"k": "b"}, {"k": "c"}]'
 echo "$JSON_DATA" | jq '.[] | select(.k | IN(["a", "b"][]))'
 

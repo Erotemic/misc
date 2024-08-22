@@ -56,8 +56,11 @@ class ConversionRates(scfg.DataConfig):
     """
     Base class representing unit conversions
     """
-    eth_to_dollar = scfg.Value(2000, help='current value of 1ETH in dollars')
-    rpl_to_eth = scfg.Value(0.024404, help='current value of 1RPL in ETH')
+    # eth_to_dollar = scfg.Value(2000, help='current value of 1ETH in dollars')
+    eth_to_dollar = scfg.Value(1650, help='current value of 1ETH in dollars')
+
+    # rpl_to_eth = scfg.Value(0.024404, help='current value of 1RPL in ETH')
+    rpl_to_eth = scfg.Value(0.013631, help='current value of 1RPL in ETH')
 
     def __post_init__(conversions):
         conversions._ureg = pint.UnitRegistry()

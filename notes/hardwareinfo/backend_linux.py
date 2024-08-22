@@ -284,6 +284,21 @@ def diskinfo():
 
     lsblk --scsi --output NAME,KNAME,LABEL,MOUNTPOINT,UUID,PARTTYPE,PARTUUID,MODEL,TYPE,SIZE,STATE
     lsblk --scsi --output NAME,KNAME,LABEL,SERIAL,UUID,PARTTYPE,PARTUUID,MODEL,TYPE,SIZE,STATE --json
+
+    References:
+        https://askubuntu.com/questions/609708/how-to-find-hard-drive-brand-name-or-model
+
+    Note:
+        A lot of disk info commands require sudo
+
+        udisksctl  status
+        udisksctl info -b /dev/sda1
+        udisksctl info -b /dev/nvme1n1
+
+
+
+        udevadm info --query=all --name=/dev/sda1
+        udevadm info --query=all --name=/dev/nvme1n1
     """
     import json
     if 0:
@@ -406,6 +421,60 @@ def monitor_info():
     """
     info = ub.cmd('xrandr --prop')
     print(info.stdout)
+
+
+def monitor_psu_voltage():
+    r"""
+    Seems that a multimeter is the most reliable way to do this, but there does
+    seem to be some software support.
+
+    sensors-detect
+
+
+    References:
+        https://askubuntu.com/questions/1009423/find-the-power-supply-hardware-information-for-a-pc-using-ubuntus-command-line
+
+    sudo apt-get install conky-all
+
+
+    Steps I took:
+
+        I ran
+
+        sudo sensors-detect
+
+        said yes to everything
+
+        it asked me to add
+
+        coretemp
+        nct6775
+
+        to my kernel modules in /etc/modules
+
+
+        To check if they existed I found:
+
+        https://askubuntu.com/questions/181433/how-can-i-find-out-what-drivers-are-built-into-my-kernel
+
+        cat /boot/config-`uname -r`
+        grep "=y" /boot/config-`uname -r`
+
+        grep "=y" /boot/config-`uname -r` | grep core -i
+
+        find /usr /lib /opt -type d -name modules -exec find {} -path "*`uname -r`*" -name "*.ko" \;
+
+
+        # To find all non-built in modules:
+        find /lib/modules/`uname -r` | grep -oP "(?<=/)\w+(?=\.ko)"
+
+        find /lib/modules/`uname -r` | grep -oP "(?<=/)\w+(?=\.ko)" | grep coretemp
+        find /lib/modules/`uname -r` | grep -oP "(?<=/)\w+(?=\.ko)" | grep nct6775
+
+        locate coretemp.ko
+        locate nct6775.ko
+
+    """
 
 
 # def current_specs():

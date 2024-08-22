@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 __doc__="""
 TODO: Port logic from ~/misc/make_new_python_package_repo.sh
 """

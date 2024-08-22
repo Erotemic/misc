@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 __doc__="""
 SeeAlso:
     ~/code/pyflann_ibeis/pyproject.toml

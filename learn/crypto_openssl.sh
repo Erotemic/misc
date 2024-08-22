@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 __doc__='
 # List available ciphers
 openssl ciphers | sed "s/:/\n/g"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Related to:
 # https://github.com/pypa/cibuildwheel/pull/966#discussion_r906712059

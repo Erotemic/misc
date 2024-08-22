@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 __doc__="
 Demo bash hash tables. Requries Bash >= 4
 

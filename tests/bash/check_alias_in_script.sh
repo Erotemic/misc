@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 __doc__="
 This is a MWE illustrating an issue where using 'bash -c' to source a file that
 sources another file does not seem to work how I would expect it. 
@@ -15,7 +15,7 @@ TEMP_DPATH=$(mktemp -d)
 # Write a bash file containing some definitions
 DEF_FPATH=$TEMP_DPATH/definitions.sh
 echo '
-#!/bin/bash
+#!/usr/bin/env bash
 echo "[definitions] start"
 export MYDEF=cowsay
 # DONT USE ALIASES THEY DO NOT EXPAND UNLESS expand_aliases in shopt is set!
@@ -28,7 +28,7 @@ echo "[definitions] finish"
 # Write a bash file containing some definitions
 USAGE_FPATH=$TEMP_DPATH/usage.sh
 echo '
-#!/bin/bash
+#!/usr/bin/env bash
 echo "[usage] about to source definitions"
 #shopt -s expand_aliases
 source "'"$TEMP_DPATH"/definitions.sh'"
