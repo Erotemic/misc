@@ -1,8 +1,12 @@
 """
-https://www.reddit.com/r/linux/comments/n1501j/linux_performance_tools/
 
 Requirements:
     pip install python-slugify
+
+
+References:
+    https://opensource.com/article/19/9/linux-commands-hardware-information
+    https://www.reddit.com/r/linux/comments/n1501j/linux_performance_tools/
 
 
 SeeAlso:
@@ -51,18 +55,18 @@ def varied_values(dict_list, min_variations=1):
         >>> varied = varied_values(dict_list)
         >>> print('varied = {}'.format(ub.repr2(varied, nl=1)))
     """
+    from collections import defaultdict
+    NoParam = object()
     all_keys = set()
     for data in dict_list:
         all_keys.update(data.keys())
-
-    varied = ub.ddict(set)
+    varied = defaultdict(set)
     for data in dict_list:
         for key in all_keys:
-            value = data.get(key, ub.NoParam)
+            value = data.get(key, NoParam)
             if isinstance(value, list):
                 value = tuple(value)
             varied[key].add(value)
-
     for key, values in list(varied.items()):
         if len(values) <= min_variations:
             del varied[key]
@@ -74,6 +78,9 @@ def motherboard_info():
     REQUIRES SUDO
 
     xdoctest -m ~/misc/notes/hardwareinfo/backend_linux.py motherboard_info
+
+    SeeAlso:
+        https://askubuntu.com/questions/179958/how-do-i-find-out-my-motherboard-model
     """
     import re
     info = ub.cmd('sudo dmidecode -t 9')
@@ -197,10 +204,11 @@ def parse_cpu_info(percore=False):
     # ALSO
     import cpuinfo
     cpu_info = cpuinfo.get_cpu_info()
-
     import re
-    info = ub.cmd('cat /proc/cpuinfo')
-    cpu_lines = info['out'].split('\n\n')
+    import subprocess
+    stdout = subprocess.check_output(['cat', '/proc/cpuinfo'],
+                                     universal_newlines=True)
+    cpu_lines = stdout.split('\n\n')
     cores = []
     for lines in cpu_lines:
         core = {}
@@ -215,11 +223,11 @@ def parse_cpu_info(percore=False):
                 core[key] = val
         if len(core):
             core = ub.map_keys(slugify_key, core)
+            # core = {slugify_key(k): v for k, v in core.items()}
             cores.append(core)
     _varied = varied_values(cores, min_variations=0)
-    unvaried = {k: ub.peek(v) for k, v in _varied.items() if len(v) == 1}
+    unvaried = {k: next(iter(v)) for k, v in _varied.items() if len(v) == 1}
     varied = {k: v for k, v in _varied.items() if len(v) > 1}
-
     cpu_info = {
         'varied': varied,
         'unvaried': unvaried,
@@ -364,7 +372,7 @@ def diskinfo():
         'zoned': 'zone model',
         'dax': 'dax-capable device',
     }
-    colnames = list(coldesc.keys())
+    # colnames = list(coldesc.keys())
     # out = ub.cmd(f'lsblk --all --json --output={",".join(colnames)}')['out']
     out = ub.cmd('lsblk --all --json')['out']
     data = json.loads(out)

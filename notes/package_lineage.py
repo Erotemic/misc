@@ -442,7 +442,7 @@ def main():
         graph3_opt.add_nodes_from(nodes)
         graph3_opt.add_edges_from(real_edges)
         non_geowatch_nodes = set(graph3_opt.nodes) - (set(nx.descendants(graph3_opt, 'geowatch')) | {'geowatch'})
-        non_geowatch_nodes |= {'ubelt', 'xdoctest', 'progiter', 'mkinit', 'networkx_algo_common_subtree', 'liberator', 'timerit'}
+        # non_geowatch_nodes |= {'ubelt', 'xdoctest', 'progiter', 'mkinit', 'networkx_algo_common_subtree', 'liberator', 'timerit'}
         graph3_opt.remove_nodes_from(non_geowatch_nodes)
         graph3t = nx.transitive_reduction(graph3_opt.reverse())
         util.util_graphviz.dump_nx_ondisk(graph3t, 'geowatch_pkgs_dependencies.png')
