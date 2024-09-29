@@ -1,0 +1,28 @@
+# https://github.com/rust-github/template/blob/main/template/Cargo.toml
+# https://doc.rust-lang.org/book/ch01-03-hello-cargo.html
+# https://pyo3.rs/main/getting-started
+
+Seems like there already is a builtin way to tempalte out a baseline
+
+cargo new rust_example_binary
+
+cd rust_example_binary
+cargo build
+./target/debug/rust_example_binary
+
+# Or
+
+cargo run
+
+
+
+pip install maturin
+
+maturin new -b pyo3 pyo3_example
+cd pyo3_example
+maturin develop
+
+python -c "
+import pyo3_example
+print(repr(pyo3_example.sum_as_string(5, 20)))
+"
