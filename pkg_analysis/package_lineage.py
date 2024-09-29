@@ -1,5 +1,5 @@
 """
-python ~/misc/notes/package_lineage.py
+python ~/misc/pkg_analysis/package_lineage.py
 """
 import ubelt as ub
 import networkx as nx
@@ -444,9 +444,12 @@ def main():
         non_geowatch_nodes = set(graph3_opt.nodes) - (set(nx.descendants(graph3_opt, 'geowatch')) | {'geowatch'})
         # non_geowatch_nodes |= {'ubelt', 'xdoctest', 'progiter', 'mkinit', 'networkx_algo_common_subtree', 'liberator', 'timerit'}
         graph3_opt.remove_nodes_from(non_geowatch_nodes)
-        graph3t = nx.transitive_reduction(graph3_opt.reverse())
-        util.util_graphviz.dump_nx_ondisk(graph3t, 'geowatch_pkgs_dependencies.png')
-        xdev.startfile('geowatch_pkgs_dependencies.png')
+        try:
+            graph3t = nx.transitive_reduction(graph3_opt.reverse())
+            util.util_graphviz.dump_nx_ondisk(graph3t, 'geowatch_pkgs_dependencies.png')
+            xdev.startfile('geowatch_pkgs_dependencies.png')
+        except Exception:
+            print((nx.find_cycle(graph3_opt)))
 
     if 1:
         with_extern_real_edges = list(ub.flatten([list(find_real_dependency_edges(pkgname, None)) for pkgname in nodes]))
@@ -486,6 +489,6 @@ def main():
 if __name__ == '__main__':
     """
     CommandLine:
-        python ~/misc/notes/package_lineage.py
+        python ~/misc/pkg_analysis/package_lineage.py
     """
     main()

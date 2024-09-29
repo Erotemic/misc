@@ -107,3 +107,9 @@ facts/fact_document.synctex
 facts/internal.toml
 
 *.png
+
+# rust binary output stuff 
+debug/
+target/
+**/*.rs.bk
+Cargo.lock

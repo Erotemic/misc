@@ -9,7 +9,30 @@ References:
 See Also:
     ~/misc/tests/bash/test_bash_func_args.sh
 '
-source "$HOME/local/init/utils.sh"
+
+# Bash array repr also exists in utils
+# source "$HOME/local/init/utils.sh"
+
+
+bash_array_repr(){
+    __doc__='
+    Given a bash array, this should print a literal copy-pastable
+    representation
+
+    Example:
+        ARR=(1 "2 3" 4)
+        bash_array_repr "${ARR[@]}"
+    '
+    ARGS=("$@")
+    if [ "${#ARGS}" -gt 0 ]; then
+        # Not sure if the double or single quotes is better here
+        echo "($(printf "'%s' " "${ARGS[@]}"))"
+        #echo "($(printf "\'%s\' " "${ARGS[@]}"))"
+    else
+        echo "()"
+    fi
+}
+
 
 # Initialize array
 arr1=(1 2 3 9 3 2 8 9)
