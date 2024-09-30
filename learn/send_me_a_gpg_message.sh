@@ -98,12 +98,12 @@ consise-version-with-filesystem(){
 }
 
 
-consise-version-in-docker(){
+consise-version-in-docker-raw(){
     __doc__="
     This variant of the command will run everything in docker
     "
     # For more info
-    # https://github.com/Erotemic/misc/blob/d0c679b0ead85136613f22339a8aff1f93573269/learn/send_me_a_gpg_message.sh
+    # https://github.com/Erotemic/misc/blob/0869242189a9b5415dc44c829b80e9f2ce96132a/learn/send_me_a_gpg_message.sh
     docker create --name tmp-gpg-container --rm -it ubuntu
     docker start tmp-gpg-container
     docker exec tmp-gpg-container bash -c "apt-get update && apt-get -y install gnupg2"
@@ -121,6 +121,25 @@ consise-version-in-docker(){
         " | gpg --encrypt --armor --recipient $RECIPIENT_FINGERPRINT
     '
     docker stop tmp-gpg-container
+}
+
+
+consise-version-in-docker-simple(){
+    __doc__="
+    This variant will use a preconfigured docker image on dockerhub to make the
+    comand super concise at the expense of a small bit of obfuscation.
+
+    SeeAlso:
+        ~/misc/learn/send_me_a_gpg_message.dockerfile
+    "
+    # For more info
+    # https://github.com/Erotemic/misc/blob/0869242189a9b5415dc44c829b80e9f2ce96132a/learn/send_me_a_gpg_message.sh
+    echo "
+    --- START YOUR MESSAGE ---
+    Hello world,
+    This is a super secret message, encrypted using docker.
+    --- END YOUR MESSAGE ---
+    " | docker run -i erotemic/send-erotemic-a-gpg-message
 }
 
 
@@ -169,23 +188,12 @@ recieve-gpg-message(){
     echo "
 -----BEGIN PGP MESSAGE-----
 
-hF4DFXuS5q76XyYSAQdAsFvdxLkSlNTEnAn5ZVOuNDrcTerR4SJM0A2XeLylpjEw
-eq4mv2GUm61FjognAur2GWD2DnRrdJa+5qi9GJxZ9y430ePAT5ZXj/5HD+Qm9hA0
-hQGMA6LXMJEvsq0BAQwA3bHuuUBx4nV2K4wbd5STtw2RUn/Ypda5padZkaORTHco
-xqZvoGeqTa+Sl7r7Q90eT5T5lLaMcIQ56C50rt/o7nFHdjRa2Jj3ZMjO6XGIytjJ
-WL6cUqd5Cc3CBLmVJHiOT5lohIVpS+wv4Xx82100bo/zIR4MCihidWI3MB46KH1u
-q+z8j+uMznjn9bom07I1I0TjKyoI1wW6n9jzWQazChIFFmiiKNlOJmzlfBGSrnlj
-ROUed5Bg5faoQRDmB0dzH01QZwhYcjjIXUayevipGlJDrpHJaKf6EJIdSnqnGhdh
-SaxYj/UgBkW/SbJdfTa5UNb93lH5GvzNwoPI2r9b0UmMgQpr5FPTq1OiycKZ+J6P
-cQrWUB/xdXoFgax1d2UZw9N1YLGXSPJ3SYq5c44kDudRyRogOUdF6RPf3FTphhvE
-mmr5U6YEpNWQjO7YU9h9lRY/cRWN+1yGyIQmuiU3dKBZ6zOqp/S4XyIFxerc4nbS
-wfWqDPqYibisYDEqV1Bk0sBEARIUx4d+v/smEOj0F1T+Wo7rsyvy3ryMti3/6OzH
-WmFJ+Dy5BgmjLXvJBd7wxc941sgbWOCFF9DgDVpwKD6gthPOP1V0WPgM9okr3k+T
-R22bXiToYsiaCop0Mv3J+fbr5Gke/AtkqOAFuh4QQqnwvcmVo/PeEjanFfCJqP0/
-e57RSvGVz3eYFreJglJx5YM3I3VtbuRys+2z5eqj704ifCHqNCowdbvoYXchlbE0
-fSMZI+3q3U6GwKAmgla//d5fO5bIHXsf3jmoHvwN8vQDQWl3zVY860HXrb/Ox+Ce
-eqhuMXltlpFNd/SxCCJxGeVe2J8rGDF2WGpCyY9xeMd0G6U2fow=
-=fmMY
+hF4DFXuS5q76XyYSAQdAjDxim/vUtnN+R9XfnLwCBEmBQYhDQ1j2BvIYQOieF3sw
+jVirBMYThjADN620l7wyZHCpb44L7wifPf+tOo86oTrCArz/VaKVj6l7oSfCX709
+0okBEy/NeqBPdvORPpI1Cx07UZQYuBGK4sgEtTgrQ67jid+VS6HATnpGdd5iUz1f
+xHMre2NrAWF5kupxu9nBrnjKtq2vUapX2lLiIkP0gb5mxs6tcMrZ2+/t6EyCZzE+
+tJvjIla8gMDN0wods1aezO5Vwbb5aUqkW+9sNEjUqB/f73iYoo5HS91d6g==
+=ydZh
 -----END PGP MESSAGE-----
     " | gpg --decrypt
 }
