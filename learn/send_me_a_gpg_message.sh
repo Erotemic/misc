@@ -22,6 +22,13 @@ grab_public_keys(){
     #gpg --recv-keys --keyserver hkps://keys.openpgp.org $RECIPIENT_FINGERPRINT
     gpg --recv-keys --keyserver hkp://keyserver.ubuntu.com $RECIPIENT_FINGERPRINT
     echo $RECIPIENT_FINGERPRINT
+
+    # Edit this key to indicate that you trust it. You can skip this step but
+    # if you skip it will ask you if you trust the key each time before you try
+    # to encrypt a message for it.
+    gpg --list-keys --fingerprint --with-colons "$RECIPIENT_FINGERPRINT" | \
+        sed -E -n -e 's/^fpr:::::::::([0-9A-F]+):$/\1:6:/p' | \
+        gpg --import-ownertrust
 }
 grab_public_keys
 
@@ -65,7 +72,7 @@ cat decrypted-message.txt
 
 
 
-consise-version(){
+consise-version-with-filesystem(){
     __doc__="
     For copy / pasting in chats
     "
@@ -73,7 +80,9 @@ consise-version(){
     # https://github.com/Erotemic/misc/blob/d0c679b0ead85136613f22339a8aff1f93573269/learn/send_me_a_gpg_message.sh
     RECIPIENT_FINGERPRINT=4AC8B478335ED6ED667715F3622BE571405441B4
     gpg --recv-keys --keyserver hkp://keyserver.ubuntu.com $RECIPIENT_FINGERPRINT
-    echo $RECIPIENT_FINGERPRINT
+    gpg --list-keys --fingerprint --with-colons "$RECIPIENT_FINGERPRINT" | \
+        sed -E -n -e 's/^fpr:::::::::([0-9A-F]+):$/\1:6:/p' | \
+        gpg --import-ownertrust
     YOUR_SECRET_TEXT_FPATH=path-to-your-PLAINTEXT-message.asc
     echo "
     --- START YOUR MESSAGE ---
@@ -86,6 +95,37 @@ consise-version(){
     gpg --output $YOUR_ENCRYPTED_FPATH --encrypt --armor --recipient $RECIPIENT_FINGERPRINT  $YOUR_SECRET_TEXT_FPATH
     # Send me this message
     cat $YOUR_ENCRYPTED_FPATH
+}
+
+
+run_in_docker(){
+
+    docker run -it ubuntu
+
+    apt-get update && apt-get -y install gnupg2
+
+}
+
+
+consise-version-with-stdout(){
+    __doc__="
+    For copy / pasting in chats
+    "
+    # The following snippet can be modified to send Jon an encrypted message
+    # For more info about what this is doing see:
+    # https://github.com/Erotemic/misc/blob/d0c679b0ead85136613f22339a8aff1f93573269/learn/send_me_a_gpg_message.sh
+    RECIPIENT_FINGERPRINT=4AC8B478335ED6ED667715F3622BE571405441B4
+    gpg --recv-keys --keyserver hkp://keyserver.ubuntu.com $RECIPIENT_FINGERPRINT
+    gpg --list-keys --fingerprint --with-colons "$RECIPIENT_FINGERPRINT" | \
+        sed -E -n -e 's/^fpr:::::::::([0-9A-F]+):$/\1:6:/p' | \
+        gpg --import-ownertrust
+    echo "
+    --- START YOUR MESSAGE ---
+    Hello world,
+    This is a super secret message.
+    --- END YOUR MESSAGE ---
+    " | gpg --encrypt --armor --recipient $RECIPIENT_FINGERPRINT
+    # Send me the output from the above command
 }
 
 
