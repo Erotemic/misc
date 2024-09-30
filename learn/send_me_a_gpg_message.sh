@@ -98,12 +98,29 @@ consise-version-with-filesystem(){
 }
 
 
-run_in_docker(){
-
-    docker run -it ubuntu
-
-    apt-get update && apt-get -y install gnupg2
-
+consise-version-in-docker(){
+    __doc__="
+    This variant of the command will run everything in docker
+    "
+    # For more info
+    # https://github.com/Erotemic/misc/blob/d0c679b0ead85136613f22339a8aff1f93573269/learn/send_me_a_gpg_message.sh
+    docker create --name tmp-gpg-container --rm -it ubuntu
+    docker start tmp-gpg-container
+    docker exec tmp-gpg-container bash -c "apt-get update && apt-get -y install gnupg2"
+    docker exec tmp-gpg-container bash -c '
+        RECIPIENT_FINGERPRINT=4AC8B478335ED6ED667715F3622BE571405441B4
+        gpg --recv-keys --keyserver hkp://keyserver.ubuntu.com $RECIPIENT_FINGERPRINT
+        gpg --list-keys --fingerprint --with-colons "$RECIPIENT_FINGERPRINT" | \
+            sed -E -n -e '\''s/^fpr:::::::::([0-9A-F]+):$/\1:6:/p'\'' | \
+            gpg --import-ownertrust
+        echo "
+        --- START YOUR MESSAGE ---
+        Hello world,
+        This is a super secret message.
+        --- END YOUR MESSAGE ---
+        " | gpg --encrypt --armor --recipient $RECIPIENT_FINGERPRINT
+    '
+    docker stop tmp-gpg-container
 }
 
 
@@ -113,7 +130,7 @@ consise-version-with-stdout(){
     "
     # The following snippet can be modified to send Jon an encrypted message
     # For more info about what this is doing see:
-    # https://github.com/Erotemic/misc/blob/d0c679b0ead85136613f22339a8aff1f93573269/learn/send_me_a_gpg_message.sh
+    # https://github.com/Erotemic/misc/blob/67573cf63cceaa37645c0df4d686c34a36a19c27/learn/send_me_a_gpg_message.sh
     RECIPIENT_FINGERPRINT=4AC8B478335ED6ED667715F3622BE571405441B4
     gpg --recv-keys --keyserver hkp://keyserver.ubuntu.com $RECIPIENT_FINGERPRINT
     gpg --list-keys --fingerprint --with-colons "$RECIPIENT_FINGERPRINT" | \
