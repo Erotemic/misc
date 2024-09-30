@@ -133,7 +133,7 @@ consise-version-in-docker-simple(){
         ~/misc/learn/send_me_a_gpg_message.dockerfile
     "
     # For more info
-    # https://github.com/Erotemic/misc/blob/d47f24460c0d89079d59e7bb9770138597b8a777/learn/send_me_a_gpg_message.sh
+    # https://github.com/Erotemic/misc/blob/303d63cb09/learn/send_me_a_gpg_message.sh
     echo "
     --- START YOUR MESSAGE ---
     Hello world,
