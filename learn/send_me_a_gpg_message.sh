@@ -137,9 +137,11 @@ consise-version-in-docker-simple(){
     echo "
     --- START YOUR MESSAGE ---
     Hello world,
-    This is a super secret message, encrypted using docker.
+    This is a super secret message.
+    Paste whatever you want to say in here, and run the command to encrypt it.
+    Then send Jon the output. Only he will be able to read it.
     --- END YOUR MESSAGE ---
-    " | docker run -i erotemic/send-erotemic-a-gpg-message
+    " | docker run -i erotemic/send-erotemic-a-gpg-message:latest
 }
 
 
