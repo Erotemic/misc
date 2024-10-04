@@ -132,14 +132,14 @@ consise-version-in-docker-simple(){
     SeeAlso:
         ~/misc/learn/send_me_a_gpg_message.dockerfile
     "
-    # For more info
-    # https://github.com/Erotemic/misc/blob/303d63cb09/learn/send_me_a_gpg_message.sh
     echo "
     --- START YOUR MESSAGE ---
     Hello world,
     This is a super secret message.
     Paste whatever you want to say in here, and run the command to encrypt it.
     Then send Jon the output. Only he will be able to read it.
+    For more info, see:
+    https://github.com/Erotemic/misc/blob/303d63cb09/learn/send_me_a_gpg_message.sh
     --- END YOUR MESSAGE ---
     " | docker run -i erotemic/send-erotemic-a-gpg-message:latest
 }

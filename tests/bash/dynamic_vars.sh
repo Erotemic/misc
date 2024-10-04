@@ -11,3 +11,6 @@ declare $key=$val
 loaded="${!key}"
 
 echo "loaded = $loaded"
+
+# To dynamically declare an array, it is different.
+declare -a "$key"='()'
