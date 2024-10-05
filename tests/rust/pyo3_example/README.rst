@@ -9,11 +9,13 @@
     maturin develop
 
     python -c "
-    import pyo3_example
+    import rust_ext
     import numpy as np
-    print(repr(pyo3_example.sum_as_string(5, 20)))
+    print(repr(rust_ext.sum_as_string(5, 20)))
 
-    A = np.random.rand(5, 5)
-    B = np.random.rand(5, 5)
+    A = np.ones((5, 5))
+    B = np.ones((5, 5)) + 1
+    rust_ext.axpy(2, B, A)
+
     "
 

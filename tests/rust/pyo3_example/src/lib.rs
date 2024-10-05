@@ -1,4 +1,9 @@
+// We need to link `blas_src` directly, c.f. https://github.com/rust-ndarray/ndarray#how-to-enable-blas-integration
+//extern crate blas_src;
+
+
 use pyo3::prelude::*;
+//use pyo3::{pymodule, types::PyModule, Bound, PyResult, Python};
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
@@ -15,45 +20,182 @@ fn pyo3_example(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 
 // Numpy stuff
-//// https://github.com/PyO3/rust-numpy
-//use numpy::ndarray::{ArrayD, ArrayViewD, ArrayViewMutD};
-//use numpy::{IntoPyArray, PyArrayDyn, PyReadonlyArrayDyn, PyArrayMethods};
-//use pyo3::{pymodule, types::PyModule, PyResult, Python, Bound};
+// https://github.com/PyO3/rust-numpy
+use std::ops::Add;
 
-//#[pymodule]
-//fn rust_ext<'py>(_py: Python<'py>, m: &Bound<'py, PyModule>) -> PyResult<()> {
-//    // example using immutable borrows producing a new array
-//    fn axpy(a: f64, x: ArrayViewD<'_, f64>, y: ArrayViewD<'_, f64>) -> ArrayD<f64> {
-//        a * &x + &y
-//    }
+use numpy::ndarray::{Array1, ArrayD, ArrayView1, ArrayViewD, ArrayViewMutD, Zip};
+use numpy::{
+    datetime::{units, Timedelta},
+    Complex64, IntoPyArray, PyArray1, PyArrayDyn, PyArrayMethods, PyReadonlyArray1,
+    PyReadonlyArrayDyn, PyReadwriteArray1, PyReadwriteArrayDyn,
+};
+use pyo3::{
+    exceptions::PyIndexError,
+    pymodule,
+    types::{PyAnyMethods, PyDict, PyDictMethods, PyModule},
+    Bound, FromPyObject, PyAny, PyObject, PyResult, Python,
+};
+//use numpy::{PyReadonlyArray2};
 
-//    // example using a mutable borrow to modify an array in-place
-//    fn mult(a: f64, mut x: ArrayViewMutD<'_, f64>) {
-//        x *= a;
-//    }
 
-//    // wrapper of `axpy`
-//    #[pyfn(m)]
-//    #[pyo3(name = "axpy")]
-//    fn axpy_py<'py>(
-//        py: Python<'py>,
-//        a: f64,
-//        x: PyReadonlyArrayDyn<'py, f64>,
-//        y: PyReadonlyArrayDyn<'py, f64>,
-//    ) -> Bound<'py, PyArrayDyn<f64>> {
-//        let x = x.as_array();
-//        let y = y.as_array();
-//        let z = axpy(a, x, y);
-//        z.into_pyarray_bound(py)
-//    }
 
-//    // wrapper of `mult`
-//    #[pyfn(m)]
-//    #[pyo3(name = "mult")]
-//    fn mult_py<'py>(a: f64, x: &Bound<'py, PyArrayDyn<f64>>) {
-//        let x = unsafe { x.as_array_mut() };
-//        mult(a, x);
-//    }
+//use numpy::ndarray::Zip;
 
-//    Ok(())
-//}
+
+
+#[pymodule]
+fn rust_ext<'py>(m: &Bound<'py, PyModule>) -> PyResult<()> {
+
+    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+
+    // example using generic PyObject
+    fn head(x: ArrayViewD<'_, PyObject>) -> PyResult<PyObject> {
+        x.get(0)
+            .cloned()
+            .ok_or_else(|| PyIndexError::new_err("array index out of range"))
+    }
+
+    // example using immutable borrows producing a new array
+    fn axpy(a: f64, x: ArrayViewD<'_, f64>, y: ArrayViewD<'_, f64>) -> ArrayD<f64> {
+        a * &x + &y
+    }
+
+    // example using a mutable borrow to modify an array in-place
+    fn mult(a: f64, mut x: ArrayViewMutD<'_, f64>) {
+        x *= a;
+    }
+
+    // example using complex numbers
+    fn conj(x: ArrayViewD<'_, Complex64>) -> ArrayD<Complex64> {
+        x.map(|c| c.conj())
+    }
+
+    // example using generics
+    fn generic_add<T: Copy + Add<Output = T>>(
+        x: ArrayView1<'_, T>,
+        y: ArrayView1<'_, T>,
+    ) -> Array1<T> {
+        &x + &y
+    }
+
+    // wrapper of `head`
+    #[pyfn(m)]
+    #[pyo3(name = "head")]
+    fn head_py<'py>(x: PyReadonlyArrayDyn<'py, PyObject>) -> PyResult<PyObject> {
+        head(x.as_array())
+    }
+
+    // wrapper of `axpy`
+    #[pyfn(m)]
+    #[pyo3(name = "axpy")]
+    fn axpy_py<'py>(
+        py: Python<'py>,
+        a: f64,
+        x: PyReadonlyArrayDyn<'py, f64>,
+        y: PyReadonlyArrayDyn<'py, f64>,
+    ) -> Bound<'py, PyArrayDyn<f64>> {
+        let x = x.as_array();
+        let y = y.as_array();
+        let z = axpy(a, x, y);
+        z.into_pyarray_bound(py)
+    }
+
+    // wrapper of `mult`
+    #[pyfn(m)]
+    #[pyo3(name = "mult")]
+    fn mult_py<'py>(a: f64, mut x: PyReadwriteArrayDyn<'py, f64>) {
+        let x = x.as_array_mut();
+        mult(a, x);
+    }
+
+    // wrapper of `conj`
+    #[pyfn(m)]
+    #[pyo3(name = "conj")]
+    fn conj_py<'py>(
+        py: Python<'py>,
+        x: PyReadonlyArrayDyn<'py, Complex64>,
+    ) -> Bound<'py, PyArrayDyn<Complex64>> {
+        conj(x.as_array()).into_pyarray_bound(py)
+    }
+
+    // example of how to extract an array from a dictionary
+    #[pyfn(m)]
+    fn extract(d: &Bound<'_, PyDict>) -> f64 {
+        let x = d
+            .get_item("x")
+            .unwrap()
+            .unwrap()
+            .downcast_into::<PyArray1<f64>>()
+            .unwrap();
+
+        x.readonly().as_array().sum()
+    }
+
+    // example using timedelta64 array
+    #[pyfn(m)]
+    fn add_minutes_to_seconds<'py>(
+        mut x: PyReadwriteArray1<'py, Timedelta<units::Seconds>>,
+        y: PyReadonlyArray1<'py, Timedelta<units::Minutes>>,
+    ) {
+        #[allow(deprecated)]
+        Zip::from(x.as_array_mut())
+            .and(y.as_array())
+            .for_each(|x, y| *x = (i64::from(*x) + 60 * i64::from(*y)).into());
+    }
+
+    // This crate follows a strongly-typed approach to wrapping NumPy arrays
+    // while Python API are often expected to work with multiple element types.
+    //
+    // That kind of limited polymorphis can be recovered by accepting an enumerated type
+    // covering the supported element types and dispatching into a generic implementation.
+    #[derive(FromPyObject)]
+    enum SupportedArray<'py> {
+        F64(Bound<'py, PyArray1<f64>>),
+        I64(Bound<'py, PyArray1<i64>>),
+    }
+
+    #[pyfn(m)]
+    fn polymorphic_add<'py>(
+        x: SupportedArray<'py>,
+        y: SupportedArray<'py>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        match (x, y) {
+            (SupportedArray::F64(x), SupportedArray::F64(y)) => Ok(generic_add(
+                x.readonly().as_array(),
+                y.readonly().as_array(),
+            )
+            .into_pyarray_bound(x.py())
+            .into_any()),
+            (SupportedArray::I64(x), SupportedArray::I64(y)) => Ok(generic_add(
+                x.readonly().as_array(),
+                y.readonly().as_array(),
+            )
+            .into_pyarray_bound(x.py())
+            .into_any()),
+            (SupportedArray::F64(x), SupportedArray::I64(y))
+            | (SupportedArray::I64(y), SupportedArray::F64(x)) => {
+                let y = y.cast::<f64>(false)?;
+
+                Ok(
+                    generic_add(x.readonly().as_array(), y.readonly().as_array())
+                        .into_pyarray_bound(x.py())
+                        .into_any(),
+                )
+            }
+        }
+    }
+
+    //#[pyfn(m)]
+    //fn rows_dot<'py>(
+    //    py: Python<'py>,
+    //    x: PyReadonlyArray2<'py, f64>,
+    //    y: PyReadonlyArray1<'py, f64>,
+    //) -> Bound<'py, PyArray1<f64>> {
+    //    let x = x.as_array();
+    //    let y = y.as_array();
+    //    let z = Zip::from(x.rows()).par_map_collect(|row| row.dot(&y));
+    //    z.into_pyarray_bound(py)
+    //}
+
+    Ok(())
+}
