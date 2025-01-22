@@ -67,7 +67,7 @@ If you want to use GPG explicitly you can take the following steps:
 sudo apt-get update 
 sudo apt-get -y install gnupg2
 
-
+# The key of the person you want to send a message to
 RECIPIENT_FINGERPRINT=4AC8B478335ED6ED667715F3622BE571405441B4
 
 # Get full public key information from a key server
@@ -78,8 +78,7 @@ gpg --list-keys --fingerprint --with-colons "$RECIPIENT_FINGERPRINT" | \
     sed -E -n -e 's/^fpr:::::::::([0-9A-F]+):$/\1:6:/p' | \
     gpg --import-ownertrust
 
-
-# Encrypt the message with GPG
+# Encrypt the message
 echo "
 --- START YOUR MESSAGE ---
 Hello world,
