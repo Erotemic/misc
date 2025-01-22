@@ -75,8 +75,9 @@ gpg --recv-keys --keyserver hkp://keyserver.ubuntu.com $RECIPIENT_FINGERPRINT
 
 # (optional) Mark that you trust the public key
 gpg --list-keys --fingerprint --with-colons "$RECIPIENT_FINGERPRINT" | \
-    sed -E -n -e '\''s/^fpr:::::::::([0-9A-F]+):$/\1:6:/p'\'' | \
+    sed -E -n -e 's/^fpr:::::::::([0-9A-F]+):$/\1:6:/p' | \
     gpg --import-ownertrust
+
 
 # Encrypt the message with GPG
 echo "
