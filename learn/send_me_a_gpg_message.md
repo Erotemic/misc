@@ -1,6 +1,6 @@
 # How To Send Jon a GPG Message
 
-A [GPG](https://en.wikipedia.org/wiki/GNU_Privacy_Guard) message is a way to
+[GPG](https://en.wikipedia.org/wiki/GNU_Privacy_Guard) is a way to
 send someone a private message. It is encrypted such that only the recipient
 can read it. The catch is that you need to be sure the public key you are using
 actually belongs to the person you want to send the message to. 
