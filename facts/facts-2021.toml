@@ -1,4 +1,5 @@
 title = "Fact Database"
+year = 2021
 
 [[facts]]
 text = """
@@ -273,37 +274,4 @@ Nobel Prize for magnetizing a cockroach.
 references = """
 https://arxiv.org/pdf/2112.07978.pdf
 https://www.improbable.com/2021/12/16/ig-nobel-winners-leap-from-magnetized-cockroaches-to-entangled-tardigrades/
-"""
-
-
-[[facts]]
-test = """
-The Hubble telescope is able to see 400 million years after the Big Bang (2.9%
-of the age of the universe).  The James Webb Space Telescope is able to see 250
-million years after (1.8%). Unlike, Hubble it can see the first generation of
-stars.
-"""
-references = """
-https://www.vox.com/science-and-health/22664709/james-webb-space-telescope-launch-date-december-science-hubble#:~:text=Hubble%20has%20seen%20light%20dating,with%20the%20Webb%20Space%20Telescope.
-https://www.nasa.gov/content/discoveries-hubbles-deep-fields
-"""
-
-
-[[facts]]
-test = """
-TODO: acid rain fact. How we beat it.
-"""
-references = """
-https://www.youtube.com/watch?v=WIdWjqZsGgg
-https://www.youtube.com/watch?v=C0ZZSYsHkEw
-"""
-
-
-[[facts]]
-test = """
-TODO: It is difficult to remove caffeine from Red Bull without interacting with
-other ingredients. But it can be slightly decaffeinated.
-"""
-references = """
-https://www.youtube.com/watch?v=oY8tz1paj6o
 """

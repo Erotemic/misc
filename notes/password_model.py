@@ -178,7 +178,7 @@ def build_password_strategy():
 
     if MODE == 'full':
         # Google random passwords are 15 chars long
-        for num in [8, 15, 20]:
+        for num in [8, 14, 15, 20]:
             base = sum(alphabets.values())
             password_schemes.append(
                 {
@@ -241,11 +241,27 @@ def build_password_strategy():
             }
         )
 
+    if 1:
+        # Add custom hybrid schemes
+        rows = [
+            dict(num_words=4, vocab_size=7776, num_chars=6, char_base=32),
+            dict(num_words=0, vocab_size=1, num_chars=16, char_base=32),
+            dict(num_words=0, vocab_size=1, num_chars=16, char_base=16),
+        ]
+        for row in rows:
+            password_schemes += [{
+                'name': 'WORDS({num_words},{vocab_size})+CHAR({num_chars},{char_base})'.format(**row),
+                'states': (row['vocab_size'] ** row['num_words']) * (row['char_base'] ** row['num_chars'])
+            }]
+
     # Postprocess password schemes
     for scheme in password_schemes:
-        scheme['states'] = scheme['base'] ** scheme['num']
+        if 'base' in scheme and 'num' in scheme:
+            scheme['states'] = scheme['base'] ** scheme['num']
+        assert 'states' in scheme
         scheme['entropy'] = math.log(scheme['states']) / math.log(2)
         scheme['security_against'] = {}
+        assert 'entropy' in scheme
 
     return password_schemes
 

@@ -5,6 +5,7 @@ Requires:
     pip install toml
     pip install pylatex
     pip install pyqrcode pylatex pypng
+    pip install pyqrcode pylatex pypng toml pylatex
 
 CommandLine:
     python ~/misc/facts/renderer.py print_facts
@@ -18,14 +19,29 @@ import ubelt as ub
 
 
 def load_facts():
-    fact_fpath = ub.Path('~/misc/facts/facts.toml').expand()
-    with open(fact_fpath, 'r') as file:
-        fact_data = toml.load(file)
+    fact_table = []
+
+    fact_paths = [
+        ub.Path('~/misc/facts/facts-2021.toml').expand(),
+        ub.Path('~/misc/facts/facts-2024.toml').expand(),
+    ]
+    for fact_fpath in fact_paths:
+        with open(fact_fpath, 'r') as file:
+            fact_data = toml.load(file)
+        fact_list = fact_data.pop('facts', [])
+
+        for num, item in enumerate(fact_list, start=1):
+            item = {**item, **fact_data}
+            item['num'] = num
+            item['total'] = len(fact_list)
+            item['stamp'] = f"{item['year']} - {item['num']:02d} of {item['total']}"
+            fact_table.append(item)
 
     if 0:
         with open(ub.Path('~/misc/facts/internal.toml').expand(), 'r') as file:
             fact_data['facts'].extend(toml.load(file)['facts'])
-    return fact_data
+
+    return fact_table
 
 
 def print_facts():
@@ -35,10 +51,11 @@ def print_facts():
     from rich.panel import Panel
     from rich.console import Console
 
-    fact_data = load_facts()
+    fact_table = load_facts()
+    print(f'fact_table = {ub.urepr(fact_table, nl=1)}')
 
     console = Console()
-    for fact in fact_data['facts']:
+    for fact in fact_table:
         text = ub.codeblock(
             '''
             {}
@@ -49,7 +66,7 @@ def print_facts():
                 ub.paragraph(fact['text']),
                 ub.indent(fact['references']),
             )
-        fact_panel = Panel(text, title='FACT')
+        fact_panel = Panel(text, title='FACT ' + fact['stamp'])
         console.print(fact_panel)
 
 
@@ -59,9 +76,8 @@ def render_facts():
     """
     import pylatex
     from pylatex.base_classes.command import Options  # NOQA
-    import pyqrcode
 
-    fact_data = load_facts()
+    fact_table = load_facts()
 
     class MDFramed(pylatex.base_classes.Environment):
         _latex_name = 'mdframed'
@@ -110,7 +126,7 @@ def render_facts():
     image_dpath = ub.Path('~/misc/facts/images').expand().ensuredir()
     # image_dpath =
 
-    for fact in ub.ProgIter(fact_data['facts']):
+    for fact in ub.ProgIter(fact_table):
         contexts = ComposeContexts(
             # doc.create(SamePage()),
             doc.create(MDFramed()),
@@ -151,14 +167,72 @@ def render_facts():
                         found = refline
                         image_fname = ub.hash_data(found, base='abc')[0:16] + '.png'
                         image_fpath = image_dpath / image_fname
-                        if not image_fpath.exists():
+                        if not image_fpath.exists() or True:
                             # pyqrcode.create(found).svg(fpath, scale=6)
-                            pyqrcode.create(found).png(str(image_fpath), scale=2)
+                            url = found
+                            if 0:
+                                import pyqrcode
+                                pyqrcode.create(url).png(str(image_fpath), scale=2)
+                            else:
+                                import qrcode
+                                import kwimage
+                                import qrcode.image
+                                from qrcode.image.styledpil import StyledPilImage
+
+                                qr = qrcode.QRCode(
+                                    version=1,
+                                    error_correction=qrcode.constants.ERROR_CORRECT_H,
+                                    box_size=10,
+                                    border=4,
+                                )
+                                qr.add_data(url)
+                                qr.make(fit=True)
+                                img = qr.make_image(fill_color="black", back_color="white")
+                                if 'wikipedia.org' in url:
+                                    # chrfpath = '/home/joncrall/misc/facts/wiki-logo.png'
+                                    chrfpath = '/home/joncrall/misc/facts/wiki-logo-3.jpg'
+                                elif 'youtube.com' in url:
+                                    chrfpath = '/home/joncrall/misc/facts/YouTube-logo.png'
+                                else:
+                                    chrfpath = None
+                                    parts = url.split('/')
+                                    base = parts[2]
+                                    base = base.replace('www.', '')
+                                    base = base.replace('.com', '')
+                                    base = base.replace('.org', '')
+                                    base = base.replace('.ca', '')
+                                    base = base.replace('.gov', '')
+                                    if len(base) > 12:
+                                        chrfpath = None
+                                    else:
+                                        flair_dpath = ub.Path.appdir('facts/flair').ensuredir()
+                                        chrimg = kwimage.draw_text_on_image({'color': 'white'}, base, color='black')
+                                        chrfpath = flair_dpath / f'{base}.png'
+                                        if not chrfpath.exists():
+                                            # chrimg = kwimage.imresize(chrimg, dsize=(512, 512))
+                                            kwimage.imwrite(chrfpath, chrimg)
+
+                                if chrfpath is None:
+                                    img = qr.make_image(
+                                        image_factory=StyledPilImage,
+                                        fill_color="black", back_color="white",
+                                    )
+                                else:
+                                    img = qr.make_image(
+                                        image_factory=StyledPilImage,
+                                        # fill_color="black", back_color="white",
+                                        embeded_image_path=chrfpath
+                                    )
+                                img.save(image_fpath)
+
                         doc.append(pylatex.NoEscape(r'\includegraphics[width=90px]{' + str(image_fpath) + '}'))
                         # doc.append(pylatex.NoEscape(r'\includesvg[width=120px]{' + fpath + '}'))
                         num_refs += 1
                         if num_refs > 3:
                             break
+                # doc.append(pylatex.NoEscape(r'\\'))
+                batch = fact['stamp']
+                doc.append(pylatex.NoEscape(fr'\hfill \tiny {batch}'))
             else:
                 doc.append(pylatex.NoEscape(r'\paragraph{References:}'))
                 with doc.create(pylatex.Itemize()) as itemize:
@@ -173,7 +247,38 @@ def render_facts():
 
     print(doc.dumps())
     print('generate pdf')
-    doc.generate_pdf(str(ub.Path('~/misc/facts/fact_document').expand()), clean_tex=True)
+    print('Num facts: ', len(fact_table))
+    out_dpath = ub.Path('~/misc/facts/fact_document').expand()
+    import rich
+    rich.print(f'[link={out_dpath.parent}]{out_dpath.parent}[/link]')
+    doc.generate_pdf(str(out_dpath), clean_tex=True)
+
+
+def qrcode_orig():
+    import pyqrcode
+    pyqrcode.create(found).png(str(image_fpath), scale=2)
+
+def qrcode_v1():
+    import qrcode
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data('Some data')
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    img = qr.make_image(fill_color="black", back_color="white")
+    import kwimage
+    import numpy as np
+    img = np.array(img).astype(np.uint8) * 255
+    kwimage.imwrite('foo.png', img)
+
+    img_1 = qr.make_image(image_factory=StyledPilImage, module_drawer=RoundedModuleDrawer())
+    img_2 = qr.make_image(image_factory=StyledPilImage, color_mask=RadialGradiantColorMask())
+    img_3 = qr.make_image(image_factory=StyledPilImage, embeded_image_path="/path/to/image.png") # this one
+
 
 
 if __name__ == '__main__':
