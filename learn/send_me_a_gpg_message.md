@@ -87,3 +87,19 @@ This is a super secret message.
 " | gpg --encrypt --armor --recipient $RECIPIENT_FINGERPRINT
 
 ```
+
+Similarly to the docker method, this will output the message
+
+```
+-----BEGIN PGP MESSAGE-----
+
+hF4DFXuS5q76XyYSAQdAL9GLU3K7on+FuJ8OJ8k0FO5LeruZPv65o30H1aTUMWMw
+Av7Ky4M3NODuyyGqGXsM9y79JKLq81pVtefdLyrhQSe74HufLaJx6kBcEAwcozaD
+0okB6ffLJzE6QHGYmzxlu/l29mdBqZ+pa+V588Bl7uZhuBhtqsgs5FrMPwaf1m7G
+w3tZkRQBgkXm1YfR47A8SbbGM1A8Yc8KtDNi2EcH0kaH/AE8ZquRKb/AXwGXBNsp
+aReN4miSM6oYpFSaayhE6I8mXRE16vOwFWyC8oEBXsblawyPIDsLClTy8Q==
+=n5bJ
+-----END PGP MESSAGE-----
+```
+
+which can be safely sent over any channel.
