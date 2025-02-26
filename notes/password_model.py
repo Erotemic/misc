@@ -247,6 +247,10 @@ def build_password_strategy():
             dict(num_words=4, vocab_size=7776, num_chars=6, char_base=32),
             dict(num_words=0, vocab_size=1, num_chars=16, char_base=32),
             dict(num_words=0, vocab_size=1, num_chars=16, char_base=16),
+            dict(num_words=4, vocab_size=7776, num_chars=6, char_base=10),
+            dict(num_words=4, vocab_size=7776, num_chars=7, char_base=10),
+            dict(num_words=4, vocab_size=7776, num_chars=8, char_base=10),
+            dict(num_words=4, vocab_size=7776, num_chars=9, char_base=10),
         ]
         for row in rows:
             password_schemes += [{
@@ -1024,7 +1028,7 @@ def main():
         subdf = df
         subdf = subdf[subdf['hashmode'] == hashmode]
         subdf = subdf.sort_values(['entropy', 'num_devices'])
-        piv = subdf.pivot(['entropy', 'cost', 'scheme'], ['num_devices', 'scale'], 'time')
+        piv = subdf.pivot(index=['entropy', 'cost', 'scheme'], columns=['num_devices', 'scale'], values='time')
         # piv.style.applymap(color_cases)
         hashmode_to_pivots[hashmode] = piv
 
@@ -1038,7 +1042,7 @@ def main():
     print('\n---')
     print('Cost Matrix:')
     subdf = df[df['scale'] == df['scale'].iloc[0]]
-    piv = subdf.pivot(['entropy', 'scheme'], ['hashmode_attempts_per_second', 'hashmode'], 'cost')
+    piv = subdf.pivot(index=['entropy', 'scheme'], columns=['hashmode_attempts_per_second', 'hashmode'], values='cost')
     piv = piv.sort_index(axis=1, ascending=False)
     piv.columns = piv.columns.droplevel(0)
     print(piv)
