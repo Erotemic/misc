@@ -40,6 +40,7 @@ geowatch
 
 kwarray
 kwcoco
+kwcoco_dataloader
 kwimage
 kwimage_ext
 kwplot
@@ -76,6 +77,7 @@ node_attributes = {
 
     'kwarray': {'stakeholders': ['kitware']},
     'kwcoco': {'stakeholders': ['kitware']},
+    'kwcoco_dataloader': {'stakeholders': ['kitware']},
     'kwimage': {'stakeholders': ['kitware']},
     'kwimage_ext': {'stakeholders': ['kitware']},
     'kwplot': {'stakeholders': ['kitware']},
@@ -94,6 +96,7 @@ node_attributes = {
 
 
 # Caused to exist
+# A -> caused -> B
 causedby_edges = [p.strip().split(' ') for p in """
 hotspotter ibeis
 
@@ -153,6 +156,7 @@ plottool_ibeis kwplot
 bioharn netharn
 
 kwcoco geowatch
+geowatch kwcoco_dataloader
 """.strip().split(chr(10)) if p.strip()]
 
 
@@ -233,6 +237,7 @@ geowatch kwcoco
 geowatch cmd_queue
 geowatch kwutil
 geowatch delayed_image
+geowatch kwcoco_dataloader
 
 git_well ubelt
 git_well scriptconfig
@@ -338,7 +343,7 @@ def find_real_dependency_edges(pkgname, nodes=None, include='all'):
     include_all = include == 'all'
 
     if not dpath.exists():
-        print('{dpath=} does not exist')
+        print(f'{dpath=} does not exist')
     else:
         req_dpath = dpath / 'requirements'
         if not req_dpath.exists():

@@ -215,6 +215,7 @@ else:
 personal_timeline = personal_timeline.sort_index()
 
 rows = [
+    {'date': '2025-03-13', 'amount':  280.59 * reg.dollars, 'organization': 'wren'},
     {'date': '2024-07-26', 'amount':  120.17 * reg.dollars, 'organization': 'wren', 'towards': 'flight&vacation'},
     {'date': '2023-03-13', 'amount':  250.00 * reg.dollars, 'organization': 'wren'},
     {'date': '2023-03-13', 'amount':  272.15 * reg.dollars, 'organization': 'wren'},
