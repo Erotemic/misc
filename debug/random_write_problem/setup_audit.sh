@@ -87,6 +87,7 @@ echo "$COMMANDS" | sudo augtool --autosave
 
 # Restart after a config change
 sudo systemctl restart auditd
+sudo systemctl status auditd
 
 # Generate a report
 sudo aureport
@@ -129,3 +130,21 @@ sudo accton on
 sudo accton off
 
 lastcomm "$USER"
+
+
+# Query status of audit tools
+systemctl status auditd
+systemctl status acct  # or acct (depends on distro)
+
+sudo auditctl -l  # List active audit rules
+sudo lastcomm "$USER"
+
+
+# Stop and cleanup
+sudo accton off
+sudo systemctl stop auditd
+sudo systemctl stop acct
+sudo systemctl disable auditd
+sudo systemctl disable acct
+
+sudo rm /var/log/audit/*
