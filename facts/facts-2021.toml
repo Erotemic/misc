@@ -2,6 +2,7 @@ title = "Fact Database"
 year = 2021
 
 [[facts]]
+title = "Total Humans Ever Lived"
 text = """
 As of 2021, the estimated number of people to have ever lived is
 100,000,000,000.  This is calculated with a cutoff point of 50,000BCE of when
@@ -17,6 +18,7 @@ https://en.wikipedia.org/wiki/World_population
 
 
 [[facts]]
+title = "Age of the Universe"
 text = """
 As of 2021, the current best estimated age of the universe is 13,787,000,000
 years.  This is based on studies of the cosmic microwave background radiation,
@@ -31,6 +33,7 @@ https://en.wikipedia.org/wiki/Age_of_the_universe
 
 
 [[facts]]
+title = "Bekenstein Bound"
 text = """
 The Bekenstein bound states that the maximum amount of
 information/energy/matter that can exist in a region of space is surprisingly
@@ -44,6 +47,7 @@ https://en.wikipedia.org/wiki/Bekenstein_bound
 
 
 [[facts]]
+title = "Age of the Earth"
 text = """
 As of 2021, the best estimated age of the earth is 4,543,000,000 years.  This
 is known through a combination of radiometric dating of the oldest rocks on the
@@ -58,6 +62,7 @@ https://en.wikipedia.org/wiki/Age_of_Earth
 
 
 [[facts]]
+title = "Age of the English Language"
 text = """
 The English language is over 1,400 years old. Broadly speaking --- as languages
 are constantly in evolutionary flux --- we can say it started with Old English
@@ -72,6 +77,7 @@ https://en.wikipedia.org/wiki/English_language
 
 
 [[facts]]
+title = "Timeline of Human History"
 text = """
 As of 2021 our best estimates find that anatomically modern humans arose
 300,000 years ago. Behaviorally modern humans arose 50,000 years ago.
@@ -86,6 +92,7 @@ https://en.wikipedia.org/wiki/Magnetic_tape
 
 
 [[facts]]
+title = "Scientific Writers from Antiquity"
 text = """
 As of 2021, there are only 144 scientific writers from antiquity known by name.
 Of these, 29 are Greek: 
@@ -103,6 +110,7 @@ https://doi.org/10.1007/s00048-011-0057-2
 
 
 [[facts]]
+title = "Oldest Living Microbes"
 text = """
 As of 2021, the oldest known living things are a group of aerobic microbes
 discovered in 2020 under the seafloor of the South Pacific Gyre, and individual
@@ -116,6 +124,7 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7387439/
 
 
 [[facts]]
+title = "Fermat's Last Theorem"
 text = """
 Fermat's Last Theorem, first stated in 1637, says that there is no integer
 solution to \\[ a^n + b^n = c^n \\] when \\[ n > 2 \\]. Fermat casually wrote
@@ -132,6 +141,7 @@ https://en.wikipedia.org/wiki/Fermat%27s_Last_Theorem
 
 
 [[facts]]
+title = "Cocaine in Early Coca-Cola"
 text = """
 When Coca-Cola first launched in 1886, it contained cocaine from the coca leaf
 and caffeine from the kola nut, hence the name. It originally contained ~9mg of
@@ -148,6 +158,7 @@ https://en.wikipedia.org/wiki/Coca-Cola
 
 
 [[facts]]
+title = "Fugaku Supercomputer"
 text = """
 As of 2021, the most powerful centralized supercomputer in the world is Fugaku,
 located at the RIKEN Center in Japan. It operates at
@@ -164,6 +175,7 @@ https://en.wikipedia.org/wiki/Green500
 
 
 [[facts]]
+title = "Gödel's Incompleteness Theorems"
 text = """
 In 1931, Kurt Gödel shook the foundations of mathematics. Gödel proved that
 within any sufficiently complex system of mathematics there are some statements that
@@ -180,6 +192,7 @@ https://en.wikipedia.org/wiki/G%C3%B6del%27s_incompleteness_theorems
 
 
 [[facts]]
+title = "Millennium Prize Problems"
 text = """
 In 2000, the Clay Institute launched the Millennium Prize, which awards $1
 million to anyone who can prove or disprove one of 7 unsolved conjectures in
@@ -200,6 +213,7 @@ https://www.claymath.org/millennium-problems
 
 
 [[facts]]
+title = "Constant Speed of Light"
 text = """
 The speed of light is always constant. This is wildly different than the way
 speed works for everyday objects. If your friend shoots an arrow and you run
@@ -217,6 +231,7 @@ https://en.wikipedia.org/wiki/Redshift
 
 
 [[facts]]
+title = "Holes in Electrical Plug Blades"
 text = """
 The holes in flat blade electrical plugs are optional and are is intended for
 manufacturing purposes only. However, if they are included --- and they almost
@@ -230,6 +245,7 @@ https://www.cnstrongpower.com/Clkj_Images/upfile/NEMA_Power_cord_drawings.pdf
 
 
 [[facts]]
+title = "Lava Lamp Chemistry"
 text = """
 The lava lamp was invented in 1963 and originally consisted of colored paraffin
 wax and tetrachloromethane in water andmineral oil. In 1970, the use of
@@ -246,6 +262,7 @@ https://en.wikipedia.org/wiki/Lava_lamp
 
 
 [[facts]]
+title = "Invention of Touch Lamps"
 text = """
 The touch lamp was first patented in 1953, became commercially available in
 1955 and made use of vacuum tubes. The components used in these original lamps
@@ -263,6 +280,7 @@ https://en.wikipedia.org/wiki/Touchscreen
 
 
 [[facts]]
+title = "Quantum-Entangled Tardigrade"
 text = """
 In 2021, the tardigrade became the first multicellular organism to be quantum
 entangled. The tardigrade was frozen and entangled with two superconducting
