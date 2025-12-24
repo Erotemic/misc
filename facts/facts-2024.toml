@@ -1,0 +1,315 @@
+title = "Fact Database 2024"
+year = 2024
+
+
+[[facts]]
+text = """
+The Hubble telescope is able to see 400 million years after the Big Bang (2.9%
+of the age of the universe).  The James Webb Space Telescope is able to see 250
+million years after (1.8%). Unlike Hubble, it can see the first generation of
+stars.
+"""
+references = """
+https://www.vox.com/science-and-health/22664709/james-webb-space-telescope-launch-date-december-science-hubble
+https://www.nasa.gov/content/discoveries-hubbles-deep-fields
+"""
+
+
+[[facts]]
+text = """
+The acid rain problem has effectively been solved.  It was a major
+environmental crisis in the 1970s and 80s, caused by sulfur dioxide and
+nitrogen oxide emissions from burning fossil fuels. Thanks to international
+cooperation, the U.S. Clean Air Act amendments of 1990, and cap-and-trade
+programs for sulfur emissions, acid rain levels dropped dramatically. This is
+considered one of the most successful environmental interventions in history.
+"""
+references = """
+https://www.youtube.com/watch?v=WIdWjqZsGgg
+https://www.youtube.com/watch?v=C0ZZSYsHkEw
+https://www.energy.gov/podcasts/direct-current-energygov-podcast/episode-9-what-happened-acid-rain
+"""
+
+
+
+[[facts]]
+text = """
+It is difficult to remove caffeine from Red Bull without affecting its other
+ingredients. This is due to its acidity. Caffeine can be partially removed
+using dichloromethane (DCM), but creating a fully decaffeinated version nearly
+impossible.
+"""
+references = """
+https://www.youtube.com/watch?v=oY8tz1paj6o
+https://link.springer.com/article/10.1007/BF00770195
+https://en.wikipedia.org/wiki/Decaffeination
+"""
+
+
+[[facts]]
+text = """
+The internet is held together by undersea cables. Some connectivity is done via
+satellites, but radio waves have limited bandwidth and higher latency. It is
+much more efficient to send signals through the network of undersea fiber optic
+and copper cables that span the globe.
+"""
+references = """
+https://www.submarinecablemap.com/
+https://en.wikipedia.org/wiki/Submarine_communications_cable
+https://newspaceeconomy.ca/2023/08/13/the-battle-for-bandwidth-submarine-cable-and-broadband-satellite-data/
+"""
+
+
+[[facts]]
+text = """
+Earth's atmosphere was once toxic to life as we know it. About 2.4 billion
+years ago, cyanobacteria began producing oxygen through photosynthesis, leading
+to the "Great Oxygenation Event", which transformed the planet and made
+multicellular life possible.
+"""
+references = """
+https://en.wikipedia.org/wiki/Great_Oxidation_Event
+https://www.youtube.com/watch?v=qERdL8uHSgI
+"""
+
+
+[[facts]]
+text = """
+In 1908, a massive explosion flattened 800 square miles of Siberian forest.  It
+was 1000x stronger than "Little Boy", the Bomb dropped Hiroshima.  Scientists
+believe it was caused by a meteor airburst from a from an asteroid or comet,
+but the site has no impact crater, which leaves open questions about the
+details.
+"""
+references = """
+https://en.wikipedia.org/wiki/Tunguska_event
+https://earthsky.org/space/what-is-the-tunguska-explosion/
+https://www.youtube.com/watch?v=PVF1NDrHPeo
+"""
+
+
+[[facts]]
+text = """
+White and arbitrary colored light from LEDs (light-emitting diode) was
+impossible until an efficient blue LED was invented in 1993. Red and green LEDs
+were invented in 1958 and 1962, but blue was much more difficult. The blue LED
+inventors, Isamu Akasaki, Hiroshi Amano, and Shuji Nakamura were awarded the
+2014 Nobel Prize in Physics for their invention. Shuji Nakamura's favorite
+color is blue.
+"""
+references = """
+https://www.youtube.com/watch?v=AF8d72mA41M
+https://en.wikipedia.org/wiki/Light-emitting_diode
+https://www.nobelprize.org/prizes/physics/2014/summary/
+"""
+
+
+[[facts]]
+text = """
+After learning a new word or concept, many people will start notice it
+everywhere.  This is the Baader-Meinhof Phenomenon (Frequency Illusion), and it
+is a common cognitive bias.  As the human brain notices patterns and filters
+information it can create a sense that the new word or concept is suddenly
+ubiquitous.
+"""
+references = """
+https://en.wikipedia.org/wiki/Frequency_illusion
+https://www.webmd.com/mental-health/what-is-frequency-illusion
+"""
+
+[[facts]]
+text = """
+The Carrington Event of 1859 was the largest recorded solar storm, causing auroras as far south as the Caribbean and damaging telegraph systems. If a similar event occurred today, it could severely impact global electrical grids and satellites.
+"""
+references = """
+https://en.wikipedia.org/wiki/Carrington_Event
+https://www.pbs.org/video/is-earths-greatest-threatthe-sun-nvbm7i/
+"""
+
+
+[[facts]]
+text = """
+The removal of lead from gasoline in the 1970s and 1980s led to a significant increase in global IQ scores, as lead exposure is directly linked to cognitive decline and developmental issues. There is a hypothesis that this also caused a sharp decrease in crime rates, but this is more difficult to measure.
+"""
+references = """
+https://today.duke.edu/2022/03/lead-exposure-last-century-shrunk-iq-scores-half-americans
+https://www.nejm.org/doi/full/10.1056/NEJM197903293001301#t=articleTop
+https://en.wikipedia.org/wiki/Lead%E2%80%93crime_hypothesis
+"""
+
+
+[[facts]]
+text = """
+The Dunning-Kruger effect is a cognitive bias where individuals with low ability in a task overestimate their competence, while highly skilled individuals may underestimate theirs. However, a surge of awareness of this effect has caused it to be widely misapplied. The main effect shown by Dunning and Kruger is: "most people think they are better than average".
+"""
+references = """
+https://en.wikipedia.org/wiki/Dunning%E2%80%93Kruger_effect
+https://www.scientificamerican.com/article/the-dunning-kruger-effect-isnt-what-you-think-it-is
+https://www.mcgill.ca/oss/article/critical-thinking/dunning-kruger-effect-probably-not-real
+"""
+
+
+[[facts]]
+text = """
+The Big Five personality traits, known as OCEAN, are Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism. They are widely used to measure and describe human personality. As of 2024 is is the only personality model that has any degree of statistical significance when making predictions, but the model remains only a weak predictor and has been shown to break down when applied to indigenous cultures.
+
+"""
+references = """
+https://en.wikipedia.org/wiki/Big_Five_personality_traits
+https://pmc.ncbi.nlm.nih.gov/articles/PMC4104167/
+"""
+
+
+[[facts]]
+text = """
+The human brain contains approximately 86 billion neurons and 150 trillion synapses. By comparison, large AI models, like GPT-4, contain 100 billion neurons and 100 trillion synapses. The details about the structure of the connections is vastly different. 
+"""
+references = """
+https://en.wikipedia.org/wiki/List_of_animals_by_number_of_neurons
+https://medium.com/@fenjiro/chatgpt-gpt-4-how-it-works-10b33fb3f12b
+"""
+
+
+[[facts]]
+text = """
+Sharks predate trees; the first sharks appeared over 400 million years ago, while the first trees emerged around 350 million years ago.
+"""
+references = """
+https://www.forbes.com/sites/scotttravers/2024/12/08/sharks-are-50-million-years-older-than-trees-a-biologist-explains/
+https://www.youtube.com/watch?v=6t2ZSalsMjQ
+"""
+
+
+[[facts]]
+text = """
+GPS satellites require Einstein’s theory of relativity to provide accurate location data because time moves faster in orbit than on Earth.
+Due to time dilation, a clock whizzing around the Earth runs 15 nanoseconds faster compared to a day being stationary relative to Earth's surface, and this needs to be corrected for in order to provide precise localization.
+"""
+references = """
+https://www.youtube.com/watch?v=aKwJayXTZUs
+https://en.wikipedia.org/wiki/Error_analysis_for_the_Global_Positioning_System
+"""
+
+
+[[facts]]
+text = """
+The Andromeda galaxy is on a collision course with the Milky Way and is
+expected to merge with it in about 4.5 billion years. The supermassive black
+holes at the center of each will eventually merge. However, the individual
+stars and planets are so far apart they will not smash into each other with a
+probability of 99.9999999%.
+"""
+references = """
+https://en.wikipedia.org/wiki/Andromeda%E2%80%93Milky_Way_collision
+https://www.pbs.org/video/the-andromeda-milky-way-collision-ktzkdj/
+"""
+
+
+[[facts]]
+text = """
+The Moon is slowly drifting away from Earth at a rate of about 3.8 centimeters
+per year.  This would continue for ~10 billion years until tidal differences
+stabilize, but the Sun will become a red giant and consume both in ~5 billion
+years.
+"""
+references = """
+https://en.wikipedia.org/wiki/Lunar_distance
+https://www.youtube.com/watch?v=IM_euz9PUiw
+"""
+
+[[facts]]
+text = """
+The Earth's oceans have absorbed more than 90% of the excess heat from climate change, significantly slowing atmospheric warming. This is one reason climate effects are difficult for the average person to see.
+"""
+references = """
+https://climate.nasa.gov/vital-signs/ocean-warming/?intent=121
+https://en.wikipedia.org/wiki/Effects_of_climate_change_on_oceans
+https://www.youtube.com/watch?v=zO2153cJORI
+"""
+
+
+[[facts]]
+text = """
+The largest living organism on Earth is a fungal network in Oregon spanning
+over 3.5 miles, known as the ``humongous fungus''. It is estimated to weight
+35,000 tons and be 8650 years old.
+"""
+references = """
+https://en.wikipedia.org/wiki/Armillaria_ostoyae
+https://www.youtube.com/watch?v=vTb1yjK_ZbE
+https://www.oregonencyclopedia.org/articles/humongous-fungus-armillaria-ostoyae
+"""
+
+
+[[facts]]
+text = """
+Koalas have fingerprints so similar to humans that they can confuse forensic
+investigators. These evolved independently from primates and also recently
+considering their close relatives wombats and kangaroos do not have
+fingerprints. The purpose of fingerprints is still scientifically debated. 
+"""
+references = """
+https://www.pbs.org/wgbh/nova/article/koala-fingerprints/
+https://www.livescience.com/14007-koalas-human-fingerprints.html
+"""
+
+
+[[facts]]
+text = """
+The modern image of Santa Claus as a jolly man in a red suit was popularized by Coca-Cola advertisements in the 1930s and based on a 1863 illustration by Thomas Nast. The origin of this transition from St Nicholas to Santa Claus can be traced to the 1823 poem: ``A Visit from St. Nicholas'', better known as ``The Night Before Chirstmas''.
+"""
+references = """
+https://en.wikipedia.org/wiki/Santa_Claus
+https://www.tiktok.com/@hereinnyc/video/7450896541755149598
+"""
+
+
+
+[[facts]]
+text = """
+In Japan, eating KFC for Christmas dinner has become a popular tradition, thanks to a 1974 marketing campaign.
+People order there feast months in advance to avoid huge lines. 
+"""
+references = """
+https://www.youtube.com/watch?v=SFw-TZzqX8M
+https://en.wikipedia.org/wiki/KFC#Christmas_tradition_in_Japan
+https://www.news.com.au/travel/destinations/asia/unlike-anywhere-else-how-kfc-became-this-japans-christmas-tradition/news-story/93393187c183e0875c4f2d8c3a95ef39
+"""
+
+
+[[facts]]
+text = """
+The date of Christmas, December 25, was likely chosen to coincide with pagan festivals like the Roman Saturnalia and the celebration of Sol Invictus, which marked the winter solstice. However, as of 2024 there are no known primary sources that explicitly state when and why this date was chosen. Many Christmas traditions, such as feasting and gift-giving, are rooted in the Roman festival of Saturnalia, a week-long celebration in December.
+"""
+references = """
+https://en.wikipedia.org/wiki/Sol_Invictus
+https://en.wikipedia.org/wiki/Saturnalia
+https://en.wikipedia.org/wiki/Christmas_traditions
+"""
+
+
+[[facts]]
+text = """
+The tradition of caroling has links to pagan wassailing, where people sang and offered toasts to ensure a good harvest and ward off evil spirits. One rendition is the custom of Mari Lwyd where a horse skull is decorated and carried by a group to local houses. 
+The group would request entry through song. The householders would be expected to deny them entry, and the two sides would continue to respond to one another through song. If the householders relented, the team would be permitted entry and given food and drink.
+"""
+references = """
+https://en.wikipedia.org/wiki/Wassailing
+https://en.wikipedia.org/wiki/Christmas_carol
+https://en.wikipedia.org/wiki/Mari_Lwyd
+"""
+
+
+
+
+[[facts]]
+text = """
+QR Codes have a high degree of redundancy. Up to 30% of the code can be removed and it will usually still be readable.
+"""
+references = """
+https://www.youtube.com/watch?v=w5ebcowAJD8
+https://en.wikipedia.org/wiki/QR_code
+"""
+
+
+
