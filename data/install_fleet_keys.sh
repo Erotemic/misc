@@ -18,6 +18,9 @@ python -c "if 1:
 "$HOME/.local/share/Steam/steamapps/compatdata/3733590677/pfx/drive_c/users/steamuser/Documents/StarCraft II/Accounts/1353877/Hotkeys/"
 
 
+$HOME/".steam/debian-installation/steamapps/compatdata/2341778848/pfx/drive_c/users/steamuser/Documents/StarCraft II/Accounts/1353877/Hotkeys/ErotemicFleetKeys.SC2Hotkeys"
+$HOME/".steam/debian-installation/steamapps/compatdata/2341778848/pfx/drive_c/users/steamuser/Documents/StarCraft II/Accounts/1353877/Hotkeys/DefaultHotkeys.SC2Hotkeys"
+
 cd /home/joncrall/misc/data/ErotemicFleetKeys.SC2Hotkeys "$HOME/.local/share/Steam/steamapps/compatdata/3733590677/pfx/drive_c/users/steamuser/Documents/StarCraft II/Accounts/1353877/Hotkeys/"
 
 

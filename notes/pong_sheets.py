@@ -16,7 +16,7 @@ Used to generate:
 """
 
 
-def test_gspread():
+def build_pong_google_sheet():
     """
     Requirements:
         uv pip install gspread gspread_dataframe gspread_formatting
@@ -117,4 +117,4 @@ if __name__ == '__main__':
     CommandLine:
         python ~/misc/notes/pong_sheets.py
     """
-    test_gspread()
+    build_pong_google_sheet()

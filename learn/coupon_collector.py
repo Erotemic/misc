@@ -3,7 +3,7 @@ import ubelt as ub
 from scipy import integrate
 
 
-class CouponCollector(object):
+class CouponCollector:
     """
     Non-uniform coupon collector problem
 
@@ -62,6 +62,26 @@ class CouponCollector(object):
     def __init__(self, probs):
         self.probs = probs
 
+    @classmethod
+    def uniform_population(cls, population_size):
+        """
+        Make an instance of the problem where each sampled item
+        has the same probability.
+
+        Ignore:
+            import sys, ubelt
+            sys.path.append(ubelt.expandpath('~/misc/learn'))
+            from coupon_collector import *  # NOQA
+            population_size = 305
+            self = CouponCollector.uniform_population(population_size)
+
+            self.prob_sampled_in(1.0, 100)
+            self.expected_samples(0.95, method='montecarlo')
+        """
+        probs = np.ones(population_size) / population_size
+        self = cls(probs)
+        return self
+
     def prob_sampled_in(self, target, num_samples, method='approx'):
         """
         Probability of drawing a ``target`` fraction of events in
@@ -103,8 +123,8 @@ class CouponCollector(object):
             method (str): can be 'approx' or 'montecarlo'.
 
         Example:
-            >>> probs = np.ones(4)
-            >>> probs = np.random.rand(int(10000))
+            >>> probs = np.ones(10)
+            >>> #probs = np.random.rand(int(10000))
             >>> probs = probs / probs.sum()
             >>> self = CouponCollector(probs)
             >>> ev_exact = self.expected_samples(target=1.0, method='exact')
@@ -113,6 +133,8 @@ class CouponCollector(object):
             >>> print('ev_approx = {!r}'.format(ev_approx))
             >>> ev_monte = self.expected_samples(target=1.0, method='montecarlo')
             >>> print('ev_monte = {!r}'.format(ev_monte))
+
+
         """
         probs = self.probs
 
@@ -121,7 +143,7 @@ class CouponCollector(object):
                 raise NotImplementedError('exact method only implemented for target=1')
             ev = coupon_collector_expected_samples(self.probs)
 
-        if method == 'approx':
+        elif method == 'approx':
             # Theoretical approximation (this is not exactly right)
             def _integrand(t):
                 return self.prob_sampled_in(target, t, method=method)
@@ -138,7 +160,7 @@ class CouponCollector(object):
         elif method == 'montecarlo':
             ntrials = 100
             timeout = 30
-            trails = []
+            trials = []
             with ub.Timer() as timer:
                 for _ in range(ntrials):
                     remain = set(range(len(probs)))
@@ -152,12 +174,12 @@ class CouponCollector(object):
                         if timer.toc() > timeout:
                             # Limit attempts
                             break
-                    trails.append(n_seen)
+                    trials.append(n_seen)
                     if timer.toc() > 2:
                         # Limit attempts
                         break
-            expected_number_samples = np.mean(trails)
-            ev = expected_number_samples
+            expected_number_samples = np.mean(trials)
+            ev = float(expected_number_samples)
         return ev
 
 
@@ -173,7 +195,7 @@ def coupon_collector_expected_samples(probs):
         float : expected number of samples before all events have occurred.
 
     References:
-        https://en.wikipedia.org/wiki/Coupon_collector%27s_problem
+        https://en.wikipedia.org/wiki/fCoupon_collector%27s_problem
         https://www.combinatorics.org/ojs/index.php/eljc/article/view/v20i2p33/pdf
         https://stackoverflow.com/questions/54539128/scipy-integrand-is-product
 
@@ -199,7 +221,7 @@ def coupon_collector_expected_samples(probs):
     probs = np.asarray(probs)
     # Philippe Flajolet's generalized expected value integral
     def _integrand(t):
-        return 1 - np.product(1 - np.exp(-probs * t))
+        return 1 - np.prod(1 - np.exp(-probs * t))
     ev, abserr = integrate.quad(func=_integrand, a=0, b=np.inf)
     return ev
 
@@ -220,17 +242,46 @@ def uniform_coupon_ev(n):
     return ev
 
 
+def uniform_coupon_ev_to_collect_all_after_having_k(n, k):
+    """
+    Let n be the total number of coupons, and k be the number of coupons
+    already collected, and Tₖ is the number of draws needed to collect all n
+    coupons when you already have k unique ones, then:
+
+        𝔼(Tₖ) = n * (harmonic(n - k))
+
+    References:
+        https://handwiki.org/wiki/Coupon_collector%27s_problem
+
+    Example:
+        >>> n = 30
+        >>> k = 3
+        >>> uniform_coupon_ev_to_collect_all_after_having_k(n, k)
+        116.743...
+    """
+    return float(n * (nth_harmonic(n - k)))
+
+
 def uniform_coupon_ev_to_collect_k(n, k):
-    i = np.arange(n)
-    prob_new = (n - i + 1) / n
-    ev_new = 1 / prob_new
-    ev = np.sum(ev_new[0:k])
-    return ev
+    """
+    You have nothing, and you want to collect the first k, this is the average
+    number of times you need to sample.
+
+    References:
+        https://handwiki.org/wiki/Coupon_collector%27s_problem
+
+    Example:
+        >>> n = 30
+        >>> k = 3
+        >>> uniform_coupon_ev_to_collect_k(n, k)
+        3.105911...
+    """
+    return float(n * (nth_harmonic(n) - nth_harmonic(n - k)))
 
 
 def bound_ev_coupons_seen(probs, num_samples):
     """
-    This seems incorrect, but probably works as a bound
+    Not exact, but works as a bound
 
     Args:
         probs: non-uniform probability for each coupon

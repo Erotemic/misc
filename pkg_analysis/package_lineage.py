@@ -491,6 +491,25 @@ def main():
         xdev.startfile('crall_extern_contrib_pkgs_dependencies_full.png')
 
 
+def test_with_stacktower():
+    """
+    Cool alternative:
+        https://stacktower.io/
+        https://github.com/matzehuels/stacktower
+
+    go install github.com/matzehuels/stacktower@latest
+
+    /home/joncrall/go/bin/stacktower parse python kwcoco -o kwcoco.json
+
+    /home/joncrall/go/bin/stacktower render kwcoco.json -t tower --style handdrawn --merge -o kwcoco_handdrawn.svg
+    /home/joncrall/go/bin/stacktower render kwcoco.json -t tower --popups -o kwcoco_serde.svg
+    /home/joncrall/go/bin/stacktower render kwcoco.json -t tower --ordering barycentric -o kwcoco_barycentric.svg
+
+
+
+    """
+
+
 if __name__ == '__main__':
     """
     CommandLine:

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Helps with output variables / outvars
 # https://stackoverflow.com/questions/16553089/dynamic-variable-names-in-bash
 
 key="custom_key"

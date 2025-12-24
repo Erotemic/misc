@@ -700,6 +700,16 @@ mypkgs(){
 
     source ~/misc/bump_versions.sh
     load_secrets
+    MODNAME=kwdagger
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_gitlab_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_gitlab_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
+
+    source ~/misc/bump_versions.sh
+    load_secrets
     MODNAME=kwarray
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
@@ -822,6 +832,16 @@ mypkgs(){
 
     # Currently need to manually merge PRs
     # TODO: use: create_github_release
+    #
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=xcookie
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
     source ~/misc/bump_versions.sh
     load_secrets
@@ -863,7 +883,7 @@ mypkgs(){
     finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
     create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
 
-
+    # Line profiler requires that the main branch is ready to release.
     source ~/misc/bump_versions.sh
     MODNAME=line_profiler
     DEPLOY_REMOTE=origin
@@ -914,6 +934,46 @@ mypkgs(){
     source ~/misc/bump_versions.sh
     load_secrets
     MODNAME=utool
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=vtool_ibeis_ext
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=pyhesaff
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=pyflann_ibeis
+    DEPLOY_REMOTE=origin
+    DEPLOY_BRANCH=release
+    accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
+    update_default_branch "$MODNAME" "$DEPLOY_REMOTE"
+    finish_deployment "$MODNAME" "$DEPLOY_REMOTE" $DEPLOY_BRANCH
+    create_new_github_dev_mr "$MODNAME" "$DEPLOY_REMOTE"
+
+    source ~/misc/bump_versions.sh
+    load_secrets
+    MODNAME=ibeis
     DEPLOY_REMOTE=origin
     DEPLOY_BRANCH=release
     accept_latest_github_dev_mr $MODNAME $DEPLOY_REMOTE
