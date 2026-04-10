@@ -15,6 +15,7 @@ CommandLine:
 # import pathlib
 import re
 import toml
+import random
 import ubelt as ub
 
 
@@ -22,8 +23,10 @@ def load_facts():
     fact_table = []
 
     fact_paths = [
-        ub.Path('~/misc/facts/facts-2021.toml').expand(),
-        ub.Path('~/misc/facts/facts-2024.toml').expand(),
+        # ub.Path('~/misc/facts/facts-2021.toml').expand(),
+        # ub.Path('~/misc/facts/facts-2024.toml').expand(),
+        ub.Path('~/misc/facts/facts-2025-true.toml').expand(),
+        ub.Path('~/misc/facts/facts-2025-fake.toml').expand(),
     ]
     for fact_fpath in fact_paths:
         with open(fact_fpath, 'r') as file:
@@ -36,6 +39,24 @@ def load_facts():
             item['total'] = len(fact_list)
             item['stamp'] = f"{item['year']} - {item['num']:02d} of {item['total']}"
             fact_table.append(item)
+
+    if 1:
+        # RANDOMIZE
+        seed = 1154499620
+        rng = random.Random(seed)
+
+        # Shuffle the combined list so fake facts appear in random positions
+        rng.shuffle(fact_table)
+
+        # Renumber based on final shuffled order
+        total = len(fact_table)
+        for i, item in enumerate(fact_table, start=1):
+            item['num'] = i
+            item['total'] = total
+            item['stamp'] = f"{item['year']} - {item['num']:02d} of {item['total']}"
+
+        # TODO: would be better to group by year, so
+        # we can keep some years evergreen
 
     if 0:
         with open(ub.Path('~/misc/facts/internal.toml').expand(), 'r') as file:
@@ -66,8 +87,76 @@ def print_facts():
                 ub.paragraph(fact['text']),
                 ub.indent(fact['references']),
             )
-        fact_panel = Panel(text, title='FACT ' + fact['stamp'])
+        title = fact.get('title', '')
+        fact_panel = Panel(text, title='FACT: ' + title + ' - ' + fact['stamp'])
         console.print(fact_panel)
+
+
+import re
+import pylatex
+
+def append_text_with_math(doc, text):
+    r"""
+    Append text to a pylatex document, converting:
+      - display math:  \[ ... \]  -> preserved as \[ ... \]
+      - inline math:   $ ... $    -> converted to \( ... \)
+
+    Additionally preserves spacing after inline math reliably.
+    """
+
+    display_pat = re.compile(r'\\\[(.*?)\\\]', flags=re.DOTALL)
+    inline_pat = re.compile(
+        r'(?<!\\)\$(?!\$)(.*?)(?<!\\)\$(?!\$)',
+        flags=re.DOTALL
+    )
+
+    tokens = []
+    for m in display_pat.finditer(text):
+        tokens.append((m.start(), m.end(), "display", m.group(1)))
+    for m in inline_pat.finditer(text):
+        tokens.append((m.start(), m.end(), "inline", m.group(1)))
+
+    if not tokens:
+        doc.append(pylatex.NoEscape(text))
+        return
+
+    tokens.sort(key=lambda t: (t[0], 0 if t[2] == "display" else 1))
+
+    cursor = 0
+
+    for start, end, kind, content in tokens:
+        if start < cursor:
+            continue
+
+        # Plain text before token
+        if start > cursor:
+            doc.append(pylatex.NoEscape(text[cursor:start]))
+
+        if kind == "display":
+            doc.append(pylatex.NoEscape(r'\[' + content + r'\]'))
+            doc.append(pylatex.NoEscape('\n'))
+            cursor = end
+            continue
+
+        # Inline math
+        doc.append(pylatex.NoEscape(r'\(' + content + r'\)'))
+
+        # IMPORTANT: Preserve spacing after inline math.
+        # If the next character in the original text is whitespace,
+        # emit an explicit TeX space (\ ) and consume that whitespace.
+        if end < len(text) and text[end].isspace():
+            doc.append(pylatex.NoEscape(r'\ '))
+            # consume all contiguous whitespace to avoid double spacing
+            j = end
+            while j < len(text) and text[j].isspace():
+                j += 1
+            cursor = j
+        else:
+            cursor = end
+
+    # Remaining plain text
+    if cursor < len(text):
+        doc.append(pylatex.NoEscape(text[cursor:]))
 
 
 def render_facts():
@@ -134,35 +223,35 @@ def render_facts():
         )
         # with doc.create(pylatex.MiniPage(width=r'\textwidth')):
         with contexts:
+
+            # Optional title support
+            if 'title' in fact and fact['title']:
+                doc.append(pylatex.NoEscape(r'\textbf{' + fact['title'] + r'}'))
+                doc.append(pylatex.NoEscape(r'\vspace{-11pt}'))
+
             doc.append(pylatex.NoEscape(r'\paragraph{Fact:}'))
+
             text = ub.paragraph(fact['text'])
 
-            if r'\[' in text:
-                found = list(re.finditer('(' + re.escape(r'\[') + '|' + re.escape(r'\]') + ')', text))
-                prev_x = 0
-                for a, b in ub.iter_window(found, step=2):
-                    part = text[prev_x:a.span()[0]]
-                    doc.append(part)
-                    ax, bx = a.span()[1], b.span()[0]
-                    part = pylatex.NoEscape(r'$' + text[ax:bx] + r'$ ')
-                    doc.append(part)
-                    prev_x = b.span()[1]
-                part = text[prev_x:]
-                doc.append(part)
+            # Render LaTeX math blocks.
+            # Supported:
+            #   - Display math delimited by '\[ ... \]'
+            #   - Inline math delimited by '$ ... $' (converted to '\( ... \)' for robustness)
+            if r'\[' in text or '$' in text:
+                append_text_with_math(doc, text)
             else:
-                # if '$' in text:
-                #     parts = text.split('$')
-                #     for idx, p in enumerate(parts):
-                #         if idx % 2 == 1:
-                #             doc.append(pylatex.NoEscape('$' + p + '$ '))
-                #         else:
-                #             doc.append(p)
-                # else:
                 doc.append(text)
             if QR_REFERENCE:
                 doc.append('\n')
                 num_refs = 0
                 for refline in fact['references'].split('\n'):
+                    if ' # ' in refline:
+                        # refline contains a comment
+                        refline, tags = refline.split(' # ', 1)
+                        tags = {t.strip(',').replace(':', '').lower() for t in tags.split(' ') if t.strip()}
+                    else:
+                        tags = set()
+
                     if refline.startswith('http'):
                         found = refline
                         image_fname = ub.hash_data(found, base='abc')[0:16] + '.png'
@@ -179,6 +268,15 @@ def render_facts():
                                 import qrcode.image
                                 from qrcode.image.styledpil import StyledPilImage
 
+                                if 'veritasium.com' in url:
+                                    tags.add('veritasium')
+                                if 'arxiv.org' in url:
+                                    tags.add('arxiv')
+                                if 'nasa.gov' in url:
+                                    tags.add('nasa')
+                                if 'tiktok.com' in url:
+                                    tags.add('tiktok')
+
                                 qr = qrcode.QRCode(
                                     version=1,
                                     error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -188,11 +286,25 @@ def render_facts():
                                 qr.add_data(url)
                                 qr.make(fit=True)
                                 img = qr.make_image(fill_color="black", back_color="white")
-                                if 'wikipedia.org' in url:
+                                if 'arxiv' in tags:
+                                    chrfpath = ub.grabdata('https://i.imgur.com/WZyQVpA.png')
+                                elif 'nasa' in tags:
+                                    chrfpath = ub.grabdata('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/960px-NASA_logo.svg.png')
+                                elif 'computerphile' in tags:
+                                    chrfpath = '/home/joncrall/misc/facts/computerphile-logo.jpg'
+                                elif 'wikipedia.org' in url:
                                     # chrfpath = '/home/joncrall/misc/facts/wiki-logo.png'
                                     chrfpath = '/home/joncrall/misc/facts/wiki-logo-3.jpg'
+                                elif 'veritasium' in tags:
+                                    chrfpath = ub.grabdata('https://upload.wikimedia.org/wikipedia/commons/9/98/Veritasium_square_logo.png')
+                                elif '3blue1brown' in tags:
+                                    chrfpath = ub.grabdata('https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/3B1B_Logo.svg/1280px-3B1B_Logo.svg.png')
+                                elif 'kurzgesagt' in tags:
+                                    chrfpath = ub.grabdata('https://cdn.shopify.com/s/files/1/0254/0516/1520/files/RGB__V6.1.png')
                                 elif 'youtube.com' in url:
                                     chrfpath = '/home/joncrall/misc/facts/YouTube-logo.png'
+                                elif 'tiktok' in tags:
+                                    chrfpath = '/home/joncrall/misc/facts/tiktok-logo.png'
                                 else:
                                     chrfpath = None
                                     parts = url.split('/')
@@ -293,3 +405,4 @@ if __name__ == '__main__':
         fire.Fire()
     else:
         print_facts()
+

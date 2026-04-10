@@ -157,6 +157,7 @@ coal_2019_footprint = 952 * million * CO2_ton
 coal_2019_co2_per_kwh = coal_2019_footprint / coal_2019_energy
 
 # How much energy compaines charge per killowatt hour
+# WELL THIS NEEDS AN UPDATE!
 paid_cost_per_kwh = (10.42 * cents) / kwh
 print('paid_cost_per_kwh  = {!r}'.format(paid_cost_per_kwh))
 
@@ -215,6 +216,8 @@ else:
 personal_timeline = personal_timeline.sort_index()
 
 rows = [
+    {'date': '2026-03-25', 'amount':   33.47 * reg.dollars, 'organization': 'wren', 'towards': 'flight', 'note': 'Wren claims 1.34t offset'},
+    {'date': '2026-03-13', 'amount':  280.59 * reg.dollars, 'organization': 'wren'},
     {'date': '2025-03-13', 'amount':  280.59 * reg.dollars, 'organization': 'wren'},
     {'date': '2024-07-26', 'amount':  120.17 * reg.dollars, 'organization': 'wren', 'towards': 'flight&vacation'},
     {'date': '2023-03-13', 'amount':  250.00 * reg.dollars, 'organization': 'wren'},
