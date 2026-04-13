@@ -38,5 +38,3 @@ Output:
 6. Open questions / unresolved items
 7. Superseded or dropped context
 8. Compressed working state
-
-Then use that compressed working state as the basis for your next response.
