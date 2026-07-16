@@ -1082,9 +1082,9 @@ def main():
             # Independent of the adversary scale we can plot cost versus scheme
             # cost vs hashmod?
             subdf = df[df['scale'] == df['scale'].iloc[0]]
-            piv = subdf.pivot(['entropy', 'scheme'],
-                              ['hashmode_attempts_per_second', 'hashmode'],
-                              'dollars')
+            piv = subdf.pivot(index=['entropy', 'scheme'],
+                              columns=['hashmode_attempts_per_second', 'hashmode'],
+                              values='dollars')
             piv = piv.sort_index(axis=1, ascending=False)
 
             # https://stackoverflow.com/questions/64234474/cust-y-lbls-seaborn
@@ -1153,9 +1153,9 @@ def main():
                 subdf = subdf.sort_values(['entropy', 'num_devices'])
 
                 piv = subdf.pivot(
-                    ['entropy', 'dollars', 'scheme'],
-                    ['num_devices', 'scale'],
-                    'seconds')
+                    index=['entropy', 'dollars', 'scheme'],
+                    columns=['num_devices', 'scale'],
+                    values='seconds')
                 piv = piv.applymap(float)
 
                 # https://stackoverflow.com/questions/64234474/cust-y-lbls-seaborn
@@ -1230,6 +1230,7 @@ if __name__ == '__main__':
         python ~/misc/notes/password_model.py --device=RTX_3090 --save --show
         python ~/misc/notes/password_model.py --device=RTX_4090 --save --show
 
+        python ~/misc/notes/password_model.py --show
         python ~/misc/notes/password_model.py --show
         python ~/misc/notes/password_model.py --show --MODE=small
     """

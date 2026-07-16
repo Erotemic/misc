@@ -1,40 +1,60 @@
-Review the entire available conversation/context, not just the latest exchange, and compress it into a compact but loss-minimizing working state.
+Compress the entire available conversation/context into a durable working state. Read all context, not just recent turns.
 
-Preserve:
-- overall goals and subgoals,
-- important facts and background,
-- constraints, preferences, and assumptions,
-- decisions already made,
-- unresolved questions or open threads,
-- terminology, definitions, and examples that may still matter,
-- corrections, reversals, rejected ideas, and superseded context,
-- lessons learned from earlier exploration, failures, or debugging.
+## Objective
 
-You may omit:
-- repetitive back-and-forth,
-- low-value conversational filler,
-- intermediate debugging or troubleshooting steps,
-- discarded trial-and-error details that do not add lasting value.
+Create a compact handoff summary that preserves everything needed to resume the work accurately.
 
-But do retain:
-- the cause of problems that were discovered,
-- what fixed them or what did not,
-- patterns to avoid,
-- any durable insight gained from the intermediate steps.
+## Priority Rules
 
-Guidelines:
-- Do not overweight recent messages just because they are recent.
-- Keep older context unless it has clearly become irrelevant or was explicitly replaced.
+- Preserve lasting relevance over recency.
 - Prefer compression over omission.
-- Preserve information in a structured way that can be reused for future reasoning.
-- If there are conflicts, note them and prefer the most recent explicit correction.
+- Keep older context unless it is clearly irrelevant, explicitly superseded, or contradicted.
+- When unsure, preserve the point in compressed form.
+- If information conflicts, note the conflict and follow the most recent explicit correction.
+- Do not invent missing information.
+- Do not narrate your reasoning process.
 
-Output:
-1. Core objective
-2. Key context
-3. Constraints and preferences
-4. Decisions made
-5. Lessons learned
-6. Open questions / unresolved items
-7. Superseded or dropped context
-8. Compressed working state
+## Preserve
+
+Retain:
+
+- Core goals, subgoals, and success criteria
+- Important facts, background, terminology, definitions, and examples
+- User constraints, preferences, assumptions, and required formats
+- Decisions already made, including rationale when stated
+- Open questions, unresolved threads, and pending next steps
+- Corrections, reversals, rejected approaches, and superseded assumptions
+- Durable lessons from exploration, failures, or debugging:
+  - root causes
+  - fixes
+  - failed approaches
+  - anti-patterns
+  - reusable insights
+
+## Drop or Compress Aggressively
+
+- Conversational filler and acknowledgments
+- Repetition
+- Low-value back-and-forth
+- Intermediate trial-and-error once the durable cause, fix, and lesson are captured
+- Details that are no longer actionable or relevant
+
+## Output Format
+
+Use exactly these sections:
+
+1. **Core objective** — one sentence.
+2. **Key context** — durable facts, background, terminology, definitions, and examples.
+3. **Constraints and preferences** — user requirements, assumptions, formats, and limits.
+4. **Decisions made** — include rationale when stated.
+5. **Lessons learned** — root causes, fixes, failed approaches, anti-patterns, and reusable insights.
+6. **Open questions / unresolved items** — pending tasks, uncertainties, or follow-ups.
+7. **Superseded or dropped context** — conflicts, replacements, and intentionally omitted details.
+8. **Compressed working state** — minimal summary sufficient to resume work.
+
+## Style
+
+- Be terse but complete.
+- Use bullets.
+- Prefer precise fragments over prose.
+- Preserve reusable state, not a transcript.
